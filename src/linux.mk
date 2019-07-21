@@ -29,7 +29,7 @@ all: clean build
 
 build: libcm_$(WORD_SIZE).so
 
-all_arch:	$(CM_LIB).so $(CM_LIB).a
+all_arch:	$(CM_LIB).so 
 
 clean:
 	find . -name '*.o' -print -exec rm -f {} \; >/dev/null
