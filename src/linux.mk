@@ -33,6 +33,7 @@
 include ./version.mk
 
 TOP=$(PWD)
+PROD_DIR=~/common
 WORD_SIZE=64
 
 POSIX_FLAGS = -D_POSIX_PTHREAD_SEMANTICS
@@ -49,17 +50,28 @@ CM_LIB = libcm_$(WORD_SIZE)
 
 default: all
 
-all: clean build
+all: clean build install
 
 build: libcm_$(WORD_SIZE).so
 
 all_arch:	$(CM_LIB).so 
 
 clean:
-	find . -name '*.o' -print -exec rm -f {} \; >/dev/null
-	find . -name '$(CM_LIB)*' -print -exec rm -f {} \; >/dev/null
-	rm -rf OBJDIR_$(WORD_SIZE)
-	mkdir -p OBJDIR_$(WORD_SIZE)
+	@find . -name '*.o' -print -exec rm -f {} \; >/dev/null
+	@find . -name '$(CM_LIB)*' -print -exec rm -f {} \; >/dev/null
+	@rm -rf OBJDIR_$(WORD_SIZE)
+	@mkdir -p OBJDIR_$(WORD_SIZE)
+	@echo "$(CM_LIB) $(@)ed" 
+
+install:
+	@mkdir -p $(PROD_DIR)/lib
+	@mkdir -p $(PROD_DIR)/include
+	@cp -f *.h $(PROD_DIR)/include
+	@chmod 0644 $(PROD_DIR)/include/*.h
+	@mv $(CM_LIB).so $(CM_LIB).so.$(CM_LIB_VERSION)
+	@cp $(CM_LIB)* $(PROD_DIR)/lib
+	@ln -s -f $(PROD_DIR)/lib/$(CM_LIB).so.$(CM_LIB_VERSION) $(PROD_DIR)/lib/$(CM_LIB).so
+	@ln -s -f $(CM_LIB).so.$(CM_VERSION) $(CM_LIB).so
 	@echo "$(CM_LIB) $(@)ed" 
 
 	

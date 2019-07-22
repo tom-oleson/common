@@ -42,4 +42,30 @@
 
 #include "util.h"
 
+//-------------------------------------------------------------------------
+// Convert binary bytes to hex-ASCII.
+//-------------------------------------------------------------------------
+
+size_t bin2hex(const unsigned char *bin, size_t bin_len, char *hex, size_t hex_len) {
+ 
+	size_t out_size = bin_len * 2 + 1;
+
+        if (bin == NULL || bin_len == 0 || hex == NULL ||
+                hex_len == 0 || (hex_len < out_size)) {
+                return 0;
+        }
+
+        memset(hex, 0, hex_len);
+
+        size_t j = 0;
+        const char *digits = "0123456789ABCDEF";
+        for (size_t i = 0; i < bin_len; i++) {
+                j = i * 2;
+                hex[j]   = digits[bin[i] >> 4];
+                hex[j+1] = digits[bin[i] & 0x0F];
+        }
+        hex[out_size-1] = '\0';
+
+        return out_size;
+}
 

@@ -11,6 +11,7 @@
 #include <cppunit/extensions/HelperMacros.h>
 
 #include <string.h>
+#include <util.h>
 
 
 using namespace std;
