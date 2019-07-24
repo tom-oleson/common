@@ -27,17 +27,13 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef __UTIL_H
-#define __UTIL_H
-
-#include <stdlib.h>
-#include <stdint.h>
+#ifndef __LOG_H
+#define __LOG_H
 
 
-//extern "C" {
+#include "util.h"
 
-size_t bin2hex(const unsigned char *bin, size_t bin_len, char *hex, size_t hex_len);
 
-//}
+
 
 #endif

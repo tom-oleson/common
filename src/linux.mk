@@ -41,10 +41,12 @@ CM_LIB_VERSION=$(CM_VERSION)
 DEBUG= -g
 INCLUDE = -I. -I$(TOP)/ 
 CCFLAGS = $(INCLUDE) -c -m$(WORD_SIZE) $(DEBUG) -fPIC -D__LINUX_BOX__
-LDFLAGS = -lpthread -lrt $(DEBUG)
+LDFLAGS = -pthread -ldl $(DEBUG) 
 CC=g++
 
-CM_OBJS = OBJDIR_$(WORD_SIZE)/util.o
+CM_OBJS = OBJDIR_$(WORD_SIZE)/util.o \
+	OBJDIR_$(WORD_SIZE)/log.o \
+	OBJDIR_$(WORD_SIZE)/timewatcher.o
 
 CM_LIB = libcm_$(WORD_SIZE)
 

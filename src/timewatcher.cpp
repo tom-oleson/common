@@ -27,17 +27,60 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef __UTIL_H
-#define __UTIL_H
 
-#include <stdlib.h>
-#include <stdint.h>
+#include "timewatcher.h"
 
 
-//extern "C" {
+extern "C" {
+void *timewatcher::handler(void *p) {
+        timewatcher *tw = (timewatcher*)p;
+        timespec ts = {0, 100000000};
+        while (true) {
+        	clock_gettime(CLOCK_REALTIME, &tw->now);
+		nanosleep(&ts, NULL);
+        }
+        return NULL;
+}}
 
-size_t bin2hex(const unsigned char *bin, size_t bin_len, char *hex, size_t hex_len);
 
-//}
+timewatcher::timewatcher() {
+	clock_gettime(CLOCK_REALTIME, &now);
+        pthread_create(&tid, NULL, &handler, (void*) this);
+}
 
-#endif
+timewatcher::~timewatcher() {
+        pthread_cancel(tid);	/* request thread cancel */
+	pthread_join(tid, NULL);/* wait here until its done */
+}
+
+timespec timewatcher::readTime() {
+	return now;
+}
+
+time_t getTime(time_t *millis) {
+	timespec now = timeWatcher().readTime();
+	if(NULL != millis) {
+		// compute millis from nanoseconds
+		*millis = now.tv_nsec / 1000000L;
+	}
+	return now.tv_sec;
+}
+
+time_t getTime() {
+	// only the seconds
+	return getTime(NULL);
+}
+
+
+int64_t getMillis() {
+	timespec now = timeWatcher().readTime();
+	int64_t millis = (int64_t)now.tv_nsec / 1000000LL;
+	return ((int64_t)now.tv_sec * 1000LL) + (millis > 0LL ? millis:0LL);
+}
+
+
+// Call to get singleton instance 
+timewatcher& timeWatcher() {
+        static timewatcher tw;
+        return tw;
+}

@@ -27,17 +27,42 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef __UTIL_H
-#define __UTIL_H
+#ifndef __TIMEWATCHER_H
+#define __TIMEWATCHER_H
 
+
+#include "util.h"
+
+#include <pthread.h>
+#include <time.h>
+#include <unistd.h>
 #include <stdlib.h>
 #include <stdint.h>
 
 
-//extern "C" {
+class timewatcher {
 
-size_t bin2hex(const unsigned char *bin, size_t bin_len, char *hex, size_t hex_len);
+        pthread_t tid;
+        timespec now;
 
-//}
+        timewatcher();
+        timewatcher(const timewatcher &r) { /* singleton: do not implement */ }
+	~timewatcher();
+
+	static void *handler(void*); /* thread handler */ 
+
+	public:
+
+	friend timewatcher& timeWatcher();
+
+	timespec readTime();
+
+};
+
+time_t getTime(time_t *millis);
+time_t getTime();
+int64_t getMillis();
+
+timewatcher& timeWatcher();
 
 #endif
