@@ -55,13 +55,27 @@ class timewatcher {
 
 	friend timewatcher& timeWatcher();
 
+	// read most recently stored time and return a copy
 	timespec readTime();
 
+        // seconds from most recently stored time
+        time_t getTime();
+
+	// seconds from the specified timespec
+	time_t timeSeconds(timespec &ts);
+
+	// compute millis from nanos
+	time_t timeMillis(timespec &ts);
+
+	// compute total millis from seconds and nanos
+	int64_t timeTotalMillis(timespec &ts);
 };
 
-time_t getTime(time_t *millis);
+timespec readTime();
 time_t getTime();
-int64_t getMillis();
+time_t timeSeconds(timespec &ts);
+time_t timeMillis(timespec &ts);
+int64_t timeTotalMillis(timespec &ts);
 
 timewatcher& timeWatcher();
 

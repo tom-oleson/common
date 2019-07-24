@@ -36,6 +36,7 @@ TOP=$(PWD)
 EXE = run_tests
 
 OBJS =	utilTest.o \
+	timewatcherTest.o \
 	main.o
 
 default: all

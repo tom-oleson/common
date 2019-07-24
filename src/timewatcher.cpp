@@ -32,6 +32,7 @@
 
 
 extern "C" {
+// read realtime clock 10x per second
 void *timewatcher::handler(void *p) {
         timewatcher *tw = (timewatcher*)p;
         timespec ts = {0, 100000000};
@@ -57,26 +58,29 @@ timespec timewatcher::readTime() {
 	return now;
 }
 
-time_t getTime(time_t *millis) {
-	timespec now = timeWatcher().readTime();
-	if(NULL != millis) {
-		// compute millis from nanoseconds
-		*millis = now.tv_nsec / 1000000L;
-	}
-	return now.tv_sec;
+timespec readTime() {
+	return timeWatcher().readTime();
 }
 
 time_t getTime() {
-	// only the seconds
-	return getTime(NULL);
+	return readTime().tv_sec;
 }
 
-
-int64_t getMillis() {
-	timespec now = timeWatcher().readTime();
-	int64_t millis = (int64_t)now.tv_nsec / 1000000LL;
-	return ((int64_t)now.tv_sec * 1000LL) + (millis > 0LL ? millis:0LL);
+time_t timeSeconds(timespec &ts) {
+	return ts.tv_sec;
 }
+
+time_t timeMillis(timespec &ts) {
+	// compute millis from nanoseconds
+	return ts.tv_nsec / 1000000L;	
+}
+
+int64_t timeTotalMillis(timespec &ts) {
+	timespec now = readTime();
+        int64_t millis = (int64_t) now.tv_nsec / 1000000LL;
+        return ((int64_t) now.tv_sec * 1000LL) + (millis > 0LL ? millis:0LL);
+}
+
 
 
 // Call to get singleton instance 
@@ -84,3 +88,4 @@ timewatcher& timeWatcher() {
         static timewatcher tw;
         return tw;
 }
+
