@@ -22,7 +22,12 @@ CPPUNIT_TEST_SUITE_REGISTRATION( timewatcherTest );
 void timewatcherTest::test_getTime() {
 
 	time_t seconds = getTime();
+	// make sure timewatcher has a non-zero time
 	CPPUNIT_ASSERT( seconds > 0 );
+
+	// make sure timewatcher thread sees time change
+	sleep(2);
+	CPPUNIT_ASSERT( getTime() >= seconds+1 );
 }
 
 void timewatcherTest::test_timeTotalMillis() {
@@ -30,8 +35,9 @@ void timewatcherTest::test_timeTotalMillis() {
 	timespec now = readTime();
 	time_t seconds = timeSeconds(now);
 	time_t millis = timeMillis(now);
-	int64_t total_millis = timeTotalMillis(now);
+	time_t total_millis = timeTotalMillis(now);
+	time_t computed_total_millis = ((seconds * 1000L) + millis);
 
-        CPPUNIT_ASSERT( total_millis == ((seconds * 1000) + (millis > 0LL ? millis:0LL) ));
+        CPPUNIT_ASSERT( total_millis == computed_total_millis );
 }
 

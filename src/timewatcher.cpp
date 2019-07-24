@@ -75,10 +75,13 @@ time_t timeMillis(timespec &ts) {
 	return ts.tv_nsec / 1000000L;	
 }
 
-int64_t timeTotalMillis(timespec &ts) {
-	timespec now = readTime();
-        int64_t millis = (int64_t) now.tv_nsec / 1000000LL;
-        return ((int64_t) now.tv_sec * 1000LL) + (millis > 0LL ? millis:0LL);
+time_t  timeNanos(timespec &ts) {
+        return ts.tv_nsec;
+}
+
+
+time_t timeTotalMillis(timespec &ts) {
+        return (ts.tv_sec * 1000L) + timeMillis(ts);
 }
 
 
