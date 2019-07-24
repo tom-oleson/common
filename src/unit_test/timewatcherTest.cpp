@@ -25,6 +25,13 @@ void timewatcherTest::test_getTime() {
 	// make sure timewatcher has a non-zero time
 	CPPUNIT_ASSERT( seconds > 0 );
 
+	time_t millis = 0xdeadbeef;	//insane value
+	seconds = getTime(&millis);
+	// make sure millis is now a sane
+	CPPUNIT_ASSERT( millis >= 0);
+	CPPUNIT_ASSERT( millis <= 999); 
+
+
 	// make sure timewatcher thread sees time change
 	sleep(2);
 	CPPUNIT_ASSERT( getTime() >= seconds+1 );

@@ -72,6 +72,7 @@ class timewatcher {
 };
 
 timespec readTime();
+time_t getTime(time_t *millis);
 time_t getTime();
 time_t timeSeconds(timespec &ts);
 time_t timeMillis(timespec &ts);

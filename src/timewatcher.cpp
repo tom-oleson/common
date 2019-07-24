@@ -62,8 +62,16 @@ timespec readTime() {
 	return timeWatcher().readTime();
 }
 
+time_t getTime(time_t *millis) {
+	timespec ts = readTime();
+	if(NULL != millis) {
+		*millis = timeMillis(ts);
+	}
+	return timeSeconds(ts); 
+}
+
 time_t getTime() {
-	return readTime().tv_sec;
+	return getTime(NULL);
 }
 
 time_t timeSeconds(timespec &ts) {
@@ -81,7 +89,7 @@ time_t  timeNanos(timespec &ts) {
 
 
 time_t timeTotalMillis(timespec &ts) {
-        return (ts.tv_sec * 1000L) + timeMillis(ts);
+        return (timeSeconds(ts) * 1000L) + timeMillis(ts);
 }
 
 
