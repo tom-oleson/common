@@ -26,11 +26,16 @@ void timewatcherTest::test_getTime() {
 	CPPUNIT_ASSERT( seconds > 0 );
 
 	time_t millis = 0xdeadbeef;	//insane value
-	seconds = getTime(&millis);
-	// make sure millis is now a sane
+	time_t nanos = 0xdeadbeef;	// insane value
+	seconds = getTime(&millis, &nanos);
+
+	// make sure millis is now sane
 	CPPUNIT_ASSERT( millis >= 0);
 	CPPUNIT_ASSERT( millis <= 999); 
 
+	// make sure nanos is now sane
+	CPPUNIT_ASSERT( nanos >= 0);
+	CPPUNIT_ASSERT( nanos <= 999999999);
 
 	// make sure timewatcher thread sees time change
 	sleep(2);

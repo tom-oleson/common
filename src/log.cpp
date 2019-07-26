@@ -44,3 +44,37 @@
 
 //-------------------------------------------------------------------------
 
+static const char *log_level[] = CM_LOG_LEVEL_NAMES;
+static cm_log::console_logger the_logger;
+
+
+void cm_log::log(cm_log::level::en lvl, const std::string &msg) {
+
+	// call the configured logger
+	the_logger.log(lvl, msg);
+}
+
+void cm_log::log(cm_log::src_loc loc, cm_log::level::en lvl, const std::string &msg) {
+
+	// call the configured logger
+	the_logger.log(loc, lvl, msg);
+}
+
+
+// used to output a message to stderr when things go wrong in the logger itself
+void cm_log::_log_error(cm_log::src_loc loc, const std::string &msg) {
+	fprintf(stderr, "LOG ERROR: [%s:%d:%s]: %s", loc.file, loc.line, loc.func, msg.c_str());
+}
+
+// console logger
+
+void cm_log::console_logger::log(cm_log::level::en lvl, const std::string &msg) {
+	fprintf(stdout, "%s: %s", ::log_level[lvl], msg.c_str());
+}
+
+void cm_log::console_logger::log(cm_log::src_loc loc, cm_log::level::en lvl, const std::string &msg) {
+	fprintf(stdout, "%s [%s:%d:%s]: %s", ::log_level[lvl], loc.file, loc.line, loc.func, msg.c_str());
+}
+
+
+

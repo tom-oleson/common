@@ -27,46 +27,34 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef __TIMEWATCHER_H
-#define __TIMEWATCHER_H
-
-
-#include "util.h"
+#ifndef __CM_MUTEX_H
+#define __CM_MUTEX_H
 
 #include <pthread.h>
-#include <time.h>
-#include <unistd.h>
-#include <stdlib.h>
-#include <stdint.h>
 
+namespace cm {
 
-class timewatcher {
-
-        pthread_t tid;
-        timespec now;
-
-        timewatcher();
-        timewatcher(const timewatcher &r) { /* singleton: do not implement */ }
-	~timewatcher();
-
-	static void *handler(void*); /* thread handler */ 
-
+class mutex {
 	public:
+		mutex() { pthread_mutex_init(&mutex, NULL); }
+		~mutex() { pthread_mutex_destroy(&mutex); }
 
-	friend timewatcher& timeWatcher();
+		int lock() { return pthread_mutex_lock(&mutex); } 
+		int unlock(){ return pthread_mutex_unlock(&mutex);  }
 
-	// return a copy of the most recently stored time
-	timespec readTime();
+		bool try_lock() {
+			return pthread_mutex_trylock(&mutex) == 0 ? true : false;
+		}
+
+
+	private:
+	pthread_mutex_t    mutex; 
+
+// disallow copying this object
+// don't implement these!
+		mutex(const mutex&);
+		const mutex& operator=(const mutex&);
 };
-
-timespec readTime();
-time_t getTime(time_t *millis, time_t *nanos);
-time_t getTime();
-time_t timeSeconds(timespec &ts);
-time_t timeMillis(timespec &ts);
-time_t timeNanos(timespec &ts);
-time_t timeTotalMillis(timespec &ts);
-
-timewatcher& timeWatcher();
+} // namespace cm
 
 #endif

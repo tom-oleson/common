@@ -62,16 +62,19 @@ timespec readTime() {
 	return timeWatcher().readTime();
 }
 
-time_t getTime(time_t *millis) {
+time_t getTime(time_t *millis, time_t *nanos) {
 	timespec ts = readTime();
 	if(NULL != millis) {
 		*millis = timeMillis(ts);
 	}
-	return timeSeconds(ts); 
+	if(NULL != nanos) {
+		*nanos = ts.tv_nsec;
+	}
+	return ts.tv_sec; 
 }
 
 time_t getTime() {
-	return getTime(NULL);
+	return getTime(NULL, NULL);
 }
 
 time_t timeSeconds(timespec &ts) {
@@ -94,7 +97,7 @@ time_t timeTotalMillis(timespec &ts) {
 
 
 
-// Call to get singleton instance 
+// Call gets singleton instance 
 timewatcher& timeWatcher() {
         static timewatcher tw;
         return tw;
