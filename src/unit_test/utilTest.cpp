@@ -13,6 +13,7 @@
 #include "utilTest.h"
 
 #include "log.h"
+#include "mutex.h"
 
 CPPUNIT_TEST_SUITE_REGISTRATION( utilTest );
 
@@ -22,6 +23,11 @@ CPPUNIT_TEST_SUITE_REGISTRATION( utilTest );
 
 
 void utilTest::test_bin2hex() {
+
+	cm::mutex mutex;
+
+	mutex.lock();
+	mutex.unlock();
 
 	cm_log::info("This is the first log message!");
 

@@ -36,19 +36,19 @@ namespace cm {
 
 class mutex {
 	public:
-		mutex() { pthread_mutex_init(&mutex, NULL); }
-		~mutex() { pthread_mutex_destroy(&mutex); }
+		mutex() { pthread_mutex_init(&_mutex, NULL); }
+		~mutex() { pthread_mutex_destroy(&_mutex); }
 
-		int lock() { return pthread_mutex_lock(&mutex); } 
-		int unlock(){ return pthread_mutex_unlock(&mutex);  }
+		int lock() { return pthread_mutex_lock(&_mutex); } 
+		int unlock(){ return pthread_mutex_unlock(&_mutex);  }
 
 		bool try_lock() {
-			return pthread_mutex_trylock(&mutex) == 0 ? true : false;
+			return pthread_mutex_trylock(&_mutex) == 0 ? true : false;
 		}
 
 
 	private:
-	pthread_mutex_t    mutex; 
+	pthread_mutex_t    _mutex; 
 
 // disallow copying this object
 // don't implement these!
