@@ -28,24 +28,77 @@
  */
 
 #include "log.h"
-
-//-------------------------------------------------------------------------
+#include "timewatcher.h"
 
 static const char *log_level[] = CM_LOG_LEVEL_NAMES;
-static cm_log::console_logger the_logger;
+
+//-------------------------------------------------------------------------
+// formatter(s)
+//-------------------------------------------------------------------------
+
+std::string cm_log::format_log_timestamp(const std::string &fmt, time_t seconds, bool gmt ) {
+        char buf[sizeof "01/01/1970 00:00:00.999 "] = { '\0' };
+
+        struct tm my_tm;
+        if(gmt) {
+        	gmtime_r(&seconds, &my_tm); // break down as GMT/UTC time
+        } else {
+        	localtime_r(&seconds, &my_tm); // break down as local time
+        }
+        //strftime(buf, sizeof buf, "%m/%d/%Y %H:%M:%S ", &my_tm);
+	strftime(buf, sizeof buf, fmt.c_str(), &my_tm);
+        return std::string(buf);
+}
+
+std::string cm_log::format_millis(time_t millis) {
+	char buf[sizeof ".999 "] = { '\0' };
+	snprintf(buf, sizeof buf, ".%03ld", millis);
+	return std::string(buf);
+}
+
+//-------------------------------------------------------------------------
+// build up log message with timestamp, level and log message
+//-------------------------------------------------------------------------
+
+std::string cm_log::build_log_message(
+	 const std::string &date_time_fmt,
+	 const std::string &log_fmt,
+	 cm_log::level::en lvl,
+	 const std::string &msg,
+	 bool gmt) {
+        std::stringstream ss;
+
+	time_t seconds, millis;
+	seconds = getTime(&millis, NULL);
+
+	ss << format_log_timestamp(date_time_fmt, seconds, gmt);
+	ss << format_millis(millis) << " ";
+	ss << ::log_level[lvl] << " ";
+	ss << msg;
+	return ss.str();
+}
+
+//-------------------------------------------------------------------------
+// default logger (output to the default logger)
+//-------------------------------------------------------------------------
+static cm_log::console_logger default_logger;
 
 
 void cm_log::log(cm_log::level::en lvl, const std::string &msg) {
 
 	// call the configured logger
-	the_logger.log(lvl, msg);
+	default_logger.log(lvl, msg);
 }
 
 void cm_log::log(cm_log::src_loc loc, cm_log::level::en lvl, const std::string &msg) {
 
 	// call the configured logger
-	the_logger.log(loc, lvl, msg);
+	default_logger.log(loc, lvl, msg);
 }
+
+//-------------------------------------------------------------------------
+// cm_log error (output to stderr)
+//-------------------------------------------------------------------------
 
 
 // used to output a message to stderr when things go wrong in the logger itself
@@ -53,15 +106,56 @@ void cm_log::_log_error(cm_log::src_loc loc, const std::string &msg) {
 	fprintf(stderr, "LOG ERROR: [%s:%d:%s]: %s", loc.file, loc.line, loc.func, msg.c_str());
 }
 
-// console logger
+//-------------------------------------------------------------------------
+// console logger (output to the terminal)
+//-------------------------------------------------------------------------
 
 void cm_log::console_logger::log(cm_log::level::en lvl, const std::string &msg) {
+
+	if(!ok_to_log(lvl)) return;
+
+	lock();
 	fprintf(stdout, "%s: %s", ::log_level[lvl], msg.c_str());
+	unlock();
 }
 
 void cm_log::console_logger::log(cm_log::src_loc loc, cm_log::level::en lvl, const std::string &msg) {
+
+	if(!ok_to_log(lvl)) return;
+
+	lock();
 	fprintf(stdout, "%s [%s:%d:%s]: %s", ::log_level[lvl], loc.file, loc.line, loc.func, msg.c_str());
+	unlock();
 }
 
 
+//-------------------------------------------------------------------------
+// file logger (output to file)
+//-------------------------------------------------------------------------
 
+void cm_log::file_logger::log(cm_log::level::en lvl, const std::string &msg) {
+
+        if(!ok_to_log(lvl)) return;
+
+        lock();
+	open_log();
+
+	*this << cm_log::build_log_message(date_time_fmt, lvl, msg, gmt) << "\n";
+	flush();
+
+        unlock();
+}
+
+void cm_log::file_logger::log(cm_log::src_loc loc, cm_log::level::en lvl, const std::string &msg) {
+
+        if(!ok_to_log(lvl)) return;
+
+        lock();
+	open_log();
+
+	std::stringstream ss(msg);
+	ss << "[" << loc.file << ":" << loc.line << ":" << loc.func << "]: " << msg;
+	*this << cm_log::build_log_message(date_time_fmt, lvl, ss.str(), gmt) << "\n";
+
+        unlock();
+}

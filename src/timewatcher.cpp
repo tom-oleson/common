@@ -90,16 +90,12 @@ time_t  timeNanos(timespec &ts) {
         return ts.tv_nsec;
 }
 
-
 time_t timeTotalMillis(timespec &ts) {
         return (timeSeconds(ts) * 1000L) + timeMillis(ts);
 }
-
-
 
 // Call gets singleton instance 
 timewatcher& timeWatcher() {
         static timewatcher tw;
         return tw;
 }
-

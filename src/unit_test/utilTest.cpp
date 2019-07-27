@@ -12,24 +12,13 @@
 
 #include "utilTest.h"
 
-#include "log.h"
-#include "mutex.h"
-
 CPPUNIT_TEST_SUITE_REGISTRATION( utilTest );
-
 
 //void utilTest::setUp() { }
 //void utilTest::tearDown() { }
 
 
 void utilTest::test_bin2hex() {
-
-	cm::mutex mutex;
-
-	mutex.lock();
-	mutex.unlock();
-
-	cm_log::info("This is the first log message!");
 
 	uint32_t bin[2] = { htonl(0xdeadbeef), htonl(0xdeadbeef) };
 	char out[512] = { '\0' };

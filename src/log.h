@@ -31,7 +31,11 @@
 #define __LOG_H
 
 #include <string>
+#include <fstream>
+#include <sstream>
+
 #include "util.h"
+#include "mutex.h"
 
 namespace cm_log {
 
@@ -83,24 +87,22 @@ void log(cm_log::src_loc loc, cm_log::level::en lvl, const std::string &msg);
 #define __LOG_SOURCE_LOC__
 #ifdef __LOG_SOURCE_LOC__
 
-#define off(msg) log(SRC_LOC, cm_log::level::off, msg)
 #define always(msg) log(SRC_LOC, cm_log::level::always, msg)
 #define fatal(msg) log(SRC_LOC, cm_log::level::fatal, msg)
 #define critical(msg) log(SRC_LOC, cm_log::level::critical, msg)
 #define error(msg) log(SRC_LOC, cm_log::level::error, msg)
-#define warn(msg) log(SRC_LOC, cm_log::level::warn, msg)
+#define warning(msg) log(SRC_LOC, cm_log::level::warning, msg)
 #define info(msg) log(SRC_LOC, cm_log::level::info, msg)
 #define debug(msg) log(SRC_LOC, cm_log::level::debug, msg)
 #define trace(msg) log(SRC_LOC, cm_log::level::trace, msg)
 
 #else
 
-#define off(msg) log(cm_log::level::off, msg)
 #define always(msg) log(cm_log::level::always, msg)
 #define fatal(msg) log(cm_log::level::fatal, msg)
 #define critical(msg) log(cm_log::level::critical, msg)
 #define error(msg) log(m_log::level::error, msg)
-#define warn(msg) log(m_log::level::warn, msg)
+#define warning(msg) log(m_log::level::warning, msg)
 #define info(msg) log(cm_log::level::info, msg)
 #define debug(msg) log(cm_log::level::debug, msg)
 #define trace(msg) log(cm_log::level::trace, msg)
@@ -111,19 +113,37 @@ void log(cm_log::src_loc loc, cm_log::level::en lvl, const std::string &msg);
     catch (const std::exception &ex) {_log_error(src_loc(__FILE__, __LINE__, __FUNCTION__), ex.what()); }\
     catch (...) { _log_error(src_loc(__FILE__, __LINE__, __FUNCTION__), "Unknown exception"); }
 
+#define CM_LOG_PARTS \
+{ "{date_time}", "{millis}", "{lvl}", "{file}", "{line}", "{func}", "{thread}", "{host}", "{msg}" } 
+
+
 void _log_error(src_loc loc, const std::string &msg);
 
-#endif
 
 class logger {
 
+protected:
 	cm_log::level::en log_level;
+	bool gmt;
+	std::string date_time_fmt;	// see strftime()
+	std::string msg_fmt;
 
 public:
-	logger(): log_level(cm_log::level::info) {}
+	logger():
+		log_level(cm_log::level::info),
+		gmt(false),
+		date_time_fmt("%m/%d/%Y %H:%M:%S"),
+		msg_fmt("{date_time}.{millis} {lvl} <{file}:{line}:{func}> [{thread}]: {msg}") {
+	}
 
 	void set_log_level(cm_log::level::en lvl) { log_level = lvl; }
 	cm_log::level::en get_log_level(void) { return log_level; }
+	void set_gmt(bool b) { gmt = b; }
+	bool get_fmt(void) { return gmt; }
+
+	bool ok_to_log(cm_log::level::en lvl) {
+		return lvl != cm_log::level::off && lvl <= log_level;
+	}
 
 	
 	virtual void log(cm_log::level::en lvl, const std::string &msg) = 0;
@@ -131,7 +151,7 @@ public:
 };
 
 
-class console_logger : public logger {
+class console_logger : public logger, private cm::mutex {
 	
 public:
 	console_logger(): logger() { }
@@ -142,4 +162,40 @@ public:
 };
 
 
+class file_logger : public logger, private cm::mutex, private std::ofstream {
+
+protected:
+	std::string log_path;
+
+	void open_log() {
+		if(!is_open()) {
+			open(log_path, ios_base::out | ios_base::app);
+		}
+	}
+
+	void close_log() {
+		if(is_open()) {
+			close();
+		}
+	}
+
+public:
+	file_logger(const std::string path): logger(), log_path(path) { open_log(); }
+	~file_logger() { lock(); close_log(); unlock(); }
+
+	void log(cm_log::level::en lvl, const std::string &msg);
+        void log(cm_log::src_loc loc, cm_log::level::en lvl, const std::string &msg); 	
+};
+
+
+std::string format_log_timestamp(const std::string &fmt, time_t seconds, /*time_t millis,*/ bool gmt);
+std::string format_millis(time_t millis);
+std::string build_log_message(const std::string &fmt, cm_log::level::en lvl, const std::string &msg, bool gmt);
+
+
 } // namespace cm_log
+
+
+
+#endif	// __LOG_H
+
