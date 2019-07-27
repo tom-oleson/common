@@ -140,7 +140,7 @@ void cm_log::file_logger::log(cm_log::level::en lvl, const std::string &msg) {
         lock();
 	open_log();
 
-	*this << cm_log::build_log_message(date_time_fmt, lvl, msg, gmt) << "\n";
+	*this << cm_log::build_log_message(date_time_fmt, msg_fmt, lvl, msg, gmt) << "\n";
 	flush();
 
         unlock();
@@ -155,7 +155,7 @@ void cm_log::file_logger::log(cm_log::src_loc loc, cm_log::level::en lvl, const 
 
 	std::stringstream ss(msg);
 	ss << "[" << loc.file << ":" << loc.line << ":" << loc.func << "]: " << msg;
-	*this << cm_log::build_log_message(date_time_fmt, lvl, ss.str(), gmt) << "\n";
+	*this << cm_log::build_log_message(date_time_fmt, msg_fmt, lvl, ss.str(), gmt) << "\n";
 
         unlock();
 }

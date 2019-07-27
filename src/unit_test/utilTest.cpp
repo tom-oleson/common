@@ -23,7 +23,7 @@ void utilTest::test_bin2hex() {
 	uint32_t bin[2] = { htonl(0xdeadbeef), htonl(0xdeadbeef) };
 	char out[512] = { '\0' };
 
-	size_t len = bin2hex((const unsigned char *) bin, 8, out, sizeof(out));
+	size_t len = cm_util::bin2hex((const unsigned char *) bin, 8, out, sizeof(out));
 	//cout << " len=" << len << ": " << out;
 
 	// length is 2 digits per byte + terminator byte

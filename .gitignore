@@ -50,3 +50,8 @@ modules.order
 Module.symvers
 Mkfile.old
 dkms.conf
+
+*/unit_test/cppunit_results.xml
+*/unit_test/log/
+*/unit_test/run_tests
+

@@ -46,7 +46,7 @@
 // Convert binary bytes to hex-ASCII.
 //-------------------------------------------------------------------------
 
-size_t bin2hex(const unsigned char *bin, size_t bin_len, char *hex, size_t hex_len) {
+size_t cm_util::bin2hex(const unsigned char *bin, size_t bin_len, char *hex, size_t hex_len) {
  
 	size_t out_size = bin_len * 2 + 1;
 

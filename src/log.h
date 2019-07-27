@@ -190,8 +190,8 @@ public:
 
 std::string format_log_timestamp(const std::string &fmt, time_t seconds, /*time_t millis,*/ bool gmt);
 std::string format_millis(time_t millis);
-std::string build_log_message(const std::string &fmt, cm_log::level::en lvl, const std::string &msg, bool gmt);
-
+std::string build_log_message( const std::string &date_time_fmt, const std::string &log_fmt,
+         cm_log::level::en lvl, const std::string &msg, bool gmt);
 
 } // namespace cm_log
 

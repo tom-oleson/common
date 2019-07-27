@@ -33,11 +33,10 @@
 #include <stdlib.h>
 #include <stdint.h>
 
-
-//extern "C" {
+namespace cm_util {
 
 size_t bin2hex(const unsigned char *bin, size_t bin_len, char *hex, size_t hex_len);
 
-//}
+} // namespace cm_util
 
 #endif
