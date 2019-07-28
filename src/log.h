@@ -126,9 +126,9 @@ void log(cm_log::src_loc loc, cm_log::level::en lvl, const std::string &msg);
 
 #define CM_LOG_CATCH()\
     catch (const std::exception &ex)\
-	{ cm_log::_log_error(src_loc(__FILE__, __LINE__, __FUNCTION__, pthread_self()), ex.what()); }\
+	{ cm_log::_log_error(src_loc(__FILE__, __LINE__, __FUNCTION__, cm_log::pid()), ex.what()); }\
     catch (...)\
-	{ cm_log::_log_error(src_loc(__FILE__, __LINE__, __FUNCTION__, pthread_self()), "Unknown exception"); }
+	{ cm_log::_log_error(src_loc(__FILE__, __LINE__, __FUNCTION__, cm_log::pid()), "Unknown exception"); }
 
 #define CM_LOG_DATE_TIME 0
 #define CM_LOG_MILLIS 1
