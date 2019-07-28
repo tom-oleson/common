@@ -23,6 +23,10 @@ class logTest : public CPPUNIT_NS::TestFixture {
 
   CPPUNIT_TEST_SUITE( logTest );
     CPPUNIT_TEST( test_file_logger );
+    CPPUNIT_TEST( test_format_log_timestamp );
+    CPPUNIT_TEST( test_format_millis );
+    CPPUNIT_TEST( test_log_level_if_macros );
+    CPPUNIT_TEST( test_get_part_index );
   CPPUNIT_TEST_SUITE_END();
 
 public:
@@ -31,7 +35,10 @@ public:
 
 protected:
   void test_file_logger();
-  
+  void test_format_log_timestamp();
+  void test_format_millis();
+  void test_log_level_if_macros();  
+  void test_get_part_index();
 };
 
 

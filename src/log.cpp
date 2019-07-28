@@ -31,6 +31,67 @@
 #include "timewatcher.h"
 
 static const char *log_level[] = CM_LOG_LEVEL_NAMES;
+static const char *log_part[] = CM_LOG_PART_NAMES;
+
+//-------------------------------------------------------------------------
+// log message formatter
+//-------------------------------------------------------------------------
+
+int cm_log::get_part_index(const std::string &str) {
+
+	try {
+	  for(int i=0; log_part[i] != NULL; i++) {
+		if(std::string(log_part[i]) == str) {
+			return( i );
+		}
+	  }
+	} CM_LOG_CATCH();
+
+	return -1;	// no match
+}
+
+// parse fmt string and output a vector of parts to use for log message
+// output.
+// fmt is of the form:
+// "${date_time}${millis}${tz} ${lvl} <${file}:${line}:${func}> [${thread}]: ${msg}"
+// output vector will have:
+// { "$date_time", "$millis", "$tz", " ", "$lvl",
+//     " <", "$file", ":", "$line", ":", "$func", "> [", "$thread", "]: ", "$msg"}
+
+void cm_log::parse_message_format(const std::string fmt, std::vector<std::string> &out_fmt) {
+
+	char ch;
+	std::string value;
+    size_t index = 0;
+	const char *buffer = fmt.c_str();
+	while((ch = buffer[index])) {
+
+		switch(ch) {
+		    case '$':   // identifier
+                if(buffer[index+1] == '{') {
+					index++;
+                    value = "$";
+					while((ch = buffer[index]) && ch != '}') {
+						value.append(1,ch);
+						index++;
+                    }
+                    if(ch == '}') index++;
+                    out_fmt.push_back(value);
+                    	
+                }
+                break;
+
+            default:    // character
+                value.append(1,ch);
+                index++;
+                if(buffer[index] == '$' || buffer[index] == '\0') {
+                    out_fmt.push_back(value);
+                }
+                break;
+		}
+
+	}
+}
 
 //-------------------------------------------------------------------------
 // formatter(s)
@@ -60,7 +121,7 @@ std::string cm_log::format_millis(time_t millis) {
 // build up log message with timestamp, level and log message
 //-------------------------------------------------------------------------
 
-std::string cm_log::build_log_message(
+std::string cm_log::format_log_message(
 	 const std::string &date_time_fmt,
 	 const std::string &log_fmt,
 	 cm_log::level::en lvl,
@@ -140,7 +201,7 @@ void cm_log::file_logger::log(cm_log::level::en lvl, const std::string &msg) {
         lock();
 	open_log();
 
-	*this << cm_log::build_log_message(date_time_fmt, msg_fmt, lvl, msg, gmt) << "\n";
+	*this << cm_log::format_log_message(date_time_fmt, msg_fmt, lvl, msg, gmt) << "\n";
 	flush();
 
         unlock();
@@ -155,7 +216,7 @@ void cm_log::file_logger::log(cm_log::src_loc loc, cm_log::level::en lvl, const 
 
 	std::stringstream ss(msg);
 	ss << "[" << loc.file << ":" << loc.line << ":" << loc.func << "]: " << msg;
-	*this << cm_log::build_log_message(date_time_fmt, msg_fmt, lvl, ss.str(), gmt) << "\n";
+	*this << cm_log::format_log_message(date_time_fmt, msg_fmt, lvl, ss.str(), gmt) << "\n";
 
         unlock();
 }

@@ -33,3 +33,32 @@ void utilTest::test_bin2hex() {
 	CPPUNIT_ASSERT( string(out) == "DEADBEEFDEADBEEF" );
 	
 }
+
+
+void utilTest::test_format_local_timestamp() {
+
+	time_t seconds = 1564244978;
+	time_t millis = 0;
+        std::string tz = cm_util::get_timezone_offset(seconds);
+	std::string result = cm_util::format_local_timestamp(seconds, millis, tz);
+	
+
+	CPPUNIT_ASSERT( true == true );
+}
+
+void utilTest::test_format_utc_timestamp() {
+
+        time_t seconds = 0;
+	time_t millis = 0;
+        std::string result = cm_util::format_utc_timestamp(seconds, millis);
+
+	CPPUNIT_ASSERT( result == "1970-01-01T00:00:00.000Z" );
+}
+
+void utilTest::get_timezone_offset() {
+
+	time_t seconds = 1564244978;
+	std::string result = cm_util::get_timezone_offset(seconds);
+	CPPUNIT_ASSERT( result.size() == 6 );
+}
+

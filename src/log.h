@@ -30,9 +30,11 @@
 #ifndef __LOG_H
 #define __LOG_H
 
+#include <exception>
 #include <string>
 #include <fstream>
 #include <sstream>
+#include <vector>
 
 #include "util.h"
 #include "mutex.h"
@@ -64,8 +66,9 @@ enum en {
 
 }//namespace level
 
+
 #define CM_LOG_LEVEL_NAMES \
-    { "off", "always", "fatal", "critical", "error", "warning", "info", "debug", "trace" }
+    { "off", "always", "fatal", "critical", "error", "warning", "info", "debug", "trace", NULL }
 
 
 struct src_loc {
@@ -83,6 +86,16 @@ struct src_loc {
 
 void log(cm_log::level::en lvl, const std::string &msg);
 void log(cm_log::src_loc loc, cm_log::level::en lvl, const std::string &msg);
+
+#define log_always(logger) if(logger.ok_to_log(cm_log::level::always))
+#define log_fatal(logger) if(logger.ok_to_log(cm_log::level::fatal))
+#define log_critical(logger) if(logger.ok_to_log(cm_log::level::critical))
+#define log_error(logger) if(logger.ok_to_log(cm_log::level::error))
+#define log_warning(logger) if(logger.ok_to_log(cm_log::level::warning))
+#define log_info(logger) if(logger.ok_to_log(cm_log::level::info))
+#define log_debug(logger) if(logger.ok_to_log(cm_log::level::debug))
+#define log_trace(logger) if(logger.ok_to_log(cm_log::level::trace))
+
 
 #define __LOG_SOURCE_LOC__
 #ifdef __LOG_SOURCE_LOC__
@@ -109,12 +122,38 @@ void log(cm_log::src_loc loc, cm_log::level::en lvl, const std::string &msg);
 
 #endif
 
-#define __CM_LOG_CATCH()\
-    catch (const std::exception &ex) {_log_error(src_loc(__FILE__, __LINE__, __FUNCTION__), ex.what()); }\
-    catch (...) { _log_error(src_loc(__FILE__, __LINE__, __FUNCTION__), "Unknown exception"); }
+#define CM_LOG_CATCH()\
+    catch (const std::exception &ex)\
+	{ cm_log::_log_error(src_loc(__FILE__, __LINE__, __FUNCTION__), ex.what()); }\
+    catch (...)\
+	{ cm_log::_log_error(src_loc(__FILE__, __LINE__, __FUNCTION__), "Unknown exception"); }
 
-#define CM_LOG_PARTS \
-{ "{date_time}", "{millis}", "{lvl}", "{file}", "{line}", "{func}", "{thread}", "{host}", "{msg}" } 
+#define CM_LOG_DATE_TIME 0
+#define CM_LOG_MILLIS 1
+#define CM_LOG_TZ 2
+#define CM_LOG_LVL 3
+#define CM_LOG_FILE 4
+#define CM_LOG_LINE 5
+#define CM_LOG_FUNC 6
+#define CM_LOG_THREAD 7
+#define CM_LOG_HOST 8
+#define CM_LOG_MSG 9
+
+enum part {
+    date_time = CM_LOG_DATE_TIME,
+    millis = CM_LOG_MILLIS,
+    tz = CM_LOG_TZ,
+    lvl = CM_LOG_LVL,
+    file = CM_LOG_FILE,
+    line = CM_LOG_LINE,
+    func = CM_LOG_FUNC,
+    thread = CM_LOG_THREAD,
+    host = CM_LOG_HOST,
+    msg = CM_LOG_MSG
+};
+
+#define CM_LOG_PART_NAMES \
+{ "date_time", "millis", "tz", "lvl", "file", "line", "func", "thread", "host", "msg", NULL } 
 
 
 void _log_error(src_loc loc, const std::string &msg);
@@ -142,7 +181,7 @@ public:
 	bool get_fmt(void) { return gmt; }
 
 	bool ok_to_log(cm_log::level::en lvl) {
-		return lvl != cm_log::level::off && lvl <= log_level;
+		return (lvl != cm_log::level::off && lvl <= log_level) || lvl == cm_log::level::always;
 	}
 
 	
@@ -187,10 +226,12 @@ public:
         void log(cm_log::src_loc loc, cm_log::level::en lvl, const std::string &msg); 	
 };
 
+int get_part_index(const std::string &str);
+void parse_message_format(const std::string fmt, std::vector<std::string> &out_fmt); 
 
 std::string format_log_timestamp(const std::string &fmt, time_t seconds, /*time_t millis,*/ bool gmt);
 std::string format_millis(time_t millis);
-std::string build_log_message( const std::string &date_time_fmt, const std::string &log_fmt,
+std::string format_log_message( const std::string &date_time_fmt, const std::string &log_fmt,
          cm_log::level::en lvl, const std::string &msg, bool gmt);
 
 } // namespace cm_log
