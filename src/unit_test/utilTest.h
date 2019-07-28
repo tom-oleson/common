@@ -24,7 +24,8 @@ class utilTest : public CPPUNIT_NS::TestFixture {
     CPPUNIT_TEST( test_bin2hex );
     CPPUNIT_TEST( test_format_local_timestamp );
     CPPUNIT_TEST( test_format_utc_timestamp );
-    CPPUNIT_TEST( get_timezone_offset );
+    CPPUNIT_TEST( test_get_timezone_offset );
+    CPPUNIT_TEST( test_get_hostname );
   CPPUNIT_TEST_SUITE_END();
 
 public:
@@ -35,7 +36,8 @@ protected:
   void test_bin2hex();
   void test_format_local_timestamp();
   void test_format_utc_timestamp();
-  void get_timezone_offset();
+  void test_get_timezone_offset();
+  void test_get_hostname();
   
 };
 

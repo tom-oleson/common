@@ -30,12 +30,20 @@
 #include "log.h"
 #include "timewatcher.h"
 
+
+
 static const char *log_level[] = CM_LOG_LEVEL_NAMES;
 static const char *log_part[] = CM_LOG_PART_NAMES;
 
 //-------------------------------------------------------------------------
 // log message formatter
 //-------------------------------------------------------------------------
+
+pid_t cm_log::pid() {
+    //pid_t pid = gettid();     // in man pages but not implemented!
+    pid_t pid = syscall(SYS_gettid); // kernel id (linux)
+    //pid_t pid = syscall(SYS_lwp_self);  // non-linux
+}
 
 int cm_log::get_part_index(const std::string &str) {
 
@@ -55,8 +63,7 @@ int cm_log::get_part_index(const std::string &str) {
 // fmt is of the form:
 // "${date_time}${millis}${tz} ${lvl} <${file}:${line}:${func}> [${thread}]: ${msg}"
 // output vector will have:
-// { "$date_time", "$millis", "$tz", " ", "$lvl",
-//     " <", "$file", ":", "$line", ":", "$func", "> [", "$thread", "]: ", "$msg"}
+// { "$0", "$1", "$2", " ", "$3", " <", "$4", ":", "$5", ":", "$6", "> [", "$7", "]: ", "$9"}
 
 void cm_log::parse_message_format(const std::string fmt, std::vector<std::string> &out_fmt) {
 
@@ -69,23 +76,34 @@ void cm_log::parse_message_format(const std::string fmt, std::vector<std::string
 		switch(ch) {
 		    case '$':   // identifier
                 if(buffer[index+1] == '{') {
-					index++;
-                    value = "$";
+					index += 2;
 					while((ch = buffer[index]) && ch != '}') {
 						value.append(1,ch);
 						index++;
                     }
                     if(ch == '}') index++;
-                    out_fmt.push_back(value);
-                    	
+                    char s_buf[30] = { '\0' };
+                    int part_index = cm_log::get_part_index(value);
+                    if(part_index >= 0) {
+                        // put it out as index number (i.e., "$0"...)
+                        snprintf(s_buf, sizeof s_buf, "$%d", part_index);
+                    }
+                    else {
+                        // not our format, put it back...
+                        snprintf(s_buf, sizeof s_buf, "${%s}", value.c_str());
+                    }
+                    out_fmt.push_back(std::string(s_buf));
+                    value.clear();
+                    break;                    	
                 }
-                break;
+                // fall through
 
             default:    // character
                 value.append(1,ch);
                 index++;
                 if(buffer[index] == '$' || buffer[index] == '\0') {
                     out_fmt.push_back(value);
+                    value.clear();
                 }
                 break;
 		}
@@ -120,6 +138,7 @@ std::string cm_log::format_millis(time_t millis) {
 //-------------------------------------------------------------------------
 // build up log message with timestamp, level and log message
 //-------------------------------------------------------------------------
+
 
 std::string cm_log::format_log_message(
 	 const std::string &date_time_fmt,

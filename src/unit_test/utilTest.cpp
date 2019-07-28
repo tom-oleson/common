@@ -55,10 +55,16 @@ void utilTest::test_format_utc_timestamp() {
 	CPPUNIT_ASSERT( result == "1970-01-01T00:00:00.000Z" );
 }
 
-void utilTest::get_timezone_offset() {
+void utilTest::test_get_timezone_offset() {
 
 	time_t seconds = 1564244978;
 	std::string result = cm_util::get_timezone_offset(seconds);
 	CPPUNIT_ASSERT( result.size() == 6 );
 }
 
+void utilTest::test_get_hostname() {
+
+    std::string hostname = cm_util::get_hostname();
+
+    CPPUNIT_ASSERT( !hostname.empty() );
+}

@@ -100,3 +100,12 @@ std::string cm_util::get_timezone_offset(time_t seconds) {
 
 	return std::string(tzoffset);
 }
+
+
+std::string cm_util::get_hostname() {
+    char buf[80] = { '\0' };
+    memset(buf, 0, sizeof buf);
+    gethostname(buf, sizeof buf);
+    return std::string(buf);
+}
+

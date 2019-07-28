@@ -96,3 +96,14 @@ void logTest::test_get_part_index() {
 	CPPUNIT_ASSERT((index = cm_log::get_part_index("deadbeef")) == -1);
 }
 
+void logTest::test_parse_message_format() {
+
+    std::string fmt = "$(junk}${date_time}${millis}${tz} ${lvl} <${file}:${line}:${func}> [${thread}]: ${msg}";
+    std::vector<std::string> out_fmt;
+
+    cm_log::parse_message_format(fmt, out_fmt); 
+
+    CPPUNIT_ASSERT( true == true );
+
+
+}

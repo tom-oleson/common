@@ -72,17 +72,19 @@ enum en {
 
 
 struct src_loc {
-    src_loc(): file{__FILE__}, line{__LINE__}, func{__FUNCTION__} {}
-    src_loc(const char *_file, int _line, const char *_func):
-         file{_file}, line{_line}, func{_func} {}
+    //src_loc(): file{__FILE__}, line{__LINE__}, func{__FUNCTION__} {}
+    src_loc(const char *_file, int _line, const char *_func, pid_t _pid):
+         file{_file}, line{_line}, func{_func}, pid{_pid} {}
 
     const char *file{nullptr};
     int line{0};
     const char *func{nullptr};
+    pid_t pid;
 };
 
+pid_t pid();
 
-#define SRC_LOC cm_log::src_loc(__FILE__, __LINE__, __FUNCTION__)
+#define SRC_LOC cm_log::src_loc(__FILE__, __LINE__, __FUNCTION__, cm_log::pid())
 
 void log(cm_log::level::en lvl, const std::string &msg);
 void log(cm_log::src_loc loc, cm_log::level::en lvl, const std::string &msg);
@@ -124,9 +126,9 @@ void log(cm_log::src_loc loc, cm_log::level::en lvl, const std::string &msg);
 
 #define CM_LOG_CATCH()\
     catch (const std::exception &ex)\
-	{ cm_log::_log_error(src_loc(__FILE__, __LINE__, __FUNCTION__), ex.what()); }\
+	{ cm_log::_log_error(src_loc(__FILE__, __LINE__, __FUNCTION__, pthread_self()), ex.what()); }\
     catch (...)\
-	{ cm_log::_log_error(src_loc(__FILE__, __LINE__, __FUNCTION__), "Unknown exception"); }
+	{ cm_log::_log_error(src_loc(__FILE__, __LINE__, __FUNCTION__, pthread_self()), "Unknown exception"); }
 
 #define CM_LOG_DATE_TIME 0
 #define CM_LOG_MILLIS 1
@@ -157,6 +159,13 @@ enum part {
 
 
 void _log_error(src_loc loc, const std::string &msg);
+int get_part_index(const std::string &str);
+void parse_message_format(const std::string fmt, std::vector<std::string> &out_fmt);
+
+std::string format_log_timestamp(const std::string &fmt, time_t seconds, /*time_t millis,*/ bool gmt);
+std::string format_millis(time_t millis);
+std::string format_log_message( const std::string &date_time_fmt, const std::string &log_fmt,
+         cm_log::level::en lvl, const std::string &msg, bool gmt);
 
 
 class logger {
@@ -166,19 +175,23 @@ protected:
 	bool gmt;
 	std::string date_time_fmt;	// see strftime()
 	std::string msg_fmt;
+    std::vector<std::string> parsed_msg_fmt;
+    std::string hostname;
 
 public:
 	logger():
 		log_level(cm_log::level::info),
 		gmt(false),
 		date_time_fmt("%m/%d/%Y %H:%M:%S"),
-		msg_fmt("{date_time}.{millis} {lvl} <{file}:{line}:{func}> [{thread}]: {msg}") {
+		msg_fmt("${date_time}${millis} ${lvl} <${file}:${line}:${func}> [${thread}]: ${msg}") {
+        cm_log::parse_message_format(msg_fmt, parsed_msg_fmt);
+        hostname = cm_util::get_hostname();
 	}
 
 	void set_log_level(cm_log::level::en lvl) { log_level = lvl; }
 	cm_log::level::en get_log_level(void) { return log_level; }
 	void set_gmt(bool b) { gmt = b; }
-	bool get_fmt(void) { return gmt; }
+	bool get_gmt(void) { return gmt; }
 
 	bool ok_to_log(cm_log::level::en lvl) {
 		return (lvl != cm_log::level::off && lvl <= log_level) || lvl == cm_log::level::always;
@@ -226,13 +239,6 @@ public:
         void log(cm_log::src_loc loc, cm_log::level::en lvl, const std::string &msg); 	
 };
 
-int get_part_index(const std::string &str);
-void parse_message_format(const std::string fmt, std::vector<std::string> &out_fmt); 
-
-std::string format_log_timestamp(const std::string &fmt, time_t seconds, /*time_t millis,*/ bool gmt);
-std::string format_millis(time_t millis);
-std::string format_log_message( const std::string &date_time_fmt, const std::string &log_fmt,
-         cm_log::level::en lvl, const std::string &msg, bool gmt);
 
 } // namespace cm_log
 
