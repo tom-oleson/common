@@ -109,12 +109,31 @@ std::string cm_util::get_hostname() {
     return std::string(buf);
 }
 
-pid_t cm_util::pid() {
+pid_t cm_util::tid() {
 #define __LINUX_GETTID__
 #ifdef __LINUX_GETTID__
-    pid_t pid = syscall(SYS_gettid); // kernel id (linux)
+    pid_t pid = syscall(SYS_gettid); // linux threads
 #else
-    pid_t pid = syscall(SYS_lwp_self);  // non-linux
+    pid_t pid = syscall(SYS_lwp_self);  // non-linux threads
 #endif
+}
+
+
+int cm_util::file_size(const std::string &path, size_t *size, time_t *mod_time) {
+	int ret = -1;
+	struct stat info;
+	
+	if((ret = stat(path.c_str(), &info)) == 0) {
+		if(S_ISREG(info.st_mode)) {
+			if(NULL != size) {
+				*size = info.st_size;
+			}
+			if(NULL != mod_time) {
+				*mod_time = info.st_mtim.tv_sec;
+			}
+		}
+	}
+	
+	return ret;
 }
 

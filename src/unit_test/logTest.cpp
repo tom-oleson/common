@@ -108,7 +108,7 @@ void logTest::test_parse_message_format() {
 
     cm_log::extra ext = CM_LOG_EXTRA;
 
-    std::string result = cm_log::build_log_message(ext, date_time_fmt, out_fmt, cm_log::level::info, "Test build_log_message.", true); 
+    std::string result = cm_log::format_log_message(ext, date_time_fmt, out_fmt, cm_log::level::info, "Test build_log_message.", true); 
 
     CPPUNIT_ASSERT( true == true );
 

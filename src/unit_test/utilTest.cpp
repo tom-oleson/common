@@ -39,7 +39,7 @@ void utilTest::test_format_local_timestamp() {
 
 	time_t seconds = 1564244978;
 	time_t millis = 0;
-        std::string tz = cm_util::get_timezone_offset(seconds);
+    std::string tz = cm_util::get_timezone_offset(seconds);
 	std::string result = cm_util::format_local_timestamp(seconds, millis, tz);
 	
 
@@ -48,9 +48,9 @@ void utilTest::test_format_local_timestamp() {
 
 void utilTest::test_format_utc_timestamp() {
 
-        time_t seconds = 0;
+    time_t seconds = 0;
 	time_t millis = 0;
-        std::string result = cm_util::format_utc_timestamp(seconds, millis);
+    std::string result = cm_util::format_utc_timestamp(seconds, millis);
 
 	CPPUNIT_ASSERT( result == "1970-01-01T00:00:00.000Z" );
 }
@@ -67,4 +67,13 @@ void utilTest::test_get_hostname() {
     std::string hostname = cm_util::get_hostname();
 
     CPPUNIT_ASSERT( !hostname.empty() );
+}
+
+void utilTest::test_file_size() {
+
+    size_t size = 0;
+    time_t seconds = 0;
+    int ret = cm_util::file_size("run_tests", &size, &seconds); 
+    
+    CPPUNIT_ASSERT( ret == 0 && size > 0 && seconds > 0);
 }

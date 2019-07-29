@@ -41,6 +41,7 @@
 #include <unistd.h>
 #include <sys/syscall.h>   /* For SYS_xxx definitions */
 #include <sys/types.h>      /* for gettid() */
+#include <sys/stat.h>		/* for stat() */
 #include <sys/time.h>
 #include <float.h>
 #include <stdint.h>
@@ -56,7 +57,8 @@ std::string format_local_timestamp(time_t seconds, time_t millis, std::string &t
 std::string format_utc_timestamp(time_t seconds, time_t millis);
 std::string get_timezone_offset(time_t seconds);
 std::string get_hostname();
-pid_t pid();
+pid_t tid();
+int file_size(const std::string &path, size_t *size, time_t *mod_time);
 
 } // namespace cm_util
 

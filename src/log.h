@@ -73,16 +73,17 @@ enum en {
 
 struct extra {
     extra() {}
-    extra(const char *_file, int _line, const char *_func, pid_t _pid):
-         file{_file}, line{_line}, func{_func}, pid{_pid} {}
+    extra(const char *_file, int _line, const char *_func):
+         file{_file}, line{_line}, func{_func} {}
 
     const char *file{nullptr};
     int line{0};
     const char *func{nullptr};
-    pid_t pid{0};
+
+    bool ignore() { return line == 0; }
 };
 
-#define CM_LOG_EXTRA cm_log::extra(__FILE__, __LINE__, __FUNCTION__, cm_util::pid())
+#define CM_LOG_EXTRA cm_log::extra(__FILE__, __LINE__, __FUNCTION__)
 
 void log(cm_log::level::en lvl, const std::string &msg);
 void log(cm_log::extra ext, cm_log::level::en lvl, const std::string &msg);
@@ -157,7 +158,7 @@ enum part {
 
 
 void _log_error(extra ext, const std::string &msg);
-std::string build_log_message(cm_log::extra, const std::string &date_time_fmt, std::vector<std::string>& fmt, cm_log::level::en, const std::string&, bool gmt);
+std::string format_log_message(cm_log::extra, const std::string &date_time_fmt, std::vector<std::string>& fmt, cm_log::level::en, const std::string&, bool gmt);
 int get_part_index(const std::string &str);
 void parse_message_format(const std::string fmt, std::vector<std::string> &out_fmt);
 

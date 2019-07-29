@@ -34,7 +34,7 @@ static const char *log_level[] = CM_LOG_LEVEL_NAMES;
 static const char *log_part[] = CM_LOG_PART_NAMES;
 
 //-------------------------------------------------------------------------
-// log message formatter
+// message formatter
 //-------------------------------------------------------------------------
 
 int cm_log::get_part_index(const std::string &str) {
@@ -51,7 +51,7 @@ int cm_log::get_part_index(const std::string &str) {
 }
 
 
-std::string cm_log::build_log_message(cm_log::extra ext, const std::string &date_time_fmt, std::vector<std::string> &msg_fmt, cm_log::level::en lvl, const std::string &msg, bool gmt) {
+std::string cm_log::format_log_message(cm_log::extra ext, const std::string &date_time_fmt, std::vector<std::string> &msg_fmt, cm_log::level::en lvl, const std::string &msg, bool gmt) {
 
     std::stringstream ss;
     //std::string hostname = cm_util::get_hostname();
@@ -95,19 +95,19 @@ std::string cm_log::build_log_message(cm_log::extra ext, const std::string &date
                 break;
                     
                 case cm_log::part::file:
-                ss << ext.file; 
+                if(!ext.ignore()) ss << ext.file; 
                 break;
 
                 case cm_log::part::line:
-                ss << ext.line;
+                if(!ext.ignore()) ss << ext.line;
                 break;
 
                 case cm_log::part::func:
-                ss << ext.func;
+                if(!ext.ignore()) ss << ext.func;
                 break;
 
                 case cm_log::part::thread:
-                ss << ext.pid;
+                ss << cm_util::tid();
                 break;
 
                 case cm_log::part::host:
@@ -115,9 +115,8 @@ std::string cm_log::build_log_message(cm_log::extra ext, const std::string &date
                 break;
 
                 default:
-                ss << "???undefined:error???";
+                ss << "?error?";
                 break;
-
             }
         }
         else {
@@ -127,9 +126,7 @@ std::string cm_log::build_log_message(cm_log::extra ext, const std::string &date
         p++;
     }
 
-
     return ss.str();
-
 }
 
 // parse fmt string and output a vector of parts to use for log message
@@ -210,29 +207,6 @@ std::string cm_log::format_millis(time_t millis) {
 }
 
 //-------------------------------------------------------------------------
-// build up log message with timestamp, level and log message
-//-------------------------------------------------------------------------
-
-
-std::string cm_log::format_log_message(
-	 const std::string &date_time_fmt,
-	 const std::string &log_fmt,
-	 cm_log::level::en lvl,
-	 const std::string &msg,
-	 bool gmt) {
-        std::stringstream ss;
-
-	time_t seconds, millis;
-	seconds = getTime(&millis, NULL);
-
-	ss << format_log_timestamp(date_time_fmt, seconds, gmt);
-	ss << format_millis(millis) << " ";
-	ss << ::log_level[lvl] << " ";
-	ss << msg;
-	return ss.str();
-}
-
-//-------------------------------------------------------------------------
 // default logger (output to the default logger)
 //-------------------------------------------------------------------------
 static cm_log::console_logger default_logger;
@@ -289,29 +263,26 @@ void cm_log::console_logger::log(cm_log::extra ext, cm_log::level::en lvl, const
 
 void cm_log::file_logger::log(cm_log::level::en lvl, const std::string &msg) {
 
-        if(!ok_to_log(lvl)) return;
+    if(!ok_to_log(lvl)) return;
 
-        lock();
-	open_log();
+    lock();
+    open_log();
 
-	*this << cm_log::format_log_message(date_time_fmt, msg_fmt, lvl, msg, gmt) << "\n";
-	flush();
+	*this << cm_log::format_log_message(cm_log::extra(), date_time_fmt, parsed_msg_fmt, lvl, msg, gmt) << "\n";
+    flush();
 
-        unlock();
+    unlock();
 }
 
 void cm_log::file_logger::log(cm_log::extra ext, cm_log::level::en lvl, const std::string &msg) {
 
-        if(!ok_to_log(lvl)) return;
+    if(!ok_to_log(lvl)) return;
 
-        lock();
-	open_log();
+    lock();
+    open_log();
 
 	//std::stringstream ss(msg);
-	//ss << "[" << ext.file << ":" << ext.line << ":" << ext.func << "]: " << msg;
-	//*this << cm_log::format_log_message(date_time_fmt, msg_fmt, lvl, ss.str(), gmt) << "\n";
+    *this << cm_log::format_log_message(ext, date_time_fmt, parsed_msg_fmt, lvl, msg, gmt) << "\n"; 
 
-    *this << cm_log::build_log_message(ext, date_time_fmt, parsed_msg_fmt, lvl, msg, gmt) << "\n"; 
-
-        unlock();
+    unlock();
 }
