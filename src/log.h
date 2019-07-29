@@ -71,23 +71,21 @@ enum en {
     { "off", "always", "fatal", "critical", "error", "warning", "info", "debug", "trace", NULL }
 
 
-struct src_loc {
-    //src_loc(): file{__FILE__}, line{__LINE__}, func{__FUNCTION__} {}
-    src_loc(const char *_file, int _line, const char *_func, pid_t _pid):
+struct extra {
+    extra() {}
+    extra(const char *_file, int _line, const char *_func, pid_t _pid):
          file{_file}, line{_line}, func{_func}, pid{_pid} {}
 
     const char *file{nullptr};
     int line{0};
     const char *func{nullptr};
-    pid_t pid;
+    pid_t pid{0};
 };
 
-pid_t pid();
-
-#define SRC_LOC cm_log::src_loc(__FILE__, __LINE__, __FUNCTION__, cm_log::pid())
+#define CM_LOG_EXTRA cm_log::extra(__FILE__, __LINE__, __FUNCTION__, cm_util::pid())
 
 void log(cm_log::level::en lvl, const std::string &msg);
-void log(cm_log::src_loc loc, cm_log::level::en lvl, const std::string &msg);
+void log(cm_log::extra ext, cm_log::level::en lvl, const std::string &msg);
 
 #define log_always(logger) if(logger.ok_to_log(cm_log::level::always))
 #define log_fatal(logger) if(logger.ok_to_log(cm_log::level::fatal))
@@ -99,17 +97,17 @@ void log(cm_log::src_loc loc, cm_log::level::en lvl, const std::string &msg);
 #define log_trace(logger) if(logger.ok_to_log(cm_log::level::trace))
 
 
-#define __LOG_SOURCE_LOC__
-#ifdef __LOG_SOURCE_LOC__
+#define __LOG_EXTRA__
+#ifdef __LOG_EXTRA__
 
-#define always(msg) log(SRC_LOC, cm_log::level::always, msg)
-#define fatal(msg) log(SRC_LOC, cm_log::level::fatal, msg)
-#define critical(msg) log(SRC_LOC, cm_log::level::critical, msg)
-#define error(msg) log(SRC_LOC, cm_log::level::error, msg)
-#define warning(msg) log(SRC_LOC, cm_log::level::warning, msg)
-#define info(msg) log(SRC_LOC, cm_log::level::info, msg)
-#define debug(msg) log(SRC_LOC, cm_log::level::debug, msg)
-#define trace(msg) log(SRC_LOC, cm_log::level::trace, msg)
+#define always(msg) log(CM_LOG_EXTRA, cm_log::level::always, msg)
+#define fatal(msg) log(CM_LOG_EXTRA, cm_log::level::fatal, msg)
+#define critical(msg) log(CM_LOG_EXTRA, cm_log::level::critical, msg)
+#define error(msg) log(CM_LOG_EXTRA, cm_log::level::error, msg)
+#define warning(msg) log(CM_LOG_EXTRA, cm_log::level::warning, msg)
+#define info(msg) log(CM_LOG_EXTRA, cm_log::level::info, msg)
+#define debug(msg) log(CM_LOG_EXTRA, cm_log::level::debug, msg)
+#define trace(msg) log(CM_LOG_EXTRA, cm_log::level::trace, msg)
 
 #else
 
@@ -126,9 +124,9 @@ void log(cm_log::src_loc loc, cm_log::level::en lvl, const std::string &msg);
 
 #define CM_LOG_CATCH()\
     catch (const std::exception &ex)\
-	{ cm_log::_log_error(src_loc(__FILE__, __LINE__, __FUNCTION__, cm_log::pid()), ex.what()); }\
+	{ cm_log::_log_error(CM_LOG_EXTRA, ex.what()); }\
     catch (...)\
-	{ cm_log::_log_error(src_loc(__FILE__, __LINE__, __FUNCTION__, cm_log::pid()), "Unknown exception"); }
+	{ cm_log::_log_error(CM_LOG_EXTRA, "Unknown exception"); }
 
 #define CM_LOG_DATE_TIME 0
 #define CM_LOG_MILLIS 1
@@ -158,7 +156,8 @@ enum part {
 { "date_time", "millis", "tz", "lvl", "file", "line", "func", "thread", "host", "msg", NULL } 
 
 
-void _log_error(src_loc loc, const std::string &msg);
+void _log_error(extra ext, const std::string &msg);
+std::string build_log_message(cm_log::extra, const std::string &date_time_fmt, std::vector<std::string>& fmt, cm_log::level::en, const std::string&, bool gmt);
 int get_part_index(const std::string &str);
 void parse_message_format(const std::string fmt, std::vector<std::string> &out_fmt);
 
@@ -176,7 +175,6 @@ protected:
 	std::string date_time_fmt;	// see strftime()
 	std::string msg_fmt;
     std::vector<std::string> parsed_msg_fmt;
-    std::string hostname;
 
 public:
 	logger():
@@ -185,7 +183,6 @@ public:
 		date_time_fmt("%m/%d/%Y %H:%M:%S"),
 		msg_fmt("${date_time}${millis} ${lvl} <${file}:${line}:${func}> [${thread}]: ${msg}") {
         cm_log::parse_message_format(msg_fmt, parsed_msg_fmt);
-        hostname = cm_util::get_hostname();
 	}
 
 	void set_log_level(cm_log::level::en lvl) { log_level = lvl; }
@@ -199,7 +196,7 @@ public:
 
 	
 	virtual void log(cm_log::level::en lvl, const std::string &msg) = 0;
-	virtual void log(cm_log::src_loc loc, cm_log::level::en lvl, const std::string &msg) = 0;
+	virtual void log(cm_log::extra ext, cm_log::level::en lvl, const std::string &msg) = 0;
 };
 
 
@@ -210,7 +207,7 @@ public:
 	~console_logger() { }
 
 	void log(cm_log::level::en lvl, const std::string &msg);
-	void log(cm_log::src_loc loc, cm_log::level::en lvl, const std::string &msg);		
+	void log(cm_log::extra ext, cm_log::level::en lvl, const std::string &msg);		
 };
 
 
@@ -236,7 +233,7 @@ public:
 	~file_logger() { lock(); close_log(); unlock(); }
 
 	void log(cm_log::level::en lvl, const std::string &msg);
-        void log(cm_log::src_loc loc, cm_log::level::en lvl, const std::string &msg); 	
+        void log(cm_log::extra ext, cm_log::level::en lvl, const std::string &msg); 	
 };
 
 

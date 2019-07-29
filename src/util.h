@@ -56,6 +56,7 @@ std::string format_local_timestamp(time_t seconds, time_t millis, std::string &t
 std::string format_utc_timestamp(time_t seconds, time_t millis);
 std::string get_timezone_offset(time_t seconds);
 std::string get_hostname();
+pid_t pid();
 
 } // namespace cm_util
 

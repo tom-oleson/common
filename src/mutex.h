@@ -35,25 +35,25 @@
 namespace cm {
 
 class mutex {
-	public:
-		mutex() { pthread_mutex_init(&_mutex, NULL); }
-		~mutex() { pthread_mutex_destroy(&_mutex); }
+public:
+    mutex() { pthread_mutex_init(&_mutex, NULL); }
+    ~mutex() { pthread_mutex_destroy(&_mutex); }
 
-		int lock() { return pthread_mutex_lock(&_mutex); } 
-		int unlock(){ return pthread_mutex_unlock(&_mutex);  }
+    int lock() { return pthread_mutex_lock(&_mutex); } 
+    int unlock(){ return pthread_mutex_unlock(&_mutex);  }
 
-		bool try_lock() {
-			return pthread_mutex_trylock(&_mutex) == 0 ? true : false;
-		}
+    bool try_lock() {
+        return pthread_mutex_trylock(&_mutex) == 0 ? true : false;
+    }
 
 
-	private:
+private:
 	pthread_mutex_t    _mutex; 
 
-// disallow copying this object
-// don't implement these!
-		mutex(const mutex&);
-		const mutex& operator=(const mutex&);
+    // do not implement these constructors
+    mutex(const mutex&);
+    const mutex& operator=(const mutex&);
+
 };
 } // namespace cm
 

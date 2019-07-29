@@ -98,10 +98,17 @@ void logTest::test_get_part_index() {
 
 void logTest::test_parse_message_format() {
 
-    std::string fmt = "$(junk}${date_time}${millis}${tz} ${lvl} <${file}:${line}:${func}> [${thread}]: ${msg}";
+    std::string fmt = "${date_time}${millis}${tz} ${lvl} <${file}:${line}:${func}> (${host})[${thread}]: ${msg}";
     std::vector<std::string> out_fmt;
 
+    // parse the msg format
     cm_log::parse_message_format(fmt, out_fmt); 
+
+    std::string date_time_fmt = "%m/%d/%Y %H:%M:%S";
+
+    cm_log::extra ext = CM_LOG_EXTRA;
+
+    std::string result = cm_log::build_log_message(ext, date_time_fmt, out_fmt, cm_log::level::info, "Test build_log_message.", true); 
 
     CPPUNIT_ASSERT( true == true );
 

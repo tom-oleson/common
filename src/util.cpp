@@ -109,3 +109,12 @@ std::string cm_util::get_hostname() {
     return std::string(buf);
 }
 
+pid_t cm_util::pid() {
+#define __LINUX_GETTID__
+#ifdef __LINUX_GETTID__
+    pid_t pid = syscall(SYS_gettid); // kernel id (linux)
+#else
+    pid_t pid = syscall(SYS_lwp_self);  // non-linux
+#endif
+}
+
