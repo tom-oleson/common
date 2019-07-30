@@ -39,14 +39,26 @@
 #include <stdlib.h>
 #include <stdint.h>
 
+namespace cm_time {
+
+timespec clock_time();
+time_t clock_seconds(time_t *millis, time_t *nanos);
+time_t clock_seconds();
+time_t seconds(timespec &ts);
+time_t nanos_to_millis(timespec &ts);
+time_t nanos(timespec &ts);
+time_t total_millis(timespec &ts);
+
+} // namespace cm_time
+
 
 class timewatcher {
 
-        pthread_t tid;
-        timespec now;
+    pthread_t tid;
+    timespec now;
 
-        timewatcher();
-        timewatcher(const timewatcher &r) { /* singleton: do not implement */ }
+    timewatcher();
+    timewatcher(const timewatcher &r) { /* singleton: do not implement */ }
 	~timewatcher();
 
 	static void *handler(void*); /* thread handler */ 
@@ -58,14 +70,6 @@ class timewatcher {
 	// return a copy of the most recently stored time
 	timespec readTime();
 };
-
-timespec readTime();
-time_t getTime(time_t *millis, time_t *nanos);
-time_t getTime();
-time_t timeSeconds(timespec &ts);
-time_t timeMillis(timespec &ts);
-time_t timeNanos(timespec &ts);
-time_t timeTotalMillis(timespec &ts);
 
 timewatcher& timeWatcher();
 

@@ -20,8 +20,8 @@ using namespace std;
 class timewatcherTest : public CPPUNIT_NS::TestFixture {
 
   CPPUNIT_TEST_SUITE( timewatcherTest );
-    CPPUNIT_TEST( test_getTime );
-    CPPUNIT_TEST( test_timeTotalMillis );
+    CPPUNIT_TEST( test_clock_time );
+    CPPUNIT_TEST( test_total_millis );
   CPPUNIT_TEST_SUITE_END();
 
 public:
@@ -29,8 +29,8 @@ public:
   //void tearDown();
 
 protected:
-  void test_getTime();
-  void test_timeTotalMillis();
+  void test_clock_time();
+  void test_total_millis();
 };
 
 

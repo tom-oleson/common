@@ -54,15 +54,9 @@ int cm_log::get_part_index(const std::string &str) {
 std::string cm_log::format_log_message(cm_log::extra ext, const std::string &date_time_fmt, std::vector<std::string> &msg_fmt, cm_log::level::en lvl, const std::string &msg, bool gmt) {
 
     std::stringstream ss;
-    //std::string hostname = cm_util::get_hostname();
 
     time_t seconds, millis;
-    seconds = getTime(&millis, NULL);
-
-    //ss << format_log_timestamp(date_time_fmt, seconds, gmt);
-    //ss << format_millis(millis) << " ";
-    //ss << ::log_level[lvl] << " ";
-    //ss << msg;
+    seconds = cm_time::clock_seconds(&millis, NULL);
 
     std::vector<std::string>::iterator p = msg_fmt.begin(); 
     while(p != msg_fmt.end()) {

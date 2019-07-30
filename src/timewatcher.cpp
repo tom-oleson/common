@@ -45,7 +45,7 @@ void *timewatcher::handler(void *p) {
 
 
 timewatcher::timewatcher() {
-	clock_gettime(CLOCK_REALTIME, &now);
+        clock_gettime(CLOCK_REALTIME, &now);
         pthread_create(&tid, NULL, &handler, (void*) this);
 }
 
@@ -58,14 +58,15 @@ timespec timewatcher::readTime() {
 	return now;
 }
 
-timespec readTime() {
+timespec cm_time::clock_time() {
 	return timeWatcher().readTime();
 }
 
-time_t getTime(time_t *millis, time_t *nanos) {
-	timespec ts = readTime();
+// from the clock time, return seconds and optional millis and nanos
+time_t cm_time::clock_seconds(time_t *millis, time_t *nanos) {
+	timespec ts = cm_time::clock_time();
 	if(NULL != millis) {
-		*millis = timeMillis(ts);
+		*millis = cm_time::nanos_to_millis(ts);
 	}
 	if(NULL != nanos) {
 		*nanos = ts.tv_nsec;
@@ -73,25 +74,30 @@ time_t getTime(time_t *millis, time_t *nanos) {
 	return ts.tv_sec; 
 }
 
-time_t getTime() {
-	return getTime(NULL, NULL);
+// from the clock time, return seconds
+time_t cm_time::clock_seconds() {
+	return cm_time::clock_seconds(NULL, NULL);
 }
 
-time_t timeSeconds(timespec &ts) {
+// seconds from timespec
+time_t cm_time::seconds(timespec &ts) {
 	return ts.tv_sec;
 }
 
-time_t timeMillis(timespec &ts) {
+// compute milliseconds from timespec nanos
+time_t cm_time::nanos_to_millis(timespec &ts) {
 	// compute millis from nanoseconds
 	return ts.tv_nsec / 1000000L;	
 }
 
-time_t  timeNanos(timespec &ts) {
+// nanoseconds from timespec
+time_t  cm_time::nanos(timespec &ts) {
         return ts.tv_nsec;
 }
 
-time_t timeTotalMillis(timespec &ts) {
-        return (timeSeconds(ts) * 1000L) + timeMillis(ts);
+// compute total milliseconds from timespec
+time_t cm_time::total_millis(timespec &ts) {
+        return (cm_time::seconds(ts) * 1000L) + cm_time::nanos_to_millis(ts);
 }
 
 // Call gets singleton instance 
