@@ -27,9 +27,7 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-
 #include "timewatcher.h"
-
 
 extern "C" {
 // read realtime clock 10x per second
@@ -58,6 +56,12 @@ timespec timewatcher::readTime() {
 	return now;
 }
 
+timespec cm_time::clock_res() {
+    timespec ts; 
+    clock_getres(CLOCK_REALTIME, &ts);
+    return ts;
+}
+
 timespec cm_time::clock_time() {
 	return timeWatcher().readTime();
 }
@@ -66,7 +70,7 @@ timespec cm_time::clock_time() {
 time_t cm_time::clock_seconds(time_t *millis, time_t *nanos) {
 	timespec ts = cm_time::clock_time();
 	if(NULL != millis) {
-		*millis = cm_time::nanos_to_millis(ts);
+		*millis = cm_time::millis(ts);
 	}
 	if(NULL != nanos) {
 		*nanos = ts.tv_nsec;
@@ -84,9 +88,8 @@ time_t cm_time::seconds(timespec &ts) {
 	return ts.tv_sec;
 }
 
-// compute milliseconds from timespec nanos
-time_t cm_time::nanos_to_millis(timespec &ts) {
-	// compute millis from nanoseconds
+// compute milliseconds from timespec
+time_t cm_time::millis(timespec &ts) {
 	return ts.tv_nsec / 1000000L;	
 }
 
@@ -97,7 +100,7 @@ time_t  cm_time::nanos(timespec &ts) {
 
 // compute total milliseconds from timespec
 time_t cm_time::total_millis(timespec &ts) {
-        return (cm_time::seconds(ts) * 1000L) + cm_time::nanos_to_millis(ts);
+        return (cm_time::seconds(ts) * 1000L) + cm_time::millis(ts);
 }
 
 // Call gets singleton instance 

@@ -41,11 +41,12 @@
 
 namespace cm_time {
 
+timespec clock_res();
 timespec clock_time();
 time_t clock_seconds(time_t *millis, time_t *nanos);
 time_t clock_seconds();
 time_t seconds(timespec &ts);
-time_t nanos_to_millis(timespec &ts);
+time_t millis(timespec &ts);
 time_t nanos(timespec &ts);
 time_t total_millis(timespec &ts);
 

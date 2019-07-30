@@ -44,9 +44,10 @@ void timewatcherTest::test_clock_time() {
 
 void timewatcherTest::test_total_millis() {
 
+    timespec res = cm_time::clock_res();
 	timespec now = cm_time::clock_time();
 	time_t seconds = cm_time::seconds(now);
-	time_t millis = cm_time::nanos_to_millis(now);
+	time_t millis = cm_time::millis(now);
 	time_t total_millis = cm_time::total_millis(now);
 	time_t computed_total_millis = ((seconds * 1000L) + millis);
 
