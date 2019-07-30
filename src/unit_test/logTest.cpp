@@ -21,16 +21,31 @@ CPPUNIT_TEST_SUITE_REGISTRATION( logTest );
 //void logTest::tearDown() { }
 
 
+void logTest::test_default_logger() {
+
+    // create a file logger 
+    cm_log::file_logger my_log("./log/default_logger.log");
+    my_log.set_log_level(cm_log::level::trace);
+
+    // set it as the default logger to be used by package macros
+    cm_log::set_default_logger(&my_log);
+
+    // see if our convience macros output to newly set default logger
+    cm_log::info("Hello world!");
+    cm_log::trace("This trace message should be in the new default log.");
+}
+
 void logTest::test_format_log_timestamp() {
 
 	std::string fmt = "%m/%d/%Y %H:%M:%S";
 	time_t seconds = 1564244978; 
 
 	std::string gmt_result = cm_log::format_log_timestamp(fmt, seconds, /*gmt*/ true);
-        CPPUNIT_ASSERT( gmt_result == "07/27/2019 16:29:38" );
+    CPPUNIT_ASSERT( gmt_result == "07/27/2019 16:29:38" );
 
+    // output as local time
 	std::string local_result = cm_log::format_log_timestamp(fmt, seconds, /*gmt*/ false);
-        CPPUNIT_ASSERT( local_result != gmt_result );
+    CPPUNIT_ASSERT( local_result != gmt_result );
 }
 
 void logTest::test_format_millis() {
@@ -40,11 +55,11 @@ void logTest::test_format_millis() {
 	result = cm_log::format_millis(0);
 	CPPUNIT_ASSERT(result == ".000");
 
-        result = cm_log::format_millis(50);
-        CPPUNIT_ASSERT(result == ".050");
+    result = cm_log::format_millis(50);
+    CPPUNIT_ASSERT(result == ".050");
 
-        result = cm_log::format_millis(999);
-        CPPUNIT_ASSERT(result == ".999");
+    result = cm_log::format_millis(999);
+    CPPUNIT_ASSERT(result == ".999");
 }
 
 void logTest::test_file_logger() {
@@ -66,7 +81,7 @@ void logTest::test_file_logger() {
 
 void logTest::test_log_level_if_macros() {
 
-        cm_log::file_logger log("./log/test_log_level_macros.log");
+    cm_log::file_logger log("./log/test_log_level_macros.log");
 	log.set_log_level(cm_log::level::off);
 
 	log_always(log) { log.always("This message must always be allowed in the log."); }

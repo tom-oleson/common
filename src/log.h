@@ -237,9 +237,13 @@ public:
         void log(cm_log::extra ext, cm_log::level::en lvl, const std::string &msg); 	
 };
 
+static console_logger console;
+static logger *default_logger;
+logger &get_default_logger();
+void set_default_logger(logger *_logger);
+
 
 } // namespace cm_log
-
 
 
 #endif	// __LOG_H

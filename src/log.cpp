@@ -203,19 +203,23 @@ std::string cm_log::format_millis(time_t millis) {
 //-------------------------------------------------------------------------
 // default logger (output to the default logger)
 //-------------------------------------------------------------------------
-static cm_log::console_logger default_logger;
+//static cm_log::console_logger cm_log::console;
+//static cm_log::logger *cm_log::default_logger = &cm_log::console;
 
+
+cm_log::logger &get_default_logger() { return *cm_log::default_logger; }
+void cm_log::set_default_logger(cm_log::logger *_logger) { cm_log::default_logger = _logger; }
 
 void cm_log::log(cm_log::level::en lvl, const std::string &msg) {
 
 	// call the configured logger
-	default_logger.log(lvl, msg);
+	cm_log::default_logger->log(lvl, msg);
 }
 
 void cm_log::log(cm_log::extra ext, cm_log::level::en lvl, const std::string &msg) {
 
 	// call the configured logger
-	default_logger.log(ext, lvl, msg);
+	cm_log::default_logger->log(ext, lvl, msg);
 }
 
 //-------------------------------------------------------------------------
