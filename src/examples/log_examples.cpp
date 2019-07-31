@@ -26,3 +26,16 @@ void set_default_logger_example() {
 
     cm_log::info("This log message will go to the file example.log.");
 }
+
+void include_source_location_example() {
+
+    cm_log::file_logger dlog("./example_debug.log");
+    dlog.set_message_format("${date_time}${millis} [${lvl}] <${thread}> src=[${file}:${func}:${line}]: ${msg}");
+    dlog.set_log_level(cm_log::level::debug);
+
+
+    dlog.info("This is the debug log file: example_debug.log.");
+    dlog.debug("This log message will go to the file example_debug.log.");
+    dlog.debug("This second log message will also go there.");
+}
+

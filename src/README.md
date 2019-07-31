@@ -69,3 +69,26 @@ Output:
 <pre>
 07/31/2019 02:34:00.306 [info] <30761>: This log message will go to the file example.log.
 </pre>
+
+Output source code location where the log message was generated:
+<pre>
+void include_source_location_example() {
+
+    cm_log::file_logger dlog("./example_debug.log");
+    dlog.set_message_format("${date_time}${millis} [${lvl}] <${thread}> src=[${file}:${func}:${line}]: ${msg}");
+    dlog.set_log_level(cm_log::level::debug);
+
+
+    dlog.info("This is the debug log file: example_debug.log.");
+    dlog.debug("This log message will go to the file example_debug.log.");
+    dlog.debug("This second log message will also go there.");
+}
+</pre>
+
+Output:
+<pre>
+07/31/2019 02:54:12.867 [info] <30893> src=[log_examples.cpp:include_source_location_example:37]: This is the debug log file: example_debug.log.
+07/31/2019 02:54:12.867 [debug] <30893> src=[log_examples.cpp:include_source_location_example:38]: This log message will go to the file example_debug.log.
+07/31/2019 02:54:12.867 [debug] <30893> src=[log_examples.cpp:include_source_location_example:39]: This second log message will also go there.
+</pre>
+
