@@ -42,6 +42,7 @@
 #include <sys/syscall.h>   /* For SYS_xxx definitions */
 #include <sys/types.h>      /* for gettid() */
 #include <sys/stat.h>		/* for stat() */
+#include <stdarg.h>
 #include <sys/time.h>
 #include <float.h>
 #include <stdint.h>
@@ -51,8 +52,8 @@
 
 namespace cm_util {
 
+std::string &format(std::string& s, const char *fmt, ...);
 size_t bin2hex(const unsigned char *bin, size_t bin_len, char *hex, size_t hex_len);
-
 std::string format_local_timestamp(time_t seconds, time_t millis, std::string &tz);
 std::string format_utc_timestamp(time_t seconds, time_t millis);
 std::string get_timezone_offset(time_t seconds);

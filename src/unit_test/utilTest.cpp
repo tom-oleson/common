@@ -18,6 +18,14 @@ CPPUNIT_TEST_SUITE_REGISTRATION( utilTest );
 //void utilTest::tearDown() { }
 
 
+void utilTest::test_format() {
+
+    std::string s;
+    cm_util::format(s, "%d %d %d %d %d", 5, 4, 3, 2, 1);
+    CPPUNIT_ASSERT( s == "5 4 3 2 1");
+}
+
+
 void utilTest::test_bin2hex() {
 
 	uint32_t bin[2] = { htonl(0xdeadbeef), htonl(0xdeadbeef) };
