@@ -65,3 +65,7 @@ void set_default_logger_example() {
 }
 </pre>
 
+Output:
+<pre>
+07/31/2019 02:34:00.306 [info] <30761>: This log message will go to the file example.log.
+</pre>
