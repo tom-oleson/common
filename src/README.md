@@ -119,10 +119,10 @@ void date_time_format_example() {
 
 Output:
 <pre>
-07/31/2019 03:52:44 [info] <31955>: This is the default date_time format (%m/%d/%Y %H:%M:%S).
-1564559564 [info] <31955>: The  number of seconds since the Epoch, 1970-01-01 00:00:00 +0000 (UTC).
-2019-07-31 03:52:44 [info] <31955>: Equivalent to %Y-%m-%d (the ISO 8601 date format) and %H:%M:%S (24-hour time).
-2019-07-31 03:52:44 EDT [info] <31955>: Same as previous with time zone abbreviation.
-2019-07-31 07:52:44+0000 [info] <31955>: Same as previous but UTC time and +hhmm or -hhmm time zone offset.
+07/31/2019 03:57:48 [info] <31994>: This is the default date_time format (%m/%d/%Y %H:%M:%S).
+1564559868 [info] <31994>: The  number of seconds since the Epoch, 1970-01-01 00:00:00 +0000 (UTC).
+2019-07-31 03:57:48 [info] <31994>: Equivalent to %Y-%m-%d (the ISO 8601 date format) and %H:%M:%S (24-hour time).
+2019-07-31 03:57:48 EDT [info] <31994>: Same as previous with time zone abbreviation.
+2019-07-31 07:57:48 +0000 [info] <31994>: Same as previous but UTC time and +hhmm or -hhmm time zone offset.
 </pre>
 
