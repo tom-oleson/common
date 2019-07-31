@@ -112,17 +112,22 @@ void date_time_format_example() {
     cm_log::info("Same as previous with time zone abbreviation.");
 
     log.set_date_time_format("%F %T %z");
+    cm_log::info("Same as previous but with +hhmm or -hhmm time zone offset.");
+
+    log.set_date_time_format("%F %T Z");
     log.set_gmt(true);  // output UTC time
-    cm_log::info("Same as previous but UTC time and +hhmm or -hhmm time zone offset.");
+    cm_log::info("Same as previous but UTC time instead of local time.");
 }
+
 </pre>
 
 Output:
 <pre>
-07/31/2019 03:57:48 [info] <31994>: This is the default date_time format (%m/%d/%Y %H:%M:%S).
-1564559868 [info] <31994>: The  number of seconds since the Epoch, 1970-01-01 00:00:00 +0000 (UTC).
-2019-07-31 03:57:48 [info] <31994>: Equivalent to %Y-%m-%d (the ISO 8601 date format) and %H:%M:%S (24-hour time).
-2019-07-31 03:57:48 EDT [info] <31994>: Same as previous with time zone abbreviation.
-2019-07-31 07:57:48 +0000 [info] <31994>: Same as previous but UTC time and +hhmm or -hhmm time zone offset.
+07/31/2019 04:04:19 [info] <32103>: This is the default date_time format (%m/%d/%Y %H:%M:%S).
+1564560259 [info] <32103>: The  number of seconds since the Epoch, 1970-01-01 00:00:00 +0000 (UTC).
+2019-07-31 04:04:19 [info] <32103>: Equivalent to %Y-%m-%d (the ISO 8601 date format) and %H:%M:%S (24-hour time).
+2019-07-31 04:04:19 EDT [info] <32103>: Same as previous with time zone abbreviation.
+2019-07-31 04:04:19 -0400 [info] <32103>: Same as previous but with +hhmm or -hhmm time zone offset.
+2019-07-31 08:04:19 Z [info] <32103>: Same as previous but UTC time instead of local time.
 </pre>
 

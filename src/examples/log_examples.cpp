@@ -57,8 +57,11 @@ void date_time_format_example() {
     cm_log::info("Same as previous with time zone abbreviation.");
 
     log.set_date_time_format("%F %T %z");
+    cm_log::info("Same as previous but with +hhmm or -hhmm time zone offset.");
+
+    log.set_date_time_format("%F %T Z");
     log.set_gmt(true);  // output UTC time
-    cm_log::info("Same as previous but UTC time and +hhmm or -hhmm time zone offset.");
+    cm_log::info("Same as previous but UTC time instead of local time.");
 }
 
 
