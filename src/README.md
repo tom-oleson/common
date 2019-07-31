@@ -131,3 +131,58 @@ Output:
 2019-07-31 08:04:19 Z [info] <32103>: Same as previous but UTC time instead of local time.
 </pre>
 
+
+Example of a multiplex_logger. Each log message is processed by each
+of the member loggers. Note that each logger can have a different log level,
+date_time format and log message format.
+
+<pre>
+void multiplexed_logs_example() {
+
+    cm_log::file_logger err_log("./mx_error.log");
+    err_log.set_log_level(cm_log::level::error);
+    err_log.set_date_time_format("%F %T");
+    err_log.set_gmt(true); // output UTC time
+    err_log.set_message_format("${date_time}Z [${lvl}]: ${msg}");
+
+    cm_log::file_logger app_log("./mx_app.log");
+    app_log.set_log_level(cm_log::level::info);
+    app_log.set_date_time_format("%m/%d/%Y %H:%M:%S");
+    app_log.set_message_format("${date_time} [${lvl}]: ${msg}");
+
+    cm_log::file_logger trace_log("./mx_trace.log");
+    trace_log.set_log_level(cm_log::level::trace);
+    trace_log.set_date_time_format("%s");
+    trace_log.set_message_format("${date_time}${millis} [${lvl}] <${thread}> [${file}:${func}:${line}]: ${msg}");
+
+    cm_log::multiplex_logger mx;
+    mx.add(err_log);
+    mx.add(app_log);
+    mx.add(trace_log);
+
+    set_default_logger(&mx);
+
+    cm_log::info("This message will go to app_log and trace_log.");
+    cm_log::error("This message will go to all three logs.");
+    cm_log::debug("This message will go to trace_log only.");
+    cm_log::trace("This message will go to trace_log only.");
+}
+
+</pre>
+
+Output:
+<pre>
+$ cat mx_app.log
+07/31/2019 14:37:14 [info]: This message will go to app_log and trace_log.
+07/31/2019 14:37:14 [error]: This message will go to all three logs.
+
+$ cat mx_error.log
+2019-07-31 18:37:14Z [error]: This message will go to all three logs.
+
+$ cat mx_trace.log
+1564598234.890 [info] <5379> [log_examples.cpp:multiplexed_logs_example:121]: This message will go to app_log and trace_log.
+1564598234.890 [error] <5379> [log_examples.cpp:multiplexed_logs_example:122]: This message will go to all three logs.
+1564598234.890 [debug] <5379> [log_examples.cpp:multiplexed_logs_example:123]: This message will go to trace_log only.
+1564598234.890 [trace] <5379> [log_examples.cpp:multiplexed_logs_example:124]: This message will go to trace_log only.
+</pre>
+

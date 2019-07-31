@@ -8,5 +8,6 @@ int main( int argc, char* argv[] ) {
     set_default_logger_example();
     include_source_location_example();
     date_time_format_example();
+    multiplexed_logs_example();
 }
 

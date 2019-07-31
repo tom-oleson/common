@@ -286,3 +286,41 @@ void cm_log::file_logger::log(cm_log::extra ext, cm_log::level::en lvl, const st
 
     unlock();
 }
+
+
+//-------------------------------------------------------------------------
+// multipex logger
+//-------------------------------------------------------------------------
+
+// apply date_time format for all member loggers
+void cm_log::multiplex_logger::set_date_time_format(std::string fmt) {
+
+    for(auto logger : loggers) {
+        logger->set_date_time_format(fmt);
+    }
+}
+
+// apply message format for all member loggers
+void cm_log::multiplex_logger::set_message_format(std::string fmt) {
+
+    for(auto logger : loggers) {
+        logger->set_message_format(fmt);
+    }
+}
+
+// log message to all member loggers
+void cm_log::multiplex_logger::log(cm_log::level::en lvl, const std::string &msg) {
+
+    for(auto logger : loggers) {
+        logger->log(lvl, msg);
+    }
+}
+
+// log message to all member loggers
+void cm_log::multiplex_logger::log(cm_log::extra ext, cm_log::level::en lvl, const std::string &msg) {
+
+    for(auto logger : loggers) {
+        logger->log(ext, lvl, msg);
+    }
+}
+

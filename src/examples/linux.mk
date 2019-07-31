@@ -26,7 +26,6 @@
 # ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 # POSSIBILITY OF SUCH DAMAGE.
 #
-# libcm cppunit unit tests make file
 #
 
 include ../version.mk
@@ -58,7 +57,7 @@ clean:
 	-@rm -rf *.o $(EXE) *.log core.*
 	@echo "$(EXE) $(@)ed"
 
-all: prod
+all: clean prod
 
 prod: $(EXE)
 	clear

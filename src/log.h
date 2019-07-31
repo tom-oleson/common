@@ -192,7 +192,7 @@ protected:
 public:
 	logger():
 		log_level(cm_log::level::info), gmt(false), date_time_fmt("%m/%d/%Y %H:%M:%S"),
-		msg_fmt("${date_time}${millis} ${lvl} <${file}:${func}:${line}>[${thread}]: ${msg}") {
+		msg_fmt("${date_time} [${lvl}]: ${msg}") {
         cm_log::parse_message_format(msg_fmt, parsed_msg_fmt);
 	}
 
@@ -255,6 +255,31 @@ public:
 	void log(cm_log::level::en lvl, const std::string &msg);
         void log(cm_log::extra ext, cm_log::level::en lvl, const std::string &msg); 	
 };
+
+
+class multiplex_logger : public logger {
+
+protected:
+    std::vector<logger *> loggers;
+
+public:
+    multiplex_logger(): logger() { name = "multiplex-logger"; }
+    ~multiplex_logger() { loggers.clear(); }
+
+    // apply date_time format for all member loggers
+    void set_date_time_format(std::string fmt);
+
+    // apply message format for all member loggers
+    void set_message_format(std::string fmt); 
+
+    // add a member logger to multiplex_logger
+    void add(cm_log::logger &_logger) { loggers.push_back(&_logger); }
+
+    // log message to all member loggers
+    void log(cm_log::level::en lvl, const std::string &msg);
+    void log(cm_log::extra ext, cm_log::level::en lvl, const std::string &msg);
+};
+
 
 extern console_logger console;
 extern logger *default_logger;
