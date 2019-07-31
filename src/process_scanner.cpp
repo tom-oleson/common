@@ -32,7 +32,6 @@
 
 #include "process_scanner.h"
 
-using namespace cm;
 
 // We know the process id but not the name
 process_scanner::process_scanner(pid_t pid) : name(""), process_id(pid) {
@@ -185,9 +184,10 @@ int process_scanner::scan_all(const string &_name) {
 	}
   }
 
-  if(-1 == closedir(dp)) {
- cm_log::error( cm::format(s, "/proc closedir failed: %s", strerror(errno)));
-  }
+    if(-1 == closedir(dp)) {
+        cm_log::error( cm::format(s, "/proc closedir failed: %s", strerror(errno)));
+    }
 
   return match;
 }
+

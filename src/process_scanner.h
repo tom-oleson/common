@@ -27,8 +27,8 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef _PROCESS_SCANNER_H
-#define _PROCESS_SCANNER_H
+#ifndef __PROCESS_SCANNER_H
+#define __PROCESS_SCANNER_H
 
 
 #include <stdio.h>
@@ -46,19 +46,16 @@
 #include <sys/types.h>
 #include <dirent.h>
 
-#include "ConfigurationFile.h"
-#include "Log.h"
-
+#include "log.h"
 
 namespace cm {
-
 
 struct ps_process {
 
 	ps_process() {}
-	ps_process(pid_t _pid, const string &_name) : name(_name), pid(_pid) {}
-	ps_process(const ps_process &pr) : name(pr.name), pid(pr.pid) {
-	} 
+	ps_process(pid_t _pid, const string &_name) : name(_name), pid(_pid) { }
+	ps_process(const ps_process &pr) : name(pr.name), pid(pr.pid) { } 
+
 	ps_process &operator = (const ps_process &pr) {
 		name.assign(pr.name);
 		pid = pr.pid;	
@@ -71,7 +68,7 @@ struct ps_process {
 	}
 
 	void dump() {
-		cm_log.trace(to_string());
+		cm_log:::trace(to_string());
 	}
 
 	string name;
@@ -88,9 +85,9 @@ class process_scanner  {
 	pid_t process_id;
 	string name;
 
-        int scan_name(pid_t pid, string &name);
-        int scan_one(pid_t pid, string &name);
-        int scan_all(const string &name);
+    int scan_name(pid_t pid, string &name);
+    int scan_one(pid_t pid, string &name);
+    int scan_all(const string &name);
 
 public:
 	process_scanner(pid_t pid);

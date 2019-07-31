@@ -33,6 +33,11 @@
 static const char *log_level[] = CM_LOG_LEVEL_NAMES;
 static const char *log_part[] = CM_LOG_PART_NAMES;
 
+// globals
+cm_log::console_logger cm_log::console;
+cm_log::logger *cm_log::default_logger = &cm_log::console;
+
+
 //-------------------------------------------------------------------------
 // message formatter
 //-------------------------------------------------------------------------
@@ -203,12 +208,6 @@ std::string cm_log::format_millis(time_t millis) {
 //-------------------------------------------------------------------------
 // default logger (output to the default logger)
 //-------------------------------------------------------------------------
-//static cm_log::console_logger cm_log::console;
-//static cm_log::logger *cm_log::default_logger = &cm_log::console;
-
-
-cm_log::logger &get_default_logger() { return *cm_log::default_logger; }
-void cm_log::set_default_logger(cm_log::logger *_logger) { cm_log::default_logger = _logger; }
 
 void cm_log::log(cm_log::level::en lvl, const std::string &msg) {
 
@@ -241,7 +240,8 @@ void cm_log::console_logger::log(cm_log::level::en lvl, const std::string &msg) 
 	if(!ok_to_log(lvl)) return;
 
 	lock();
-	fprintf(stdout, "%s: %s", ::log_level[lvl], msg.c_str());
+    std::cout << cm_log::format_log_message(cm_log::extra(), date_time_fmt, parsed_msg_fmt, lvl, msg, gmt) << "\n";
+	//fprintf(stdout, "%s: %s", ::log_level[lvl], msg.c_str());
 	unlock();
 }
 
@@ -250,7 +250,9 @@ void cm_log::console_logger::log(cm_log::extra ext, cm_log::level::en lvl, const
 	if(!ok_to_log(lvl)) return;
 
 	lock();
-	fprintf(stdout, "%s [%s:%d:%s]: %s", ::log_level[lvl], ext.file, ext.line, ext.func, msg.c_str());
+
+    std::cout << cm_log::format_log_message(ext, date_time_fmt, parsed_msg_fmt, lvl, msg, gmt) << "\n";
+	//fprintf(stdout, "%s [%s:%d:%s]: %s", ::log_level[lvl], ext.file, ext.line, ext.func, msg.c_str());
 	unlock();
 }
 

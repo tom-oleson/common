@@ -34,6 +34,7 @@
 #include <string>
 #include <fstream>
 #include <sstream>
+#include <iostream>
 #include <vector>
 
 #include "util.h"
@@ -88,6 +89,7 @@ struct extra {
 void log(cm_log::level::en lvl, const std::string &msg);
 void log(cm_log::extra ext, cm_log::level::en lvl, const std::string &msg);
 
+
 #define log_always(logger) if(logger.ok_to_log(cm_log::level::always))
 #define log_fatal(logger) if(logger.ok_to_log(cm_log::level::fatal))
 #define log_critical(logger) if(logger.ok_to_log(cm_log::level::critical))
@@ -96,6 +98,15 @@ void log(cm_log::extra ext, cm_log::level::en lvl, const std::string &msg);
 #define log_info(logger) if(logger.ok_to_log(cm_log::level::info))
 #define log_debug(logger) if(logger.ok_to_log(cm_log::level::debug))
 #define log_trace(logger) if(logger.ok_to_log(cm_log::level::trace))
+
+#define CM_LOG_ALWAYS log_always(get_default_logger())
+#define CM_LOG_FATAL log_fatal(get_default_logger())
+#define CM_LOG_CRITICAL log_critical(get_default_logger())
+#define CM_LOG_ERROR log_error(get_default_logger())
+#define CM_LOG_WARNING log_warning(get_default_logger())
+#define CM_LOG_INFO log_info(get_default_logger())
+#define CM_LOG_DEBUG log_debug(get_default_logger())
+#define CM_LOG_TRACE log_trace(get_default_logger())
 
 
 #define __LOG_EXTRA__
@@ -171,6 +182,7 @@ std::string format_log_message( const std::string &date_time_fmt, const std::str
 class logger {
 
 protected:
+    std::string name;
 	cm_log::level::en log_level;
 	bool gmt;
 	std::string date_time_fmt;	// see strftime()
@@ -179,15 +191,19 @@ protected:
 
 public:
 	logger():
-		log_level(cm_log::level::info),
-		gmt(false),
-		date_time_fmt("%m/%d/%Y %H:%M:%S"),
-		msg_fmt("${date_time}${millis} ${lvl} <${file}:${line}:${func}> [${thread}]: ${msg}") {
+		log_level(cm_log::level::info), gmt(false), date_time_fmt("%m/%d/%Y %H:%M:%S"),
+		msg_fmt("${date_time}${millis} ${lvl} <${file}:${func}:${line}>[${thread}]: ${msg}") {
         cm_log::parse_message_format(msg_fmt, parsed_msg_fmt);
 	}
 
 	void set_log_level(cm_log::level::en lvl) { log_level = lvl; }
 	cm_log::level::en get_log_level(void) { return log_level; }
+    void set_date_time_format(std::string fmt) { date_time_fmt = fmt; }
+    void set_message_format(std::string fmt) {
+        msg_fmt = fmt;
+        parsed_msg_fmt.clear();
+        cm_log::parse_message_format(msg_fmt, parsed_msg_fmt);
+    }
 	void set_gmt(bool b) { gmt = b; }
 	bool get_gmt(void) { return gmt; }
 
@@ -204,7 +220,7 @@ public:
 class console_logger : public logger, private cm::mutex {
 	
 public:
-	console_logger(): logger() { }
+	console_logger(): logger() { name = "console-logger"; }
 	~console_logger() { }
 
 	void log(cm_log::level::en lvl, const std::string &msg);
@@ -230,21 +246,24 @@ protected:
 	}
 
 public:
-	file_logger(const std::string path): logger(), log_path(path) { open_log(); }
+	file_logger(const std::string path): logger(), log_path(path) { 
+        name = "file-logger";
+        open_log();
+    }
 	~file_logger() { lock(); close_log(); unlock(); }
 
 	void log(cm_log::level::en lvl, const std::string &msg);
         void log(cm_log::extra ext, cm_log::level::en lvl, const std::string &msg); 	
 };
 
-static console_logger console;
-static logger *default_logger;
-logger &get_default_logger();
-void set_default_logger(logger *_logger);
+extern console_logger console;
+extern logger *default_logger;
 
 
 } // namespace cm_log
 
+inline cm_log::logger &get_default_logger() { return *cm_log::default_logger; }
+inline void set_default_logger(cm_log::logger *_logger) { cm_log::default_logger = _logger; }
 
 #endif	// __LOG_H
 

@@ -12,6 +12,7 @@
 
 #include "logTest.h"
 
+#include "log.h"
 #include "timewatcher.h"
 
 
@@ -20,7 +21,6 @@ CPPUNIT_TEST_SUITE_REGISTRATION( logTest );
 //void logTest::setUp() { }
 //void logTest::tearDown() { }
 
-
 void logTest::test_default_logger() {
 
     // create a file logger 
@@ -28,11 +28,17 @@ void logTest::test_default_logger() {
     my_log.set_log_level(cm_log::level::trace);
 
     // set it as the default logger to be used by package macros
-    cm_log::set_default_logger(&my_log);
-
+    set_default_logger(&my_log);
+    
     // see if our convience macros output to newly set default logger
-    cm_log::info("Hello world!");
-    cm_log::trace("This trace message should be in the new default log.");
+    CM_LOG_ALWAYS { cm_log::always("This always message should be in the default log."); }
+    CM_LOG_FATAL { cm_log::fatal("This fatal message should be in the default log."); }
+    CM_LOG_CRITICAL { cm_log::critical("This critical message should be in the default log."); }
+    CM_LOG_ERROR { cm_log::error("This error message should be in the default log."); }
+    CM_LOG_WARNING { cm_log::warning("This warning message should be in the default log."); }
+    CM_LOG_INFO { cm_log::info("This info message should be in the default log."); }
+    CM_LOG_DEBUG { cm_log::debug("This debug message should be in the default log."); }
+    CM_LOG_TRACE { cm_log::trace("This trace message should be in the default log."); }
 }
 
 void logTest::test_format_log_timestamp() {
