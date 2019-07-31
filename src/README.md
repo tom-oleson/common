@@ -92,7 +92,7 @@ Output:
 07/31/2019 02:54:12.867 [debug] <30893> src=[log_examples.cpp:include_source_location_example:39]: This second log message will also go there.
 </pre>
 
-Example date_time formats. See <pre>strftime()</pre> for documentation on specifiers. 
+Example date_time formats. See <strong>strftime()</strong> for documentation on specifiers. 
 <pre>
 void date_time_format_example() {
 
