@@ -92,3 +92,37 @@ Output:
 07/31/2019 02:54:12.867 [debug] <30893> src=[log_examples.cpp:include_source_location_example:39]: This second log message will also go there.
 </pre>
 
+Example date_time formats. See <pre>strftime()</pre> for documentation on specifiers. 
+<pre>
+void date_time_format_example() {
+
+    cm_log::file_logger log("./date_time_example.log");
+    log.set_message_format("${date_time} [${lvl}] <${thread}>: ${msg}");
+    set_default_logger(&log);
+
+    cm_log::info("This is the default date_time format (%m/%d/%Y %H:%M:%S).");
+
+    log.set_date_time_format("%s");
+    cm_log::info("The  number of seconds since the Epoch, 1970-01-01 00:00:00 +0000 (UTC).");
+
+    log.set_date_time_format("%F %T");
+    cm_log::info("Equivalent to %Y-%m-%d (the ISO 8601 date format) and %H:%M:%S (24-hour time).");
+
+    log.set_date_time_format("%F %T %Z");
+    cm_log::info("Same as previous with time zone abbreviation.");
+
+    log.set_date_time_format("%F %T %z");
+    log.set_gmt(true);  // output UTC time
+    cm_log::info("Same as previous but UTC time and +hhmm or -hhmm time zone offset.");
+}
+</pre>
+
+Output:
+<pre>
+07/31/2019 03:52:44 [info] <31955>: This is the default date_time format (%m/%d/%Y %H:%M:%S).
+1564559564 [info] <31955>: The  number of seconds since the Epoch, 1970-01-01 00:00:00 +0000 (UTC).
+2019-07-31 03:52:44 [info] <31955>: Equivalent to %Y-%m-%d (the ISO 8601 date format) and %H:%M:%S (24-hour time).
+2019-07-31 03:52:44 EDT [info] <31955>: Same as previous with time zone abbreviation.
+2019-07-31 07:52:44+0000 [info] <31955>: Same as previous but UTC time and +hhmm or -hhmm time zone offset.
+</pre>
+

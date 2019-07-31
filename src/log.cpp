@@ -186,7 +186,7 @@ void cm_log::parse_message_format(const std::string fmt, std::vector<std::string
 //-------------------------------------------------------------------------
 
 std::string cm_log::format_log_timestamp(const std::string &fmt, time_t seconds, bool gmt ) {
-        char buf[sizeof "01/01/1970 00:00:00.999 "] = { '\0' };
+        char buf[64] = { '\0' };
 
         struct tm my_tm;
         if(gmt) {

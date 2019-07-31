@@ -52,6 +52,12 @@ void logTest::test_format_log_timestamp() {
     // output as local time
 	std::string local_result = cm_log::format_log_timestamp(fmt, seconds, /*gmt*/ false);
     CPPUNIT_ASSERT( local_result != gmt_result );
+
+
+    // test %z
+    fmt = "%F %T %z";
+    std::string tz_result = cm_log::format_log_timestamp(fmt, seconds, false);
+
 }
 
 void logTest::test_format_millis() {
