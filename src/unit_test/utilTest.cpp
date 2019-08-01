@@ -21,8 +21,8 @@ CPPUNIT_TEST_SUITE_REGISTRATION( utilTest );
 void utilTest::test_format() {
 
     std::string s;
-    cm_util::format(s, "%d %d %d %d %d", 5, 4, 3, 2, 1);
-    CPPUNIT_ASSERT( s == "5 4 3 2 1");
+    cm_util::format(s, "%02d %02d %02d %03d %03d", 5, 4, 3, 2, 1);
+    CPPUNIT_ASSERT( s == "05 04 03 002 001");
 }
 
 

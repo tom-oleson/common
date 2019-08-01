@@ -22,6 +22,7 @@ class timewatcherTest : public CPPUNIT_NS::TestFixture {
   CPPUNIT_TEST_SUITE( timewatcherTest );
     CPPUNIT_TEST( test_clock_time );
     CPPUNIT_TEST( test_total_millis );
+    CPPUNIT_TEST( test_duration );
   CPPUNIT_TEST_SUITE_END();
 
 public:
@@ -31,6 +32,7 @@ public:
 protected:
   void test_clock_time();
   void test_total_millis();
+  void test_duration();
 };
 
 

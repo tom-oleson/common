@@ -35,6 +35,7 @@ TOP=$(PWD)
 EXE = examples
 
 OBJS =	log_examples.o \
+    util_examples.o \
 	main.o
 
 default: all

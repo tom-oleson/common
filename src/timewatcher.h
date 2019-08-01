@@ -50,6 +50,8 @@ time_t millis(timespec &ts);
 time_t nanos(timespec &ts);
 time_t total_millis(timespec &ts);
 
+double duration(const timespec &start, const timespec &finish);
+
 } // namespace cm_time
 
 

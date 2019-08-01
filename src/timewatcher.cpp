@@ -103,6 +103,35 @@ time_t cm_time::total_millis(timespec &ts) {
         return (cm_time::seconds(ts) * 1000L) + cm_time::millis(ts);
 }
 
+double cm_time::duration(const timespec &start, const timespec &finish) {
+
+    time_t start_secs, finish_secs;
+    long start_ns, finish_ns;
+
+    if(finish.tv_sec >= start.tv_sec) {  // expected order
+        start_secs = start.tv_sec;
+        start_ns = start.tv_nsec;
+        finish_secs = finish.tv_sec;
+        finish_ns = finish.tv_nsec;
+    } else {                        // order reversed
+        start_secs = finish.tv_sec;
+        start_ns = finish.tv_nsec;
+        finish_secs = start.tv_sec;
+        finish_ns = start.tv_nsec;
+    }
+
+    time_t seconds = finish_secs - start_secs;
+    long ns = finish_ns - start_ns;
+
+    if(start_ns > finish_ns) { // clock underflow
+        --seconds;
+        ns += 1000000000;
+    }
+
+    return ((double) seconds + (double) ns / (double) 1000000000);
+
+}
+
 // Call gets singleton instance 
 timewatcher& timeWatcher() {
         static timewatcher tw;

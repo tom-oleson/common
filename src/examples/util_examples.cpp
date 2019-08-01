@@ -27,22 +27,31 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "examples.h"
-
-int main( int argc, char* argv[] ) {
-
-    // util examples
-
-    format_example();
+#include "timewatcher.h"
+#include "util.h"
+#include "log.h"
 
 
-    // log examples
+void format_example() {
 
-    stdout_default_logger_example();
-    set_default_logger_example();
-    include_source_location_example();
-    date_time_format_example();
-    multiplexed_logs_example();
+    timespec delay = {1, 500000000};   // 1.5 seconds
 
+    std::string s;
+    size_t count = 1000000;
+    size_t burp = 100000;
+
+    timespec start = cm_time::clock_time();
+    timespec last = start;
+
+    for(size_t n = 0; n < count; n++) {
+        if(n % burp == 0) {
+            nanosleep(&delay, NULL);    // interruptable
+            timespec now = cm_time::clock_time();
+            double delta = cm_time::duration(last, now);
+            double total = cm_time::duration(start, now);
+            last = now;
+            cm_log::info(cm_util::format(s, "%6.4f secs %6.4f secs", delta, total));
+        }
+    }
 }
 

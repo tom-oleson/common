@@ -54,3 +54,16 @@ void timewatcherTest::test_total_millis() {
         CPPUNIT_ASSERT( total_millis == computed_total_millis );
 }
 
+void timewatcherTest::test_duration() {
+
+    timespec delay = {3, 500000000};   // 3.5 seconds
+
+    timespec start = cm_time::clock_time();
+    nanosleep(&delay, NULL);
+    timespec finish = cm_time::clock_time();
+ 
+    double diff = cm_time::duration(start, finish);
+
+    CPPUNIT_ASSERT( diff > 3.5f && diff < 4.0f );
+}
+
