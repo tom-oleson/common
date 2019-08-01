@@ -25,28 +25,24 @@ Example of using cm_util::format() with log output.
 void format_example() {
 
     timespec delay = {1, 500000000};   // 1.5 seconds
-
     std::string s;
-    size_t count = 1000000;
-    size_t burp = 100000;
-    double diff, delta, total, x{1.0};
 
     timespec start, last, now;
-
     clock_gettime(CLOCK_REALTIME, &start);
     last = start;
 
-    for(int n = 1; n <= count; n++) {
-        if(n % burp == 0) {
-            nanosleep(&delay, NULL);    // interruptable
-            clock_gettime(CLOCK_REALTIME, &now);
-            diff = cm_time::duration(last, now);
-            total = cm_time::duration(start, now);
-            delta = total - (x * 1.5);
-            x += 1.0;
-            last = now;
-            cm_log::info(cm_util::format(s, "diff: %7.4lf secs   total: %7.4lf secs   delta: %7.4lf secs", diff, total, delta));
-        }
+    for(int n = 1; n <= 10; n++) {
+
+        nanosleep(&delay, NULL);  // interruptable
+        clock_gettime(CLOCK_REALTIME, &now);
+
+        double diff = cm_time::duration(last, now);
+        double total = cm_time::duration(start, now);
+        double delta = total - ((double) n * 1.5);
+        last = now;
+
+        cm_log::info(cm_util::format(s, "pass: %7.4lf secs   total: %7.4lf secs   delta: %7.4lf secs", diff, total, delta));
+
     }
 }
 </pre>
@@ -54,18 +50,17 @@ void format_example() {
 
 Output:
 <pre>
-08/01/2019 13:46:05 [info]: diff:  1.5028 secs   total:  1.5028 secs   delta:  0.0028 secs
-08/01/2019 13:46:06 [info]: diff:  1.5027 secs   total:  3.0055 secs   delta:  0.0055 secs
-08/01/2019 13:46:08 [info]: diff:  1.5024 secs   total:  4.5079 secs   delta:  0.0079 secs
-08/01/2019 13:46:09 [info]: diff:  1.5024 secs   total:  6.0103 secs   delta:  0.0103 secs
-08/01/2019 13:46:11 [info]: diff:  1.5024 secs   total:  7.5127 secs   delta:  0.0127 secs
-08/01/2019 13:46:12 [info]: diff:  1.5024 secs   total:  9.0151 secs   delta:  0.0151 secs
-08/01/2019 13:46:14 [info]: diff:  1.5022 secs   total: 10.5174 secs   delta:  0.0174 secs
-08/01/2019 13:46:15 [info]: diff:  1.5024 secs   total: 12.0198 secs   delta:  0.0198 secs
-08/01/2019 13:46:17 [info]: diff:  1.5024 secs   total: 13.5221 secs   delta:  0.0221 secs
-08/01/2019 13:46:18 [info]: diff:  1.5023 secs   total: 15.0245 secs   delta:  0.0245 secs
+08/01/2019 17:16:10 [info]: pass:  1.5002 secs   total:  1.5002 secs   delta:  0.0002 secs
+08/01/2019 17:16:11 [info]: pass:  1.5004 secs   total:  3.0006 secs   delta:  0.0006 secs
+08/01/2019 17:16:12 [info]: pass:  1.5003 secs   total:  4.5009 secs   delta:  0.0009 secs
+08/01/2019 17:16:14 [info]: pass:  1.5002 secs   total:  6.0011 secs   delta:  0.0011 secs
+08/01/2019 17:16:15 [info]: pass:  1.5002 secs   total:  7.5013 secs   delta:  0.0013 secs
+08/01/2019 17:16:17 [info]: pass:  1.5002 secs   total:  9.0016 secs   delta:  0.0016 secs
+08/01/2019 17:16:18 [info]: pass:  1.5002 secs   total: 10.5018 secs   delta:  0.0018 secs
+08/01/2019 17:16:20 [info]: pass:  1.5002 secs   total: 12.0021 secs   delta:  0.0021 secs
+08/01/2019 17:16:21 [info]: pass:  1.5002 secs   total: 13.5023 secs   delta:  0.0023 secs
+08/01/2019 17:16:23 [info]: pass:  1.5002 secs   total: 15.0025 secs   delta:  0.0025 secs
 </pre>
-
 
 <pre>
  _

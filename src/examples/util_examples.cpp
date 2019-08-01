@@ -35,28 +35,24 @@
 void format_example() {
 
     timespec delay = {1, 500000000};   // 1.5 seconds
-
     std::string s;
-    size_t count = 1000000;
-    size_t burp = 100000;
-    double diff, delta, total, x{1.0};
 
     timespec start, last, now;
-
     clock_gettime(CLOCK_REALTIME, &start);
     last = start;
 
-    for(int n = 1; n <= count; n++) {
-        if(n % burp == 0) {
-            nanosleep(&delay, NULL);    // interruptable
-            clock_gettime(CLOCK_REALTIME, &now);
-            diff = cm_time::duration(last, now);
-            total = cm_time::duration(start, now);
-            delta = total - (x * 1.5);
-            x += 1.0;
-            last = now;
-            cm_log::info(cm_util::format(s, "diff: %7.4lf secs   total: %7.4lf secs   delta: %7.4lf secs", diff, total, delta));
-        }
+    for(int n = 1; n <= 10; n++) {
+
+        nanosleep(&delay, NULL);  // interruptable
+        clock_gettime(CLOCK_REALTIME, &now);
+
+        double diff = cm_time::duration(last, now);
+        double total = cm_time::duration(start, now);
+        double delta = total - ((double) n * 1.5);
+        last = now;
+
+        cm_log::info(cm_util::format(s, "pass: %7.4lf secs   total: %7.4lf secs   delta: %7.4lf secs", diff, total, delta));
+
     }
 }
 

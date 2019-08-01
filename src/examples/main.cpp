@@ -27,6 +27,7 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
+#include <iostream>
 #include "examples.h"
 
 int main( int argc, char* argv[] ) {
