@@ -39,18 +39,23 @@ void format_example() {
     std::string s;
     size_t count = 1000000;
     size_t burp = 100000;
+    double diff, delta, total, x{1.0};
 
-    timespec start = cm_time::clock_time();
-    timespec last = start;
+    timespec start, last, now;
 
-    for(size_t n = 0; n < count; n++) {
+    clock_gettime(CLOCK_REALTIME, &start);
+    last = start;
+
+    for(int n = 1; n <= count; n++) {
         if(n % burp == 0) {
             nanosleep(&delay, NULL);    // interruptable
-            timespec now = cm_time::clock_time();
-            double delta = cm_time::duration(last, now);
-            double total = cm_time::duration(start, now);
+            clock_gettime(CLOCK_REALTIME, &now);
+            diff = cm_time::duration(last, now);
+            total = cm_time::duration(start, now);
+            delta = total - (x * 1.5);
+            x += 1.0;
             last = now;
-            cm_log::info(cm_util::format(s, "%6.4f secs %6.4f secs", delta, total));
+            cm_log::info(cm_util::format(s, "diff: %7.4lf secs   total: %7.4lf secs   delta: %7.4lf secs", diff, total, delta));
         }
     }
 }

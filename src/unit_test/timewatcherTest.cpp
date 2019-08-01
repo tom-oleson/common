@@ -64,6 +64,6 @@ void timewatcherTest::test_duration() {
  
     double diff = cm_time::duration(start, finish);
 
-    CPPUNIT_ASSERT( diff > 3.5f && diff < 4.0f );
+    CPPUNIT_ASSERT( diff > 3.5f && diff < 3.6f );
 }
 

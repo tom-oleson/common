@@ -1,3 +1,15 @@
+
+<pre>
+ _   _                              _       _
+| |_(_)_ __ ___   _____      ____ _| |_ ___| |__   ___ _ __
+| __| | '_ ` _ \ / _ \ \ /\ / / _` | __/ __| '_ \ / _ \ '__|
+| |_| | | | | | |  __/\ V  V / (_| | || (__| | | |  __/ |
+ \__|_|_| |_| |_|\___| \_/\_/ \__,_|\__\___|_| |_|\___|_|
+</pre>
+
+Low impact time source thread for applications. Reads realtime clock ten times per second. Used in loggers to avoid excessive context switching in multi-threaded applications.
+
+
 <pre>
        _   _ _
  _   _| |_(_) |
@@ -8,16 +20,51 @@
 
 Frequently used functions that perform general purpose tasks.
 
-
+Example of using cm_util::format() with log output.
 <pre>
- _   _                              _       _
-| |_(_)_ __ ___   _____      ____ _| |_ ___| |__   ___ _ __
-| __| | '_ ` _ \ / _ \ \ /\ / / _` | __/ __| '_ \ / _ \ '__|
-| |_| | | | | | |  __/\ V  V / (_| | || (__| | | |  __/ |
- \__|_|_| |_| |_|\___| \_/\_/ \__,_|\__\___|_| |_|\___|_|
+void format_example() {
+
+    timespec delay = {1, 500000000};   // 1.5 seconds
+
+    std::string s;
+    size_t count = 1000000;
+    size_t burp = 100000;
+    double diff, delta, total, x{1.0};
+
+    timespec start, last, now;
+
+    clock_gettime(CLOCK_REALTIME, &start);
+    last = start;
+
+    for(int n = 1; n <= count; n++) {
+        if(n % burp == 0) {
+            nanosleep(&delay, NULL);    // interruptable
+            clock_gettime(CLOCK_REALTIME, &now);
+            diff = cm_time::duration(last, now);
+            total = cm_time::duration(start, now);
+            delta = total - (x * 1.5);
+            x += 1.0;
+            last = now;
+            cm_log::info(cm_util::format(s, "diff: %7.4lf secs   total: %7.4lf secs   delta: %7.4lf secs", diff, total, delta));
+        }
+    }
+}
 </pre>
 
-Low impact time source thread for applications. Reads realtime clock ten times per second. Use in loggers to avoid excessive context switching in multi-threaded applications.
+
+Output:
+<pre>
+08/01/2019 13:46:05 [info]: diff:  1.5028 secs   total:  1.5028 secs   delta:  0.0028 secs
+08/01/2019 13:46:06 [info]: diff:  1.5027 secs   total:  3.0055 secs   delta:  0.0055 secs
+08/01/2019 13:46:08 [info]: diff:  1.5024 secs   total:  4.5079 secs   delta:  0.0079 secs
+08/01/2019 13:46:09 [info]: diff:  1.5024 secs   total:  6.0103 secs   delta:  0.0103 secs
+08/01/2019 13:46:11 [info]: diff:  1.5024 secs   total:  7.5127 secs   delta:  0.0127 secs
+08/01/2019 13:46:12 [info]: diff:  1.5024 secs   total:  9.0151 secs   delta:  0.0151 secs
+08/01/2019 13:46:14 [info]: diff:  1.5022 secs   total: 10.5174 secs   delta:  0.0174 secs
+08/01/2019 13:46:15 [info]: diff:  1.5024 secs   total: 12.0198 secs   delta:  0.0198 secs
+08/01/2019 13:46:17 [info]: diff:  1.5024 secs   total: 13.5221 secs   delta:  0.0221 secs
+08/01/2019 13:46:18 [info]: diff:  1.5023 secs   total: 15.0245 secs   delta:  0.0245 secs
+</pre>
 
 
 <pre>
