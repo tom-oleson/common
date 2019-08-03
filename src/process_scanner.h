@@ -3,9 +3,9 @@
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are met:
+ * modification, are permitted provided that the following conditions are me
  *
- *   * Redistributions of source code must retain the above copyright notice,
+ *   * Redistributions of source code must retain the above copyright notice
  *     this list of conditions and the following disclaimer.
  *   * Redistributions in binary form must reproduce the above copyright
  *     notice, this list of conditions and the following disclaimer in the
@@ -38,7 +38,6 @@
 #include <string.h>
 #include <errno.h>
 
-#define __LINUX_BOX__
 #ifndef __LINUX_BOX__
 #include <procfs.h>
 #endif
@@ -48,12 +47,12 @@
 
 #include "log.h"
 
-namespace cm {
+namespace cm_process {
 
 struct ps_process {
 
 	ps_process() {}
-	ps_process(pid_t _pid, const string &_name) : name(_name), pid(_pid) { }
+	ps_process(pid_t _pid, const std::string &_name) : name(_name), pid(_pid) { }
 	ps_process(const ps_process &pr) : name(pr.name), pid(pr.pid) { } 
 
 	ps_process &operator = (const ps_process &pr) {
@@ -62,16 +61,16 @@ struct ps_process {
 		return *this;
 	}
 
-	const string to_string() {
-		string ss;
-		return cm::format(ss, "ps_process: pid=[%d], name=[%s]", pid, name.c_str());
+	const std::string to_string() {
+		std::string ss;
+		return cm_util::format(ss, "ps_process: pid=[%d], name=[%s]", pid, name.c_str());
 	}
 
 	void dump() {
-		cm_log:::trace(to_string());
+		cm_log::trace(to_string());
 	}
 
-	string name;
+	std::string name;
 	pid_t pid;
 
 private:
@@ -80,18 +79,18 @@ private:
 
 class process_scanner  {
 
-	vector<ps_process *> match_list;	// list of matched processes
+	std::vector<ps_process *> match_list;	// list of matched processes
 
 	pid_t process_id;
-	string name;
+	std::string name;
 
-    int scan_name(pid_t pid, string &name);
-    int scan_one(pid_t pid, string &name);
-    int scan_all(const string &name);
+    int scan_name(pid_t pid, std::string &name);
+    int scan_one(pid_t pid, std::string &name);
+    int scan_all(const std::string &name);
 
 public:
 	process_scanner(pid_t pid);
-	process_scanner(string &_name);
+	process_scanner(std::string &_name);
 	process_scanner(const char *_name);
 
 	~process_scanner();
@@ -99,13 +98,12 @@ public:
 
 	bool is_process_running(pid_t pid);
 	pid_t get_process_id() { return process_id; }
-	string get_name() { return name; }
+	std::string get_name() { return name; }
 
 	// return a list of processes that matched in scan_all()
-	vector<ps_process *> &get_match_list() { return match_list; }
+	std::vector<ps_process *> &get_match_list() { return match_list; }
 };
 
 }
-
 
 #endif

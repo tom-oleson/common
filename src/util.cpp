@@ -30,7 +30,7 @@
 
 #include "util.h"
 
-#define _SPRINTF_BUF_SZ 2048
+#define _SPRINTF_BUF_SZ 4096
 
 //-------------------------------------------------------------------------
 // printf style string formatter 

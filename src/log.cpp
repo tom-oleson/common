@@ -35,8 +35,7 @@ static const char *log_part[] = CM_LOG_PART_NAMES;
 
 // globals
 cm_log::console_logger cm_log::console;
-cm_log::logger *cm_log::default_logger = &cm_log::console;
-
+void *default_logger = &cm_log::console;
 
 //-------------------------------------------------------------------------
 // message formatter
@@ -212,13 +211,13 @@ std::string cm_log::format_millis(time_t millis) {
 void cm_log::log(cm_log::level::en lvl, const std::string &msg) {
 
 	// call the configured logger
-	cm_log::default_logger->log(lvl, msg);
+	((cm_log::logger *)default_logger)->log(lvl, msg);
 }
 
 void cm_log::log(cm_log::extra ext, cm_log::level::en lvl, const std::string &msg) {
 
 	// call the configured logger
-	cm_log::default_logger->log(ext, lvl, msg);
+	((cm_log::logger *)default_logger)->log(ext, lvl, msg);
 }
 
 //-------------------------------------------------------------------------

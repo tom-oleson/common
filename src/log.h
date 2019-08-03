@@ -40,6 +40,9 @@
 #include "util.h"
 #include "mutex.h"
 
+
+extern void *default_logger;
+
 namespace cm_log {
 
 #define CM_LOG_LEVEL_OFF 0
@@ -189,12 +192,24 @@ protected:
 	std::string msg_fmt;
     std::vector<std::string> parsed_msg_fmt;
 
+    void *save_default_logger;
+
 public:
 	logger():
 		log_level(cm_log::level::info), gmt(false), date_time_fmt("%m/%d/%Y %H:%M:%S"),
 		msg_fmt("${date_time} [${lvl}]: ${msg}") {
         cm_log::parse_message_format(msg_fmt, parsed_msg_fmt);
+
+        // save pointer to default logger to be restored
+        save_default_logger = default_logger;
 	}
+
+    ~logger() {
+        // restore default logger if we became "the one"
+        if(default_logger == this) {
+            default_logger = save_default_logger;
+        }
+    }
 
 	void set_log_level(cm_log::level::en lvl) { log_level = lvl; }
 	cm_log::level::en get_log_level(void) { return log_level; }
@@ -282,13 +297,14 @@ public:
 
 
 extern console_logger console;
-extern logger *default_logger;
 
 
 } // namespace cm_log
 
-inline cm_log::logger &get_default_logger() { return *cm_log::default_logger; }
-inline void set_default_logger(cm_log::logger *_logger) { cm_log::default_logger = _logger; }
+inline cm_log::logger &get_default_logger() { return *(cm_log::logger*)default_logger; }
+inline void set_default_logger(cm_log::logger *_logger) {
+    default_logger = _logger;
+}
 
 #endif	// __LOG_H
 

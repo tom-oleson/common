@@ -34,26 +34,26 @@
 
 
 // We know the process id but not the name
-process_scanner::process_scanner(pid_t pid) : name(""), process_id(pid) {
+cm_process::process_scanner::process_scanner(pid_t pid) : name(""), process_id(pid) {
 	scan_name(process_id, name);
 }
 
 // We know the name but not the process id
-process_scanner::process_scanner(string &_name) : name(_name), process_id(0) {
+cm_process::process_scanner::process_scanner(std::string &_name) : name(_name), process_id(0) {
 	scan_all(name.c_str());
 	
 }
-process_scanner::process_scanner(const char *_name) : name(_name), process_id(0) {
+cm_process::process_scanner::process_scanner(const char *_name) : name(_name), process_id(0) {
 	scan_all(name.c_str());
 }
 
-process_scanner::~process_scanner() {
+cm_process::process_scanner::~process_scanner() {
 	free_match_list();
 }
 
-void process_scanner::free_match_list() {
+void cm_process::process_scanner::free_match_list() {
 
-	vector<ps_process*>::iterator p = match_list.begin();
+	std::vector<ps_process*>::iterator p = match_list.begin();
         while (p != match_list.end()) {
                 ps_process *ps = (*p);
                 delete ps;
@@ -63,31 +63,31 @@ void process_scanner::free_match_list() {
         match_list.clear();
 }
 
-bool process_scanner::is_process_running(pid_t pid) {
+bool cm_process::process_scanner::is_process_running(pid_t pid) {
 
 	return process_id == pid && scan_name(process_id, name) > 0;
 }
 
 #ifdef __LINUX_BOX__
-int process_scanner::scan_name(pid_t pid, string &_name) {
+int cm_process::process_scanner::scan_name(pid_t pid, std::string &_name) {
 
-	  string pathname;
-	  fstream fs;
+	  std::string pathname;
+	  std::fstream fs;
 	  char pr_fname[256] = {'\0'};
-	  string s;
+	  std::string s;
 
-	  cm::format(pathname, "/proc/%d/status", (int)pid);
+	  cm_util::format(pathname, "/proc/%d/status", (int)pid);
 
-	  fs.open(pathname.c_str(), fstream::in);
+	  fs.open(pathname.c_str(), std::fstream::in);
 	  if (!fs.is_open()) {
-	        cm_log::error( cm::format(s,"%s open failed: %s", pathname.c_str(), strerror(errno)));
+	        cm_log::error( cm_util::format(s,"%s open failed: %s", pathname.c_str(), strerror(errno)));
 		return -1;
 	  }
 
 	  fs.getline(pr_fname, sizeof(pr_fname));
 
 	  if (fs.bad()) {
-	        cm_log::error( cm::format(s,"%s getline failed: %s", pathname.c_str(), strerror(errno)));
+	        cm_log::error( cm_util::format(s,"%s getline failed: %s", pathname.c_str(), strerror(errno)));
 		fs.close();
 	    	return -2;
 	  }
@@ -103,22 +103,22 @@ int process_scanner::scan_name(pid_t pid, string &_name) {
 
 #else
 // Sun Solaris method
-int process_scanner::scan_name(pid_t pid, string &_name) {
+int cm_process::process_scanner::scan_name(pid_t pid, std::string &_name) {
 
-  string pathname;
+  std::string pathname;
   int fd;
   psinfo_t  psinfo;
-  string s;
+  std::string s;
 
-  cm::format(pathname, "/proc/%d/psinfo", (int)pid);
+  cm_util::format(pathname, "/proc/%d/psinfo", (int)pid);
 
   if ((fd = open(pathname.c_str(), O_RDONLY)) < 0) {
-        cm_log::error( cm::format(s,"%s open failed: %s", pathname.c_str(), strerror(errno)));
+        cm_log::error( cm_util::format(s,"%s open failed: %s", pathname.c_str(), strerror(errno)));
         return -1;
   }
 
   if (read(fd, &psinfo, sizeof (psinfo)) != sizeof (psinfo)) {
-        cm_log::error(  cm::format(s, "%s read failed", pathname.c_str(), strerror(errno)));
+        cm_log::error(  cm_util::format(s, "%s read failed", pathname.c_str(), strerror(errno)));
         (void) close(fd);
         return -2;
   }
@@ -132,16 +132,16 @@ int process_scanner::scan_name(pid_t pid, string &_name) {
 #endif
 
 
-int process_scanner::scan_one(pid_t pid, string &_name) {
+int cm_process::process_scanner::scan_one(pid_t pid, std::string &_name) {
 
-  string s;
+  std::string s;
 
   int result = scan_name(pid, _name);
   if(result < 0) return result;
 
-  CM_LOG_TRACE { cm_log::trace( cm::format(s, "process_name=[%s]", _name.c_str())); }
+  CM_LOG_TRACE { cm_log::trace( cm_util::format(s, "process_name=[%s]", _name.c_str())); }
   if(0 == strncmp(name.c_str(), _name.c_str(), name.length())) {
-  cm_log::info( cm::format(s, "found: %s, pid=[%d]", _name.c_str(), (int)pid));
+  cm_log::info( cm_util::format(s, "found: %s, pid=[%d]", _name.c_str(), (int)pid));
 	process_id = pid;
 	return 1;
   }
@@ -149,26 +149,26 @@ int process_scanner::scan_one(pid_t pid, string &_name) {
   return 0;
 }
 
-int process_scanner::scan_all(const string &_name) {
+int cm_process::process_scanner::scan_all(const std::string &_name) {
   pid_t pid = 1;
   DIR *dp;
   struct dirent *d;
-  string s;
+  std::string s;
 
   if (NULL == (dp = opendir("/proc"))) {
-    cm_log::error( cm::format(s, "/proc opendir failed: %s", strerror(errno)));
+    cm_log::error( cm_util::format(s, "/proc opendir failed: %s", strerror(errno)));
 	return -2;
   }
 
   int match = 0;
   while (NULL != (d = readdir(dp))) {
-    CM_LOG_TRACE { cm_log::trace( cm::format(s, "dir=[%s]", d->d_name)); }
+    CM_LOG_TRACE { cm_log::trace( cm_util::format(s, "dir=[%s]", d->d_name)); }
 	pid = atoi(d->d_name);
 
 	if(pid > 0) {
-	 CM_LOG_TRACE { cm_log::trace( cm::format(s, "pid=[%d]", (int)pid)); }
+	 CM_LOG_TRACE { cm_log::trace( cm_util::format(s, "pid=[%d]", (int)pid)); }
 
-		string find_name(_name);
+		std::string find_name(_name);
 		//match = scan_one(pid, _find_name);
 		// stop scanning on match (keep scanning on open/read error)
 		//if(1 == match) break; 
@@ -185,7 +185,7 @@ int process_scanner::scan_all(const string &_name) {
   }
 
     if(-1 == closedir(dp)) {
-        cm_log::error( cm::format(s, "/proc closedir failed: %s", strerror(errno)));
+        cm_log::error( cm_util::format(s, "/proc closedir failed: %s", strerror(errno)));
     }
 
   return match;

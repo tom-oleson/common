@@ -46,6 +46,7 @@ CC=g++
 
 CM_OBJS = OBJDIR_$(WORD_SIZE)/util.o \
 	OBJDIR_$(WORD_SIZE)/log.o \
+    OBJDIR_$(WORD_SIZE)/process_scanner.o \
 	OBJDIR_$(WORD_SIZE)/timewatcher.o
 
 CM_LIB = libcm_$(WORD_SIZE)

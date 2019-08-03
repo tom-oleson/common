@@ -38,6 +38,7 @@ EXE = run_tests
 OBJS =	utilTest.o \
 	timewatcherTest.o \
 	logTest.o \
+    process_scannerTest.o \
 	main.o
 
 default: all
