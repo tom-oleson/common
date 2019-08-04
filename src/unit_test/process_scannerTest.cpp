@@ -42,7 +42,7 @@ void process_scannerTest::setUp() {
 
     // create a file logger
     cm_log::file_logger *ps_log = new cm_log::file_logger("./log/process_scanner.log");
-    ps_log->set_log_level(cm_log::level::trace);
+    //ps_log->set_log_level(cm_log::level::trace);
 
     // set it as the default logger to be used by package macros
     set_default_logger(ps_log);
@@ -55,22 +55,23 @@ void process_scannerTest::tearDown() {
 void process_scannerTest::test_constructors() {
 	std::string s;
 	std::string name = "run_tests";
+
 	pid_t pid = getpid();
 	cm_log::info(cm_util::format(s, "pid = [%d]", pid));
 
 	cm_process::process_scanner pid_ps(pid);
 	cm_log::info(cm_util::format(s, "pid_ps.name = [%s]", pid_ps.get_name().c_str()));
 	cm_log::info(cm_util::format(s, "pid_ps.pid = [%d]", pid_ps.get_process_id()));
+
 	CPPUNIT_ASSERT( pid_ps.get_name() == name );
 	CPPUNIT_ASSERT( pid_ps.get_process_id() == pid);
 
 	cm_process::process_scanner name_ps(name);
 	cm_log::info(cm_util::format(s, "name_ps.name = [%s]", name_ps.get_name().c_str()));
 	cm_log::info(cm_util::format(s, "name_ps.pid = [%d]", name_ps.get_process_id()));
-	CPPUNIT_ASSERT( name_ps.get_name() == name);  //
+
+	CPPUNIT_ASSERT( name_ps.get_name() == name);  
 	CPPUNIT_ASSERT( name_ps.get_process_id() == pid);
-
-
 	CPPUNIT_ASSERT( name_ps.is_process_running(pid) );
 }
 
@@ -81,15 +82,16 @@ void process_scannerTest::test_multi() {
     cm_process::process_scanner name_ps(name);
     cm_log::info(cm_util::format(s, "name_ps.name = [%s]", name_ps.get_name().c_str()));
     cm_log::info(cm_util::format(s, "name_ps.pid = [%d]", name_ps.get_process_id()));
+
     CPPUNIT_ASSERT( name_ps.get_name() == name);	//
     CPPUNIT_ASSERT( name_ps.get_process_id() > 0);
 
-// dump all processes in match list...
+    // dump all processes in match list...
     std::vector<cm_process::ps_process*>::iterator p = name_ps.get_match_list().begin();
     while (p != name_ps.get_match_list().end()) {
-            cm_process::ps_process *ps = (*p);
-    ps->dump();
-            p++;
+        cm_process::ps_process *ps = (*p);
+        ps->dump();
+        p++;
     }
 }
 

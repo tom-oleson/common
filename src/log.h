@@ -256,6 +256,7 @@ protected:
 
 	void close_log() {
 		if(is_open()) {
+            flush();
 			close();
 		}
 	}

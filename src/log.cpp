@@ -239,7 +239,7 @@ void cm_log::console_logger::log(cm_log::level::en lvl, const std::string &msg) 
 	if(!ok_to_log(lvl)) return;
 
 	lock();
-    std::cout << cm_log::format_log_message(cm_log::extra(), date_time_fmt, parsed_msg_fmt, lvl, msg, gmt) << "\n";
+    std::cout << cm_log::format_log_message(cm_log::extra(), date_time_fmt, parsed_msg_fmt, lvl, msg, gmt) << std::endl;
 	//fprintf(stdout, "%s: %s", ::log_level[lvl], msg.c_str());
 	unlock();
 }
@@ -250,7 +250,8 @@ void cm_log::console_logger::log(cm_log::extra ext, cm_log::level::en lvl, const
 
 	lock();
 
-    std::cout << cm_log::format_log_message(ext, date_time_fmt, parsed_msg_fmt, lvl, msg, gmt) << "\n";
+    std::cout << cm_log::format_log_message(ext, date_time_fmt, parsed_msg_fmt, lvl, msg, gmt) << std::endl;
+
 	//fprintf(stdout, "%s [%s:%d:%s]: %s", ::log_level[lvl], ext.file, ext.line, ext.func, msg.c_str());
 	unlock();
 }
@@ -282,6 +283,7 @@ void cm_log::file_logger::log(cm_log::extra ext, cm_log::level::en lvl, const st
 
 	//std::stringstream ss(msg);
     *this << cm_log::format_log_message(ext, date_time_fmt, parsed_msg_fmt, lvl, msg, gmt) << "\n"; 
+    flush();
 
     unlock();
 }
