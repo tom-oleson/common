@@ -37,6 +37,7 @@ void set_default_logger_example();
 void include_source_location_example();
 void date_time_format_example();
 void multiplexed_logs_example();
+void set_message_format_example();
 
 
 #endif

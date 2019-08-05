@@ -77,11 +77,39 @@ void utilTest::test_get_hostname() {
     CPPUNIT_ASSERT( !hostname.empty() );
 }
 
-void utilTest::test_file_size() {
+void utilTest::test_file_stat() {
 
     size_t size = 0;
     time_t seconds = 0;
-    int ret = cm_util::file_size("run_tests", &size, &seconds); 
+    int ret = cm_util::file_stat("run_tests", &size, &seconds); 
     
     CPPUNIT_ASSERT( ret == 0 && size > 0 && seconds > 0);
+}
+
+void utilTest::test_format_filename_timestamp() {
+
+    time_t seconds = 0;
+    std::string result = cm_util::format_filename_timestamp(seconds, true /*gmt*/);
+
+    CPPUNIT_ASSERT( result == "19700101_000000" );
+}
+
+void utilTest::test_remove() {
+
+    bool appended = cm_util::append_to_file("remove_test.log", "This file should be removed.");
+
+    int removed = cm_util::remove("remove_test.log");
+
+    CPPUNIT_ASSERT( appended == true && removed == 0);
+}
+
+void utilTest::test_rename() {
+     bool appended = cm_util::append_to_file("rename_test.log", "This renamed file should be removed.");
+
+    int renamed = cm_util::rename("rename_test.log", "remove_test.log");
+
+    int removed = cm_util::remove("remove_test.log");
+
+    CPPUNIT_ASSERT( appended == true && renamed == 0 && removed == 0);
+
 }

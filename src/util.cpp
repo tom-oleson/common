@@ -74,6 +74,8 @@ size_t cm_util::bin2hex(const unsigned char *bin, size_t bin_len, char *hex, siz
         return out_size;
 }
 
+
+// use cm_util::get_timezone_offset() for tz value (we avoid it inside to reduce calls and correct tz offset format)
 std::string cm_util::format_local_timestamp(time_t seconds, time_t millis, std::string &tz) {
 	char buf[sizeof "1970-01-01T00:00:00.999+00:00"] = { '\0' };
 	struct tm local_tm;
@@ -84,13 +86,25 @@ std::string cm_util::format_local_timestamp(time_t seconds, time_t millis, std::
 }
 
 std::string cm_util::format_utc_timestamp(time_t seconds, time_t millis) {
-	char buf[sizeof "1970-01-01T00:00:00.999Z"] = { '\0' };
+	char buf[sizeof "1970-01-01T00:00:00.999Z "] = { '\0' };
 	struct tm utc_tm;
 	gmtime_r(&seconds, &utc_tm);	// break down as UTC time
 	strftime(buf, sizeof buf, "%FT%T", &utc_tm);
 	snprintf(buf + 19, sizeof buf - 19, ".%03ldZ", millis);
 	return std::string(buf);
 }
+
+// used to create timestamp part of a file name (e.g., 20190804_225819)
+// useful for building output file names that need to be uniqued
+std::string cm_util::format_filename_timestamp(time_t seconds, bool gmt) {
+    char buf[sizeof "19700101_000000 "] = { '\0' };
+    struct tm _tm;
+    if(gmt) gmtime_r(&seconds, &_tm);    // break down as UTC time
+    else localtime_r(&seconds, &_tm);   // break down as local time
+    strftime(buf, sizeof buf, "%Y%m%d_%H%M%S", &_tm);
+    return std::string(buf);
+}
+
 
 // returns the timezone offset formatted as: +HH:MM (see RFC 3339 and ISO 8601)
 // or empty string if the TZ environment variable is missing (or not correctly configured)
@@ -99,12 +113,12 @@ std::string cm_util::get_timezone_offset(time_t seconds) {
 	struct tm local_tm;
 	localtime_r(&seconds, &local_tm); // break down as local time
 	
-    	char buf[sizeof "+hhmm"] = {'\0'};	// strftime %z does not output ":"
-	char tzoffset[sizeof "+hh:mm"] = {'\0'};	// RFC 3339/ISO 8601 format
+    char buf[sizeof "+hhmm"] = {'\0'};	// strftime %z does not output ":"
+    char tzoffset[sizeof "+hh:mm"] = {'\0'};	// RFC 3339/ISO 8601 format
 
 	tzset();	// make sure TZ has been processed
 
-        strftime(buf, sizeof buf, "%z", &local_tm);
+    strftime(buf, sizeof buf, "%z", &local_tm);
 	if(strlen(buf) == sizeof buf -1) {
 		tzoffset[0] = buf[0];
 		tzoffset[1] = buf[1];
@@ -131,17 +145,17 @@ pid_t cm_util::tid() {
 #ifdef __LINUX_GETTID__
     pid_t pid = syscall(SYS_gettid); // linux threads
 #else
-    pid_t pid = syscall(SYS_lwp_self);  // non-linux threads
+    pid_t pid = syscall(SYS_lwp_self);  // non-linux threads (solaris)
 #endif
 }
 
 
-int cm_util::file_size(const std::string &path, size_t *size, time_t *mod_time) {
+int cm_util::file_stat(const std::string &path, size_t *size, time_t *mod_time) {
 	int ret = -1;
 	struct stat info;
 	
 	if((ret = stat(path.c_str(), &info)) == 0) {
-		if(S_ISREG(info.st_mode)) {
+		if(S_ISREG(info.st_mode)) {     // if regular file
 			if(NULL != size) {
 				*size = info.st_size;
 			}
@@ -154,3 +168,26 @@ int cm_util::file_size(const std::string &path, size_t *size, time_t *mod_time) 
 	return ret;
 }
 
+int cm_util::rename(const std::string &old_name, const std::string &new_name) {
+    return std::rename(old_name.c_str(), new_name.c_str()); 
+}
+
+int cm_util::remove(const std::string &path) {
+    return std::remove(path.c_str());
+}
+
+// append a string to a text file
+// intended as a helper for unit tests only
+bool cm_util::append_to_file(const std::string &path, const std::string &str) {
+
+    std::ofstream fs;
+    fs.open(path, std::ios_base::out | std::ios_base::app);
+    if(!fs.is_open()) {
+        return false;
+    }
+    fs << str.c_str() << "\n";
+
+    fs.flush();
+    fs.close();
+    return true;
+}

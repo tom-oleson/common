@@ -243,7 +243,7 @@ public:
 };
 
 
-class file_logger : public logger, private cm::mutex, private std::ofstream {
+class file_logger : public logger, private cm::mutex, protected std::ofstream {
 
 protected:
 	std::string log_path;
@@ -269,7 +269,43 @@ public:
 	~file_logger() { lock(); close_log(); unlock(); }
 
 	void log(cm_log::level::en lvl, const std::string &msg);
-        void log(cm_log::extra ext, cm_log::level::en lvl, const std::string &msg); 	
+    void log(cm_log::extra ext, cm_log::level::en lvl, const std::string &msg); 	
+};
+
+
+class roller {
+
+
+};
+
+
+class rolling_file_logger : public file_logger, public roller  {
+
+protected:
+
+        std::string dir;
+        std::string base_name;
+        std::string ext;
+
+        std::string build_path(const std::string _dir, const std::string _base_name,
+             const std::string _ext) {
+            dir = _dir;
+            base_name = _base_name;
+            ext = _ext;
+
+            return (dir +  base_name + ext);
+        }
+
+public:
+    rolling_file_logger(const std::string dir, const std::string base_name,
+             const std::string ext): file_logger(build_path(dir, base_name, ext)) {
+
+    }
+
+    ~rolling_file_logger() {
+
+    }
+
 };
 
 

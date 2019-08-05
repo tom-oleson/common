@@ -44,6 +44,7 @@ int main( int argc, char* argv[] ) {
     include_source_location_example();
     date_time_format_example();
     multiplexed_logs_example();
+    set_message_format_example();
 
 }
 

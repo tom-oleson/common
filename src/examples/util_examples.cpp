@@ -34,6 +34,9 @@
 
 void format_example() {
 
+    // show millis in logger output
+    get_default_logger().set_message_format("${date_time}${millis} [${lvl}]: ${msg}");
+
     timespec delay = {1, 500000000};   // 1.5 seconds
     std::string s;
 

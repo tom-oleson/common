@@ -31,6 +31,7 @@
 #define __UTIL_H
 
 #include <string>
+#include <fstream>
 
 #include <stdlib.h>
 #include <stdio.h>
@@ -56,10 +57,15 @@ std::string &format(std::string& s, const char *fmt, ...);
 size_t bin2hex(const unsigned char *bin, size_t bin_len, char *hex, size_t hex_len);
 std::string format_local_timestamp(time_t seconds, time_t millis, std::string &tz);
 std::string format_utc_timestamp(time_t seconds, time_t millis);
+std::string format_filename_timestamp(time_t seconds, bool gmt);
 std::string get_timezone_offset(time_t seconds);
 std::string get_hostname();
 pid_t tid();
-int file_size(const std::string &path, size_t *size, time_t *mod_time);
+
+int file_stat(const std::string &path, size_t *size, time_t *mod_time);
+int rename(const std::string &old_name, const std::string &new_name);
+int remove(const std::string &path);
+bool append_to_file(const std::string &path, const std::string &str);
 
 } // namespace cm_util
 

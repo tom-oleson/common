@@ -28,7 +28,7 @@
  */
 
 #include "log.h"
-
+#include "examples.h"
 
 void stdout_default_logger_example() {
 
@@ -122,5 +122,25 @@ void multiplexed_logs_example() {
     cm_log::error("This message will go to all three logs.");
     cm_log::debug("This message will go to trace_log only.");
     cm_log::trace("This message will go to trace_log only.");
+}
+
+void set_message_format_example() {
+
+    cm_log::file_logger log("./message_format_example.log");
+    set_default_logger(&log);
+
+    cm_log::info("This message has the default message format given to newly created loggers.");
+
+    // make sure we use local time for proper time-zone offset
+    log.set_gmt(false); 
+    log.set_message_format("${date_time}${millis}${tz} [${lvl}] <${thread}>: ${msg}");
+    cm_log::info("This log message adds milliseconds, time-zone offset (+|-hh:mm) and thread id.");
+
+    log.set_message_format("${date_time} [${lvl}] <${host}>: ${msg}");
+    cm_log::info("This log message adds host name.");
+
+    log.set_message_format("[${lvl}] ${msg}");
+    cm_log::info("This log message is minimal with level and message only.");
+
 }
 

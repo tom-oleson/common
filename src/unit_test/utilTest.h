@@ -16,7 +16,6 @@
 
 
 using namespace std;
-//using namespace cm;
 
 class utilTest : public CPPUNIT_NS::TestFixture {
 
@@ -25,9 +24,12 @@ class utilTest : public CPPUNIT_NS::TestFixture {
     CPPUNIT_TEST( test_bin2hex );
     CPPUNIT_TEST( test_format_local_timestamp );
     CPPUNIT_TEST( test_format_utc_timestamp );
+    CPPUNIT_TEST( test_format_filename_timestamp );
     CPPUNIT_TEST( test_get_timezone_offset );
     CPPUNIT_TEST( test_get_hostname );
-    CPPUNIT_TEST( test_file_size );
+    CPPUNIT_TEST( test_file_stat );
+    CPPUNIT_TEST( test_remove );
+    CPPUNIT_TEST( test_rename );
   CPPUNIT_TEST_SUITE_END();
 
 public:
@@ -35,13 +37,16 @@ public:
   //void tearDown();
 
 protected:
-  void test_format();
-  void test_bin2hex();
-  void test_format_local_timestamp();
-  void test_format_utc_timestamp();
-  void test_get_timezone_offset();
-  void test_get_hostname();
-  void test_file_size();
+    void test_format();
+    void test_bin2hex();
+    void test_format_local_timestamp();
+    void test_format_utc_timestamp();
+    void test_get_timezone_offset();
+    void test_get_hostname();
+    void test_file_stat();
+    void test_format_filename_timestamp();
+    void test_remove();
+    void test_rename();
 };
 
 
