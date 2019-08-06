@@ -13,6 +13,7 @@
 #include <string.h>
 #include "util.h"
 #include "log.h" 
+#include "timewatcher.h"
 
 
 using namespace std;
@@ -30,6 +31,10 @@ class utilTest : public CPPUNIT_NS::TestFixture {
     CPPUNIT_TEST( test_file_stat );
     CPPUNIT_TEST( test_remove );
     CPPUNIT_TEST( test_rename );
+    CPPUNIT_TEST( test_calendar_time );
+    CPPUNIT_TEST( test_next_midnight );
+    CPPUNIT_TEST( test_next_hour );
+    CPPUNIT_TEST( test_next_calendar_time );
   CPPUNIT_TEST_SUITE_END();
 
 public:
@@ -47,6 +52,10 @@ protected:
     void test_format_filename_timestamp();
     void test_remove();
     void test_rename();
+    void test_calendar_time();
+    void test_next_midnight();
+    void test_next_hour();
+    void test_next_calendar_time();
 };
 
 

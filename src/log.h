@@ -39,6 +39,7 @@
 
 #include "util.h"
 #include "mutex.h"
+#include "timewatcher.h"
 
 
 extern void *default_logger;
@@ -225,7 +226,6 @@ public:
 	bool ok_to_log(cm_log::level::en lvl) {
 		return (lvl != cm_log::level::off && lvl <= log_level) || lvl == cm_log::level::always;
 	}
-
 	
 	virtual void log(cm_log::level::en lvl, const std::string &msg) = 0;
 	virtual void log(cm_log::extra ext, cm_log::level::en lvl, const std::string &msg) = 0;
@@ -275,7 +275,35 @@ public:
 
 class roller {
 
+    int hour_interval;  /* rotate every {1,2,3,4,6,8,12,24} hours from midnight */
+    time_t  next_rotate_time;
 
+public:
+    roller(int _interval) { set_interval( _interval); } 
+    ~roller() {}        
+
+    void set_interval(int _interval) { 
+        hour_interval = _interval;
+        if((hour_interval < 1 || 24 < hour_interval) || !(24 % hour_interval == 0) )
+            hour_interval = 24;
+        
+        time_t now = cm_time::clock_seconds();
+        next_rotate_time = cm_util::prev_midnight(now);
+        while(next_rotate_time < now) {
+            next_rotate_time = cm_util::next_hour(next_rotate_time, hour_interval);
+        }
+    }
+
+    bool next_rotate() {
+        bool ret = false; 
+        if(cm_time::clock_seconds() >= next_rotate_time) {
+            next_rotate_time = cm_util::next_hour(next_rotate_time, hour_interval);
+            rotate();
+        }
+        return ret;
+    }    
+
+    void rotate() { }
 };
 
 
@@ -283,22 +311,22 @@ class rolling_file_logger : public file_logger, public roller  {
 
 protected:
 
-        std::string dir;
-        std::string base_name;
-        std::string ext;
+    std::string dir;
+    std::string base_name;
+    std::string ext;
 
-        std::string build_path(const std::string _dir, const std::string _base_name,
-             const std::string _ext) {
-            dir = _dir;
-            base_name = _base_name;
-            ext = _ext;
+    std::string build_path(const std::string _dir, const std::string _base_name,
+         const std::string _ext) {
+        dir = _dir;
+        base_name = _base_name;
+        ext = _ext;
 
-            return (dir +  base_name + ext);
-        }
+        return (dir +  base_name + ext);
+    }
 
 public:
     rolling_file_logger(const std::string dir, const std::string base_name,
-             const std::string ext): file_logger(build_path(dir, base_name, ext)) {
+             const std::string ext, int _interval): file_logger(build_path(dir, base_name, ext)), roller(_interval) {
 
     }
 

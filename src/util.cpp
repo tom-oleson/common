@@ -74,6 +74,89 @@ size_t cm_util::bin2hex(const unsigned char *bin, size_t bin_len, char *hex, siz
         return out_size;
 }
 
+time_t cm_util::next_midnight(time_t seconds) {
+
+    struct tm local_tm;
+    local_tm.tm_isdst = -1;
+
+    time_t tomorrow = seconds + (24 * 60 * 60);  // 24 hours from now
+    localtime_r(&tomorrow, &local_tm);   // break down as local time
+
+    // back next day up to its midnight
+    local_tm.tm_sec = 0;
+    local_tm.tm_min = 0;
+    local_tm.tm_hour = 0;
+
+    // compute and return the epoch time this will happen
+    return mktime(&local_tm);
+}
+
+time_t cm_util::prev_midnight(time_t seconds) {
+
+    struct tm local_tm;
+    local_tm.tm_isdst = -1;
+
+    localtime_r(&seconds, &local_tm);   // break down as local time
+
+    // move it to midnight
+    local_tm.tm_sec = 0;
+    local_tm.tm_min = 0;
+    local_tm.tm_hour = 0;
+
+    // compute and return the epoch time this will happened
+    return mktime(&local_tm);
+}
+
+
+time_t cm_util::next_hour(time_t seconds, int n_hour) {
+
+    struct tm local_tm;
+    local_tm.tm_isdst = -1;
+
+    time_t future = seconds + (n_hour * (60 * 60));  // n_hour(s) from now
+    localtime_r(&future, &local_tm);   // break down as local time
+
+    // adjust to top of the hour
+    local_tm.tm_sec = 0;
+    local_tm.tm_min = 0;
+
+    // compute and return the epoch time this will happen
+    return mktime(&local_tm);
+}
+
+
+time_t cm_util::next_calendar_time(time_t seconds, int hour, int min, int sec) {
+
+    struct tm local_tm;
+    local_tm.tm_isdst = -1;
+
+    time_t today = seconds;         // time now
+    localtime_r(&today, &local_tm); // break down as local time
+    local_tm.tm_sec = sec;
+    local_tm.tm_min = min;
+    local_tm.tm_hour = hour;
+    today = mktime(&local_tm);      // time's epoch for today
+
+    if(today > seconds) return today;   // next time point is today
+
+    time_t tomorrow =  seconds + (24 * 60 * 60);  // 24 hours from now
+    localtime_r(&tomorrow, &local_tm); // break down as local time
+    local_tm.tm_sec = sec;
+    local_tm.tm_min = min;
+    local_tm.tm_hour = hour;
+    tomorrow =  mktime(&local_tm);  // time's epoch for tomorrow
+
+    return tomorrow;    // next time point is tomorrow
+}
+
+time_t cm_util::calendar_time(time_t seconds, struct tm &local_tm) {
+
+    local_tm.tm_isdst = -1;
+    localtime_r(&seconds, &local_tm); // break down as local time
+    return mktime(&local_tm);
+}
+
+
 
 // use cm_util::get_timezone_offset() for tz value (we avoid it inside to reduce calls and correct tz offset format)
 std::string cm_util::format_local_timestamp(time_t seconds, time_t millis, std::string &tz) {
@@ -104,7 +187,6 @@ std::string cm_util::format_filename_timestamp(time_t seconds, bool gmt) {
     strftime(buf, sizeof buf, "%Y%m%d_%H%M%S", &_tm);
     return std::string(buf);
 }
-
 
 // returns the timezone offset formatted as: +HH:MM (see RFC 3339 and ISO 8601)
 // or empty string if the TZ environment variable is missing (or not correctly configured)

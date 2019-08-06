@@ -67,6 +67,12 @@ int rename(const std::string &old_name, const std::string &new_name);
 int remove(const std::string &path);
 bool append_to_file(const std::string &path, const std::string &str);
 
+time_t calendar_time(time_t seconds, struct tm &local_tm);
+time_t next_midnight(time_t seconds);
+time_t prev_midnight(time_t seconds);
+time_t next_hour(time_t seconds, int n_hour);
+time_t next_calendar_time(time_t seconds, int hour, int min, int sec);
+
 } // namespace cm_util
 
 #endif

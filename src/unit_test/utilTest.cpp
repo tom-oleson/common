@@ -86,6 +86,51 @@ void utilTest::test_file_stat() {
     CPPUNIT_ASSERT( ret == 0 && size > 0 && seconds > 0);
 }
 
+void utilTest::test_next_midnight() {
+
+    time_t seconds = cm_time::clock_seconds();
+    time_t next_midnight = cm_util::next_midnight(seconds);
+
+    CPPUNIT_ASSERT( next_midnight > 0 );
+
+}
+
+void utilTest::test_next_hour() {
+
+    struct tm local_tm;
+    time_t seconds = cm_time::clock_seconds();
+    time_t next_hour = cm_util::next_hour(seconds, 1);
+
+    CPPUNIT_ASSERT( next_hour > 0 );
+
+    next_hour = cm_util::prev_midnight(seconds);
+    next_hour = cm_util::next_hour(next_hour, 3);   // 3am
+    next_hour = cm_util::next_hour(next_hour, 3);   // 6am
+    next_hour = cm_util::next_hour(next_hour, 3);   // 9am
+    next_hour = cm_util::next_hour(next_hour, 3);   // 12pm
+
+
+    next_hour = cm_util::prev_midnight(seconds);
+    next_hour = cm_util::next_hour(next_hour, 24);  // next midnight
+}
+
+void utilTest::test_next_calendar_time() {
+
+    time_t seconds = cm_time::clock_seconds();
+    time_t next_time = cm_util::next_calendar_time(seconds, 13, 0, 0);   // next 1pm
+
+    CPPUNIT_ASSERT( next_time > 0 );
+}
+
+void utilTest::test_calendar_time() {
+
+    struct tm local_tm;
+    time_t seconds = cm_time::clock_seconds();
+    time_t cal_time = cm_util::calendar_time(seconds, local_tm);
+
+    CPPUNIT_ASSERT( cal_time == seconds );
+}
+
 void utilTest::test_format_filename_timestamp() {
 
     time_t seconds = 0;
