@@ -224,7 +224,6 @@ void cm_log::log(cm_log::extra ext, cm_log::level::en lvl, const std::string &ms
 // cm_log error (output to stderr)
 //-------------------------------------------------------------------------
 
-
 // used to output a message to stderr when things go wrong in the logger itself
 void cm_log::_log_error(cm_log::extra ext, const std::string &msg) {
 	fprintf(stderr, "LOG ERROR: [%s:%d:%s]: %s", ext.file, ext.line, ext.func, msg.c_str());
@@ -256,7 +255,6 @@ void cm_log::console_logger::log(cm_log::extra ext, cm_log::level::en lvl, const
 	unlock();
 }
 
-
 //-------------------------------------------------------------------------
 // file logger (output to file)
 //-------------------------------------------------------------------------
@@ -281,13 +279,11 @@ void cm_log::file_logger::log(cm_log::extra ext, cm_log::level::en lvl, const st
     lock();
     open_log();
 
-	//std::stringstream ss(msg);
     *this << cm_log::format_log_message(ext, date_time_fmt, parsed_msg_fmt, lvl, msg, gmt) << "\n"; 
     flush();
 
     unlock();
 }
-
 
 //-------------------------------------------------------------------------
 // multipex logger
@@ -323,5 +319,39 @@ void cm_log::multiplex_logger::log(cm_log::extra ext, cm_log::level::en lvl, con
     for(auto logger : loggers) {
         logger->log(ext, lvl, msg);
     }
+}
+
+void cm_log::rolling_file_logger::rotate() {
+
+    // create timestamp part for target path
+    std::string timestamp = cm_util::format_filename_timestamp(this_rotate_time, gmt); //YYYYMMDD_HHMMSS
+
+    lock();
+
+    // build the target path
+    std::string rotate_path = build_rotate_path(timestamp);
+
+    // flush and close the current log file
+    flush();
+    close_log();
+
+    // move it
+    cm_util::rename(log_path, rotate_path);
+
+    unlock();
+}
+
+void cm_log::rolling_file_logger::log(cm_log::level::en lvl, const std::string &msg) {
+
+    check_to_rotate();
+    cm_log::file_logger::log(lvl, msg);
+
+}
+
+void cm_log::rolling_file_logger::log(cm_log::extra ext, cm_log::level::en lvl, const std::string &msg) {
+
+    check_to_rotate(); 
+    cm_log::file_logger::log(ext, lvl, msg);
+
 }
 

@@ -232,7 +232,7 @@ public:
 };
 
 
-class console_logger : public logger, private cm::mutex {
+class console_logger : public logger, protected cm::mutex {
 	
 public:
 	console_logger(): logger() { name = "console-logger"; }
@@ -243,7 +243,7 @@ public:
 };
 
 
-class file_logger : public logger, private cm::mutex, protected std::ofstream {
+class file_logger : public logger, protected cm::mutex, protected std::ofstream {
 
 protected:
 	std::string log_path;
@@ -262,9 +262,9 @@ protected:
 	}
 
 public:
-	file_logger(const std::string path): logger(), log_path(path) { 
-        name = "file-logger";
-        open_log();
+    file_logger() { name = "file-logger"; }
+	file_logger(const std::string path): logger(), log_path(path) {
+        lock(); open_log(); unlock();
     }
 	~file_logger() { lock(); close_log(); unlock(); }
 
@@ -275,48 +275,58 @@ public:
 
 class roller {
 
-    int hour_interval;  /* rotate every {1,2,3,4,6,8,12,24} hours from midnight */
-    time_t  next_rotate_time;
+protected:
+    // rotate every interval seconds from midnight
+    // note: interval in seconds must be an even multiple of 24 hours (24*60*60)
+    time_t interval = 0;  /* rotate every interval seconds from midnight */
+    time_t next_rotate_time = 0;
+    time_t this_rotate_time = 0;
 
 public:
-    roller(int _interval) { set_interval( _interval); } 
+    roller() { set_interval(24 * 60 * 60); }
+    roller(time_t _interval) { set_interval( _interval); } 
     ~roller() {}        
 
-    void set_interval(int _interval) { 
-        hour_interval = _interval;
-        if((hour_interval < 1 || 24 < hour_interval) || !(24 % hour_interval == 0) )
-            hour_interval = 24;
+    void set_interval(time_t _interval) { 
+        interval = _interval;
+        if( !((24 * 60 * 60)  % interval == 0) )
+            interval = 24 * 60 * 60;
         
         time_t now = cm_time::clock_seconds();
-        next_rotate_time = cm_util::prev_midnight(now);
-        while(next_rotate_time < now) {
-            next_rotate_time = cm_util::next_hour(next_rotate_time, hour_interval);
-        }
+        time_t diff = now - cm_util::prev_midnight(now);
+
+        int intervals = diff / interval + ( diff % interval != 0 ? 1 : 0);
+        next_rotate_time = now + ((interval * intervals) - diff);
     }
 
-    bool next_rotate() {
-        bool ret = false; 
-        if(cm_time::clock_seconds() >= next_rotate_time) {
-            next_rotate_time = cm_util::next_hour(next_rotate_time, hour_interval);
+    bool check_to_rotate() {
+        time_t seconds = cm_time::clock_seconds();
+        if(seconds >= next_rotate_time) {
+            this_rotate_time = next_rotate_time;
+            next_rotate_time = cm_util::next_interval(this_rotate_time, interval);
             rotate();
+            return true;
         }
-        return ret;
+        return false;
     }    
 
-    void rotate() { }
+    virtual void rotate() = 0;
 };
 
 
 class rolling_file_logger : public file_logger, public roller  {
 
 protected:
-
     std::string dir;
     std::string base_name;
     std::string ext;
 
+
+    // build path (e.g., dir="./some_path/", base_name="app", ext=".log" becomes
+    // "./some_path/app.log")
     std::string build_path(const std::string _dir, const std::string _base_name,
          const std::string _ext) {
+
         dir = _dir;
         base_name = _base_name;
         ext = _ext;
@@ -324,16 +334,25 @@ protected:
         return (dir +  base_name + ext);
     }
 
+    // build target path (e.g. "./some_path/20190806_134518_app.log")
+    std::string build_rotate_path(const std::string timestamp) {
+        return (dir + timestamp + (gmt ? "Z" : "") + "_" + base_name + ext);
+    }
+
 public:
-    rolling_file_logger(const std::string dir, const std::string base_name,
-             const std::string ext, int _interval): file_logger(build_path(dir, base_name, ext)), roller(_interval) {
-
+    rolling_file_logger(): roller() { name = "rolling-file-logger"; }
+    rolling_file_logger(const std::string _dir, const std::string _base_name,
+             const std::string _ext, time_t _interval): file_logger(), roller(_interval) {
+        log_path = build_path(_dir, _base_name, _ext);
+        lock(); open_log(); unlock();
     }
 
-    ~rolling_file_logger() {
+    ~rolling_file_logger() { }
 
-    }
+    void rotate();
 
+    void log(cm_log::level::en lvl, const std::string &msg);
+    void log(cm_log::extra ext, cm_log::level::en lvl, const std::string &msg);
 };
 
 

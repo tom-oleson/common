@@ -108,6 +108,23 @@ time_t cm_util::prev_midnight(time_t seconds) {
 }
 
 
+time_t cm_util::next_interval(time_t seconds, time_t interval) {
+
+    struct tm local_tm;
+    local_tm.tm_isdst = -1;
+
+    time_t future = seconds + interval;  // interval seconds from now
+    localtime_r(&future, &local_tm);   // break down as local time
+
+    // adjust to top of the hour
+    //local_tm.tm_sec = 0;
+    //local_tm.tm_min = 0;
+
+    // compute and return the epoch time this will happen
+    return mktime(&local_tm);
+}
+
+
 time_t cm_util::next_hour(time_t seconds, int n_hour) {
 
     struct tm local_tm;
@@ -180,7 +197,7 @@ std::string cm_util::format_utc_timestamp(time_t seconds, time_t millis) {
 // used to create timestamp part of a file name (e.g., 20190804_225819)
 // useful for building output file names that need to be uniqued
 std::string cm_util::format_filename_timestamp(time_t seconds, bool gmt) {
-    char buf[sizeof "19700101_000000 "] = { '\0' };
+    char buf[sizeof "19700101_000000_000 "] = { '\0' };
     struct tm _tm;
     if(gmt) gmtime_r(&seconds, &_tm);    // break down as UTC time
     else localtime_r(&seconds, &_tm);   // break down as local time

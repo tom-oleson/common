@@ -29,6 +29,7 @@ class logTest : public CPPUNIT_NS::TestFixture {
     CPPUNIT_TEST( test_log_level_if_macros );
     CPPUNIT_TEST( test_get_part_index );
     CPPUNIT_TEST( test_parse_message_format );
+    CPPUNIT_TEST( test_rotate );
   CPPUNIT_TEST_SUITE_END();
 
 public:
@@ -43,6 +44,7 @@ protected:
     void test_log_level_if_macros();  
     void test_get_part_index();
     void test_parse_message_format(); 
+    void test_rotate();
 };
 
 

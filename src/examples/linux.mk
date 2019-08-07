@@ -35,8 +35,12 @@ TOP=$(PWD)
 EXE = examples
 
 OBJS =	log_examples.o \
-    util_examples.o \
+	util_examples.o \
 	main.o
+
+EXE2 = rolling
+
+OBJS2 = rolling.o
 
 default: all
 
@@ -54,13 +58,15 @@ POSIXFLAGS = -D_POSIX_PTHREAD_SEMANTICS -D_REENTRANT
 $(EXE): $(OBJS)
 	$(CC) $(OBJS) $(LDFLAGS) -o $(EXE)
 
+$(EXE2): $(OBJS2)
+	$(CC) $(OBJS2) $(LDFLAGS) -o $(EXE2)
+
 clean:
-	-@rm -rf *.o $(EXE) *.log core.*
-	@echo "$(EXE) $(@)ed"
+	-@rm -rf *.o $(EXE) $(EXE2) *.log core.*
+	@echo "$(EXE) $(EXE2) $(@)ed"
 
 all: clean prod
 
-prod: $(EXE)
-	clear
-	export LD_LIBRARY_PATH=$(CM_LIB_DIR):$(LD_LIBRARY_PATH);$(PWD)/$(EXE)
+prod: $(EXE) $(EXE2)
+	export LD_LIBRARY_PATH=$(CM_LIB_DIR):$(LD_LIBRARY_PATH);$(PWD)/$(EXE);$(PWD)/$(EXE2)&
 
