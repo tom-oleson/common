@@ -288,8 +288,7 @@ bool cm_util::append_to_file(const std::string &path, const std::string &str) {
 
 int cm_util::dir_scan(const std::string &dir_name, const std::string &pattern,
             std::vector<std::string> &matches) {
-
-    int ret = 0;
+    int retcode = 0;
     DIR *dp;
     struct dirent *d;
 
@@ -299,23 +298,18 @@ int cm_util::dir_scan(const std::string &dir_name, const std::string &pattern,
 
     try {
         const std::regex reg(pattern.c_str());
-
         while (NULL != (d = readdir(dp))) {
-
             const std::string name(d->d_name);
             if(std::regex_match(name, reg)) {
                 matches.push_back(name);
             }
         }
-
-    } catch(...) {
-       ret = -2; 
-    }
+    } catch(...) { retcode = -2; }
 
     if(-1 == closedir(dp)) {
         return -1;  // call strerror(errno) for error
     }
 
-    return ret;
+    return retcode;
 }
 
