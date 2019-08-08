@@ -27,7 +27,6 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-
 #include "util.h"
 
 #define _SPRINTF_BUF_SZ 4096
@@ -107,7 +106,6 @@ time_t cm_util::prev_midnight(time_t seconds) {
     return mktime(&local_tm);
 }
 
-
 time_t cm_util::next_interval(time_t seconds, time_t interval) {
 
     struct tm local_tm;
@@ -119,7 +117,6 @@ time_t cm_util::next_interval(time_t seconds, time_t interval) {
     // compute and return the epoch time this will happen
     return mktime(&local_tm);
 }
-
 
 time_t cm_util::next_hour(time_t seconds, int n_hour) {
 
@@ -167,7 +164,6 @@ time_t cm_util::calendar_time(time_t seconds, struct tm &local_tm) {
     localtime_r(&seconds, &local_tm); // break down as local time
     return mktime(&local_tm);
 }
-
 
 // use cm_util::get_timezone_offset() for tz value (we avoid it inside to reduce calls and correct tz offset format)
 std::string cm_util::format_local_timestamp(time_t seconds, time_t millis, std::string &tz) {
@@ -225,7 +221,6 @@ std::string cm_util::get_timezone_offset(time_t seconds) {
 	return std::string(tzoffset);
 }
 
-
 std::string cm_util::get_hostname() {
     char buf[80] = { '\0' };
     memset(buf, 0, sizeof buf);
@@ -241,7 +236,6 @@ pid_t cm_util::tid() {
     pid_t pid = syscall(SYS_lwp_self);  // non-linux threads (solaris)
 #endif
 }
-
 
 int cm_util::file_stat(const std::string &path, size_t *size, time_t *mod_time) {
 	int ret = -1;
@@ -284,7 +278,6 @@ bool cm_util::append_to_file(const std::string &path, const std::string &str) {
     fs.close();
     return true;
 }
-
 
 int cm_util::dir_scan(const std::string &dir_name, const std::string &pattern,
             std::vector<std::string> &matches) {
