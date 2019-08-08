@@ -303,7 +303,7 @@ public:
         time_t seconds = cm_time::clock_seconds();
         if(seconds >= next_rotate_time) {
             this_rotate_time = next_rotate_time;
-            next_rotate_time = cm_util::next_interval(this_rotate_time, interval);
+            next_rotate_time = this_rotate_time + interval;
             rotate();
             return true;
         }
@@ -320,6 +320,10 @@ protected:
     std::string dir;
     std::string base_name;
     std::string ext;
+
+    int keep = 0;       // # of logs to keep in rotation (0 = remove none)
+
+    std::vector<std::string> rotation_list;
 
 
     // build path (e.g., dir="./some_path/", base_name="app", ext=".log" becomes
@@ -342,7 +346,7 @@ protected:
 public:
     rolling_file_logger(): roller() { name = "rolling-file-logger"; }
     rolling_file_logger(const std::string _dir, const std::string _base_name,
-             const std::string _ext, time_t _interval): file_logger(), roller(_interval) {
+             const std::string _ext, time_t _interval, int _keep = 0): file_logger(), roller(_interval), keep(_keep) {
         log_path = build_path(_dir, _base_name, _ext);
         lock(); open_log(); unlock();
     }

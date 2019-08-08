@@ -32,6 +32,8 @@
 
 #include <string>
 #include <fstream>
+#include <vector>
+#include <regex>
 
 #include <stdlib.h>
 #include <stdio.h>
@@ -43,6 +45,7 @@
 #include <sys/syscall.h>   /* For SYS_xxx definitions */
 #include <sys/types.h>      /* for gettid() */
 #include <sys/stat.h>		/* for stat() */
+#include <dirent.h>         /* for readdir() */
 #include <stdarg.h>
 #include <sys/time.h>
 #include <float.h>
@@ -65,6 +68,9 @@ pid_t tid();
 int file_stat(const std::string &path, size_t *size, time_t *mod_time);
 int rename(const std::string &old_name, const std::string &new_name);
 int remove(const std::string &path);
+int dir_scan(const std::string &dir_name, const std::string &pattern, std::vector<std::string> &matches);
+
+
 bool append_to_file(const std::string &path, const std::string &str);
 
 time_t calendar_time(time_t seconds, struct tm &local_tm);
@@ -74,6 +80,7 @@ time_t next_hour(time_t seconds, int n_hour);
 time_t next_interval(time_t seconds, time_t interval);
 time_t next_calendar_time(time_t seconds, int hour, int min, int sec);
 
+ 
 } // namespace cm_util
 
 #endif

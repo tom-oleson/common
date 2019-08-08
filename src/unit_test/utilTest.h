@@ -28,6 +28,7 @@ class utilTest : public CPPUNIT_NS::TestFixture {
     CPPUNIT_TEST( test_format_filename_timestamp );
     CPPUNIT_TEST( test_get_timezone_offset );
     CPPUNIT_TEST( test_get_hostname );
+    CPPUNIT_TEST( test_dir_scan );
     CPPUNIT_TEST( test_file_stat );
     CPPUNIT_TEST( test_remove );
     CPPUNIT_TEST( test_rename );
@@ -56,6 +57,7 @@ protected:
     void test_next_midnight();
     void test_next_hour();
     void test_next_calendar_time();
+    void test_dir_scan();
 };
 
 

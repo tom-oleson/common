@@ -116,10 +116,6 @@ time_t cm_util::next_interval(time_t seconds, time_t interval) {
     time_t future = seconds + interval;  // interval seconds from now
     localtime_r(&future, &local_tm);   // break down as local time
 
-    // adjust to top of the hour
-    //local_tm.tm_sec = 0;
-    //local_tm.tm_min = 0;
-
     // compute and return the epoch time this will happen
     return mktime(&local_tm);
 }
@@ -140,7 +136,6 @@ time_t cm_util::next_hour(time_t seconds, int n_hour) {
     // compute and return the epoch time this will happen
     return mktime(&local_tm);
 }
-
 
 time_t cm_util::next_calendar_time(time_t seconds, int hour, int min, int sec) {
 
@@ -172,7 +167,6 @@ time_t cm_util::calendar_time(time_t seconds, struct tm &local_tm) {
     localtime_r(&seconds, &local_tm); // break down as local time
     return mktime(&local_tm);
 }
-
 
 
 // use cm_util::get_timezone_offset() for tz value (we avoid it inside to reduce calls and correct tz offset format)
@@ -290,3 +284,38 @@ bool cm_util::append_to_file(const std::string &path, const std::string &str) {
     fs.close();
     return true;
 }
+
+
+int cm_util::dir_scan(const std::string &dir_name, const std::string &pattern,
+            std::vector<std::string> &matches) {
+
+    int ret = 0;
+    DIR *dp;
+    struct dirent *d;
+
+    if (NULL == (dp = opendir(dir_name.c_str()))) {
+        return -3;   // call strerror(errno) for error
+    }
+
+    try {
+        const std::regex reg(pattern.c_str());
+
+        while (NULL != (d = readdir(dp))) {
+
+            const std::string name(d->d_name);
+            if(std::regex_match(name, reg)) {
+                matches.push_back(name);
+            }
+        }
+
+    } catch(...) {
+       ret = -2; 
+    }
+
+    if(-1 == closedir(dp)) {
+        return -1;  // call strerror(errno) for error
+    }
+
+    return ret;
+}
+

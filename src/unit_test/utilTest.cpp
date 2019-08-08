@@ -149,12 +149,36 @@ void utilTest::test_remove() {
 }
 
 void utilTest::test_rename() {
-     bool appended = cm_util::append_to_file("rename_test.log", "This renamed file should be removed.");
+
+    bool appended = cm_util::append_to_file("rename_test.log", "This renamed file should be removed.");
 
     int renamed = cm_util::rename("rename_test.log", "remove_test.log");
-
     int removed = cm_util::remove("remove_test.log");
 
     CPPUNIT_ASSERT( appended == true && renamed == 0 && removed == 0);
 
+}
+
+void utilTest::test_dir_scan() {
+
+    cm_log::file_logger log("./log/test_dir_scan.log");
+    log.set_log_level(cm_log::level::info);
+    set_default_logger(&log);
+
+    std::vector<std::string> matches;
+
+    // scan ./log directory and match any that end with ".log"
+    // note: use of raw string literal to avoid need escape \ in regex
+    cm_util::dir_scan("./log", R"(.+\.log$)", matches);
+
+    std::string s;
+    std::vector<std::string>::iterator p = matches.begin();
+    while(p != matches.end()) {
+        std::string name = *p;
+        cm_log::info(cm_util::format(s, "%s", name.c_str() ));
+        p++;
+    }
+    cm_log::info(cm_util::format(s, "matched: %d", matches.size()));
+
+    CPPUNIT_ASSERT( matches.size() > 0 );
 }

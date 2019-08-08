@@ -35,7 +35,7 @@ int main( int argc, char* argv[] ) {
 
     // run this program in the background
 
-    cm_log::rolling_file_logger log("./", "roller", ".log", 60 /*seconds*/);
+    cm_log::rolling_file_logger log("./", "roller", ".log", 60 /*seconds*/, 4);
     log.set_log_level(cm_log::level::info);
 
     // set it as the default logger to be used by package macros
@@ -44,7 +44,7 @@ int main( int argc, char* argv[] ) {
     std::string s;
     int count = 1;
 
-    while(count <= 150) {
+    while(count <= 1200) {
         cm_log::info(cm_util::format(s, "Message #%d for the log file.", count));
         sleep(1);
         count++;

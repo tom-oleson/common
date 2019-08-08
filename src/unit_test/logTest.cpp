@@ -144,7 +144,7 @@ void logTest::test_parse_message_format() {
 
 void logTest::test_rotate() {
 
-    cm_log::rolling_file_logger log("./log/", "rotate", ".log", 5 /* seconds */);
+    cm_log::rolling_file_logger log("./log/", "rotate", ".log", 6 /* seconds */);
     log.set_log_level(cm_log::level::info);
 
     // set it as the default logger to be used by package macros
@@ -152,10 +152,11 @@ void logTest::test_rotate() {
 
     int count = 1;
     std::string s;
+    timespec delay = {1,0};   // 1 second
 
-    while(count <= 12) {
+    while(count <= 18) {
         cm_log::info(cm_util::format(s, "Message #%d in the log file.", count));
         count++;
-        sleep(1);
+        nanosleep(&delay, NULL);
     }
 }
