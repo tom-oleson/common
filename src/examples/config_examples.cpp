@@ -27,29 +27,51 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include <iostream>
-#include "examples.h"
-
-int main( int argc, char* argv[] ) {
-
-    // config examples
-    
-    memory_config_example();
-    file_config_example();
-
-    // util examples
-
-    format_example();
+#include "util.h"
+#include "log.h"
+#include "config.h"
 
 
-    // log examples
+void memory_config_example() {
 
-    stdout_default_logger_example();
-    set_default_logger_example();
-    include_source_location_example();
-    date_time_format_example();
-    multiplexed_logs_example();
-    set_message_format_example();
+    std::string s;
+
+    cm_config::set("host", cm_util::get_hostname());
+
+    std::string host = cm_config::get("host");
+
+
+    bool found = cm_config::check("host");
+    if(found) {
+        cm_log::info(cm_util::format(s, "host: [%s]", host.c_str()));
+    }
+
+    // default value when key is not present
+    std::string some_option = cm_config::get("some_option", "none" );
+    cm_log::info(cm_util::format(s, "some_option: [%s]", some_option.c_str())); 
 
 }
 
+
+void file_config_example() {
+
+    std::string s;
+    std::string path = "./example_config.cfg";
+
+    cm_config::file_config config_file(path);
+    config_file.load();
+    set_default_config(&config_file);
+
+    // access base level option
+    std::string option = cm_config::get("option", "none");
+
+    // access section option
+    std::string section_option = cm_config::get("section.option", "none");
+
+    // access nested sub-section option
+    std::string subsection_option = cm_config::get("section.subsection.option", "none");
+   
+    cm_log::info(cm_util::format(s, "1: [%s], 2: [%s], 3: [%s]", 
+        option.c_str(), section_option.c_str(), subsection_option.c_str())); 
+
+}

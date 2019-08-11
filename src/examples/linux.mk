@@ -34,7 +34,8 @@ TOP=$(PWD)
 
 EXE = examples
 
-OBJS =	log_examples.o \
+OBJS =	config_examples.o \
+    log_examples.o \
 	util_examples.o \
 	main.o
 
