@@ -45,7 +45,7 @@ Output:
 </pre>
 
 
-Access configuration file information and different levels example:
+Access configuration file information at different levels example:
 
 example_config.cfg:
 <pre>
