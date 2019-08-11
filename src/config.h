@@ -46,6 +46,58 @@ extern void *default_config;
 
 namespace cm_config {
 
+// file grammer:
+// # comment
+// // comment
+// = equals
+// string
+// identifier
+// { left_brace
+// identifier = string
+// } right brace
+// identifier = string
+// \0 eol
+
+enum token_type {
+     input_end, error, comment, string, identifier, left_brace, right_brace, equals
+};
+
+struct token_t {
+    token_type id = input_end;
+    std::string value;
+};
+
+class scanner {
+
+protected:
+    const char *buffer;     // input buffer
+    size_t buf_sz;          // buffer size
+    token_t token;          // current token
+    int index = 0;          // index into input buffer
+
+    int level = 0;
+    std::vector<std::string> sections;
+    
+
+    scanner(): buffer(NULL), index(0), buf_sz(0) { }
+    ~scanner() {}
+
+    bool next_token();
+
+    bool is_ident(char ch) {
+        return (isalnum(ch) || ch == '-' || ch == '_' || ch == '.');
+    }
+
+    void accept(token_type id) { token.id = id; index++; }
+    void skip_whitespace() { while(isspace( buffer[index] )) index++; }
+    void skip_to_end() { while(buffer[index] != '\0') index++; }
+
+    void scan_string(char quote_ch);
+    void scan_identifier();  
+
+    void set_input(const char *p, size_t sz) { index = 0; buffer = p; buf_sz = sz;}
+};
+
 
 class config {
 
@@ -67,9 +119,9 @@ public:
     }
   
     virtual bool check(const std::string &name) = 0; 
-
     virtual void set(const std::string &name, const std::string &value) = 0;
     virtual std::string get(const std::string &name) = 0;
+    virtual std::string get(const std::string &name, const std::string &_default) = 0;
 };
 
 
@@ -82,22 +134,52 @@ public:
     memory_config() { name = "memory-config"; }
     ~memory_config() { }
 
-    bool check(const std::string &name) { return _map.find(name) != _map.end(); }
+    bool check(const std::string &name) {
+        lock();
+        bool b = _map.find(name) != _map.end();
+        unlock();
+        return b;
+    }
 
-    void set(const std::string &name, const std::string &value) { _map[name] = value; }
-    std::string get(const std::string &name) { return _map[name]; }
+    void set(const std::string &name, const std::string &value) {
+        lock();
+        _map[name] = value;
+        unlock();
+    }
+    std::string get(const std::string &name) {
+        lock();
+        std::string &value = _map[name];
+        unlock();
+        return value;
+    }
+
+    std::string get(const std::string &name, const std::string &_default) {
+        std::string value = _default;
+        lock();
+        if(_map.find(name) != _map.end()) {
+           value = _map[name]; 
+        }
+        unlock();
+        return value;
+    }
 
 };
 
-class file_config : protected memory_config, protected std::ofstream {
+class file_config: protected memory_config, protected scanner,  protected std::ofstream {
 
 protected:
     std::string path;
 
 public:
-    file_config() { name = "file-logger"; }
+    file_config() { name = "file-config"; }
     file_config(const std::string _path): path(_path) { }
     ~file_config() { }
+
+    int load();
+    bool parse();
+    bool parse_identifier();
+    bool parse_section();
+    bool parse_assignment(std::string &lvalue);
 
 };
 
@@ -105,6 +187,7 @@ public:
 bool check(const std::string &name);
 void set(const std::string &name, const std::string &value);
 std::string get(const std::string &name);
+std::string get(const std::string &name, const std::string &_default);
 
 
 extern memory_config mem_config;

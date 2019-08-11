@@ -44,9 +44,9 @@ CCFLAGS = $(INCLUDE) -c -m$(WORD_SIZE) $(DEBUG) -fPIC -D__LINUX_BOX__
 LDFLAGS = -pthread -ldl $(DEBUG) 
 CC=g++
 
-CM_OBJS = OBJDIR_$(WORD_SIZE)/util.o \
+CM_OBJS = OBJDIR_$(WORD_SIZE)/config.o \
+    OBJDIR_$(WORD_SIZE)/util.o \
 	OBJDIR_$(WORD_SIZE)/log.o \
-	OBJDIR_$(WORD_SIZE)/config.o \
 	OBJDIR_$(WORD_SIZE)/process_scanner.o \
 	OBJDIR_$(WORD_SIZE)/timewatcher.o
 

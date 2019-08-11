@@ -21,6 +21,7 @@ class configTest : public CPPUNIT_NS::TestFixture {
 
   CPPUNIT_TEST_SUITE( configTest );
     CPPUNIT_TEST( test_memory_config );
+    CPPUNIT_TEST( test_file_config );
   CPPUNIT_TEST_SUITE_END();
 
 public:
@@ -29,6 +30,7 @@ public:
 
 protected:
     void test_memory_config();
+    void test_file_config();
 };
 
 

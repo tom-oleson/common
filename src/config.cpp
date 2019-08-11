@@ -41,4 +41,183 @@ void cm_config::set(const std::string &name, const std::string &value) {
     get_default_config().set(name, value);
 }
 std::string cm_config::get(const std::string &name) { return get_default_config().get(name); }
+std::string cm_config::get(const std::string &name, const std::string &_default) {
+    return get_default_config().check(name) ? get_default_config().get(name) : _default;
+}
 
+// file grammer:
+// # comment
+// // comment
+// identifier
+// { left_brace
+// } right brace
+// = equals
+// string
+// \0 eol
+
+bool cm_config::scanner::next_token() {
+
+    skip_whitespace();
+    token.id = error;
+    token.value.clear();
+
+    if(index >= buf_sz) return false;
+
+    char ch = buffer[index];
+    switch(ch) {
+        case '=':   accept(equals);
+                    break; 
+
+        case '#':   accept(comment);
+                    skip_to_end();
+                    break;
+
+        case '/':   if(buffer[index+1] == '/') {
+                        accept(comment);
+                        skip_to_end();
+                    } /* else error */
+                    break;
+
+        case '{':   accept(left_brace);
+                    break;
+
+        case '}':   accept(right_brace);
+                    break;
+       
+        case '"':   accept(string);
+                    scan_string('"');
+                    break;
+
+        case '\'':  accept(string);
+                    scan_string('\'');
+                    break; 
+
+        case '\0':  token.id = input_end;
+                    break;
+
+        default:    if(is_ident(ch)) {
+                        token.id = identifier;
+                        scan_identifier();
+                    }
+                    break;
+    }
+    return true;
+} 
+
+void cm_config::scanner::scan_string(char quote_ch) { 
+    char ch;
+    while((ch = buffer[index]) && ch != quote_ch) {
+        token.value.append(1,ch);
+        index++;
+    }
+    if(ch == quote_ch) index++;
+}
+
+void cm_config::scanner::scan_identifier() {
+    char ch;
+    while(is_ident(ch = buffer[index])) {
+        token.value.append(1,ch);
+        index++;
+    } 
+}
+
+bool cm_config::file_config::parse_identifier() {
+
+    std::string lvalue = token.value;
+
+    next_token();
+
+    if(token.id == cm_config::left_brace) {
+        sections.push_back(token.value);
+        level++;
+        return parse_section();
+    } 
+    if(token.id == cm_config::equals) {
+        return parse_assignment(lvalue);
+    } 
+    return false;
+}
+
+bool cm_config::file_config::parse_section() {
+
+    return parse();
+}
+
+bool cm_config::file_config::parse_assignment(std::string &lvalue) {
+
+    next_token();
+
+    std::string rvalue = token.value;
+
+    if(token.id == cm_config::identifier) {
+
+    }
+
+    if(token.id == cm_config::string) {
+
+    }
+
+    return false;
+}
+
+bool cm_config::file_config::parse() {
+
+    while(next_token()) {
+
+        if(token.id == cm_config::comment) {
+            continue;
+        }
+
+        if(token.id == cm_config::identifier) {
+            if(!parse_identifier()) {
+                return false;
+            }
+            continue;
+        }
+
+        if(token.id == cm_config::right_brace) {
+            // end of section
+            if(level > 0) level--;
+            continue;
+        }
+
+        if(token.id == cm_config::input_end) {
+            break;
+        }
+
+        if(token.id == cm_config::error) {
+            return false;
+        }
+    }
+
+    return true;      
+}
+
+int cm_config::file_config::load() {
+
+    std::fstream fs;
+    char buf[1024] = {'\0'};
+
+    fs.open(path.c_str(), std::fstream::in);
+    if(!fs.is_open()) {
+        return -1;
+    }
+
+    while( fs.getline(buf, sizeof(buf)) ) {
+
+        set_input(buf, sizeof(buf));
+
+        if(!parse()) {
+            return -2;
+        }
+    }
+
+    if(fs.bad()) {
+        fs.close();
+        return -3;
+    }
+
+    fs.close();
+
+    return 0;
+}
