@@ -37,6 +37,7 @@
 #include <iostream>
 #include <map>
 #include <vector>
+#include <deque>
 
 #include "util.h"
 #include "mutex.h"
@@ -125,7 +126,7 @@ public:
 };
 
 
-class memory_config: protected config, protected cm::mutex {
+class memory_config: public config, protected cm::mutex {
 
 protected:
     std::map<std::string, std::string> _map; 
@@ -165,10 +166,11 @@ public:
 
 };
 
-class file_config: protected memory_config, protected scanner,  protected std::ofstream {
+class file_config: public memory_config, protected scanner,  protected std::ofstream {
 
 protected:
     std::string path;
+    std::deque<std::string> sections;
 
 public:
     file_config() { name = "file-config"; }
@@ -180,6 +182,7 @@ public:
     bool parse_identifier();
     bool parse_section();
     bool parse_assignment(std::string &lvalue);
+    void do_assign(std::string &lvalue, std::string &rvalue);
 
 };
 

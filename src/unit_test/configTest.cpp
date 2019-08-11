@@ -36,6 +36,31 @@ void configTest::test_memory_config() {
 
 void configTest::test_file_config() {
 
-    cm_config::file_config cf("./test.cfg");
+    cm_config::file_config cf("./config_test.cfg");
     cf.load();
+    set_default_config(&cf);
+
+    bool found = cm_config::check("section1.option1");
+    CPPUNIT_ASSERT(found == true);
+
+    std::string option1 = cm_config::get("section1.option1");
+    CPPUNIT_ASSERT(option1 == "value1");
+
+    std::string option2 = cm_config::get("section2.option2");
+    CPPUNIT_ASSERT(option2 == "value2");
+
+    std::string option3 = cm_config::get("section3.option3");
+    CPPUNIT_ASSERT(option3 == "host.name");
+
+    std::string option4 = cm_config::get("section4.option4");
+    CPPUNIT_ASSERT(option4 == "12345678");
+
+    std::string option = cm_config::get("option");
+    CPPUNIT_ASSERT(option == "base level value");
+
+    std::string wild_guess = cm_config::get("never_find", "not there");
+    CPPUNIT_ASSERT(wild_guess == "not there");
+
+    std::string optionA = cm_config::get("section4.sectionA.optionA");
+    CPPUNIT_ASSERT(optionA == "123");
 }

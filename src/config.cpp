@@ -127,14 +127,15 @@ bool cm_config::file_config::parse_identifier() {
 
     next_token();
 
-    if(token.id == cm_config::left_brace) {
-        sections.push_back(token.value);
+    if(token.id == cm_config::left_brace || token.id == cm_config::input_end) {
+        sections.push_back(lvalue);
         level++;
         return parse_section();
     } 
     if(token.id == cm_config::equals) {
         return parse_assignment(lvalue);
     } 
+
     return false;
 }
 
@@ -149,15 +150,30 @@ bool cm_config::file_config::parse_assignment(std::string &lvalue) {
 
     std::string rvalue = token.value;
 
-    if(token.id == cm_config::identifier) {
-
-    }
-
-    if(token.id == cm_config::string) {
-
+    if(token.id == cm_config::identifier || token.id == cm_config::string ) {
+        do_assign(lvalue, rvalue);
+        return true;
     }
 
     return false;
+}
+
+void cm_config::file_config::do_assign(std::string &lvalue, std::string &rvalue) {
+
+    if(!sections.empty()) {
+
+        std::string prefix;
+        std::deque<std::string>::iterator p = sections.begin();
+        while(p != sections.end()) {
+            prefix += (*p) + ".";
+            p++;
+        }
+        set(prefix + lvalue, rvalue);
+    }
+    else {
+        set(lvalue, rvalue);
+    }
+
 }
 
 bool cm_config::file_config::parse() {
@@ -177,6 +193,7 @@ bool cm_config::file_config::parse() {
 
         if(token.id == cm_config::right_brace) {
             // end of section
+            sections.pop_back();
             if(level > 0) level--;
             continue;
         }
