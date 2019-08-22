@@ -35,7 +35,7 @@
 
 #include "mutex.h"
 
-namespace cm {
+namespace cm_store {
 
 
 template<class keyT, class valueT>
@@ -96,9 +96,10 @@ public:
 
 };
 
+
 extern info_store<std::string,std::string> mem_store;
 
-} // namespace cm
+} // namespace cm_store
 
 extern void *default_store;
 
