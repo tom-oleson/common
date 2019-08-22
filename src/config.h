@@ -35,7 +35,7 @@
 #include <fstream>
 #include <sstream>
 #include <iostream>
-#include <map>
+#include <unordered_map>
 #include <vector>
 #include <deque>
 
@@ -129,7 +129,7 @@ public:
 class memory_config: public config, protected cm::mutex {
 
 protected:
-    std::map<std::string, std::string> _map; 
+    std::unordered_map<std::string, std::string> _map; 
 
 public:
     memory_config() { name = "memory-config"; }
