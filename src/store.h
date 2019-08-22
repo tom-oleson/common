@@ -30,38 +30,82 @@
 #ifndef __STORE_H
 #define __STORE_H
 
-#include <exception>
 #include <string>
-#include <map>
-#include <vector>
-#include <deque>
+#include <unordered_map>
 
-#include "util.h"
 #include "mutex.h"
-
 
 namespace cm {
 
-template<class keyT, class valueT>
-struct info_pair {
-    keyT key;                   // key object
-    valueT value;               // value object
-};
 
 template<class keyT, class valueT>
-struct info_store {
-    bool check(keyT);
-    bool add(keyT key, valueT value);
-    valueT find(keyT key);
-    bool set(keyT key, valueT value);
-    valueT swap(keyT key, valueT value);
-    bool remove(keyT key);
+class info_store: protected cm::mutex {
+
+protected:
+    // unordered map for fast access using buckets
+    std::unordered_map<keyT,valueT> _map;
+
+public:
+
+    bool check(const keyT &name) {
+        lock();
+        bool b = _map.find(name) != _map.end();
+        unlock();
+        return b;
+    }
+
+    bool set(const keyT &name, const valueT &value) {
+        lock();
+        _map[name] = value;
+        unlock();
+    }
+
+    valueT find(const keyT &name) {
+        valueT value;
+        lock();
+        if( _map.find(name) != _map.end() ) {
+            value = _map[name];
+        }
+        unlock();
+        return value;
+    }
+
+    valueT get(const keyT &name, const valueT &_default) {
+        valueT value = _default;
+        lock();
+        if(_map.find(name) != _map.end()) {
+           value = _map[name]; 
+        }
+        unlock();
+        return value;
+    }
+    
+    size_t remove(const keyT &name) {
+        lock();
+        size_t num_erased = _map.erase(name);
+        unlock();
+        return num_erased;   
+    }
+
+    size_t size() {
+        lock();
+        size_t size = _map.size();
+        unlock();
+        return size;
+    }
+
 };
 
-
+extern info_store<std::string,std::string> mem_store;
 
 } // namespace cm
 
+extern void *default_store;
+
+inline void *get_default_store() { return default_store; }
+inline void set_default_store(void *_store) {
+    default_store = _store;
+}
 
 #endif	// __STORE_H
 

@@ -29,4 +29,7 @@
 
 #include "store.h"
 
+// globals
+cm::info_store<std::string,std::string> cm::mem_store;
+void *default_store = &cm::mem_store;
 
