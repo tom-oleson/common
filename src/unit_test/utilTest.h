@@ -21,6 +21,7 @@ using namespace std;
 class utilTest : public CPPUNIT_NS::TestFixture {
 
   CPPUNIT_TEST_SUITE( utilTest );
+    CPPUNIT_TEST( test_format_str );
     CPPUNIT_TEST( test_format );
     CPPUNIT_TEST( test_bin2hex );
     CPPUNIT_TEST( test_format_local_timestamp );
@@ -43,6 +44,7 @@ public:
   //void tearDown();
 
 protected:
+    void test_format_str();
     void test_format();
     void test_bin2hex();
     void test_format_local_timestamp();

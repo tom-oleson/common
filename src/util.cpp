@@ -29,11 +29,24 @@
 
 #include "util.h"
 
-#define _SPRINTF_BUF_SZ 4096
+#define _SPRINTF_BUF_SZ 1024
 
 //-------------------------------------------------------------------------
-// printf style string formatter 
+// printf style string formatter(s) 
 //-------------------------------------------------------------------------
+std::string cm_util::format_str(const char *fmt, ...) {
+    char c_format_buf[_SPRINTF_BUF_SZ];
+    memset(c_format_buf, 0, sizeof(c_format_buf));
+
+    va_list args;
+    va_start(args, fmt);
+    int sz = vsnprintf(c_format_buf,sizeof(c_format_buf),fmt,args);
+    va_end(args);
+
+    // return value
+    return std::string(c_format_buf,sz);
+}
+
 std::string &cm_util::format(std::string& s, const char *fmt, ...) {
     char c_format_buf[_SPRINTF_BUF_SZ];
     memset(c_format_buf, 0, sizeof(c_format_buf));
@@ -43,6 +56,7 @@ std::string &cm_util::format(std::string& s, const char *fmt, ...) {
     int sz = vsnprintf(c_format_buf,sizeof(c_format_buf),fmt,args);
     va_end(args);
 
+    // return reference
     return s.assign(c_format_buf,sz);
 }
 

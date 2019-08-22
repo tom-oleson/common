@@ -56,6 +56,7 @@
 
 namespace cm_util {
 
+std::string format_str(const char *fmt, ...);
 std::string &format(std::string& s, const char *fmt, ...);
 size_t bin2hex(const unsigned char *bin, size_t bin_len, char *hex, size_t hex_len);
 std::string format_local_timestamp(time_t seconds, time_t millis, std::string &tz);

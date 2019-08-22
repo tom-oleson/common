@@ -17,6 +17,11 @@ CPPUNIT_TEST_SUITE_REGISTRATION( utilTest );
 //void utilTest::setUp() { }
 //void utilTest::tearDown() { }
 
+void utilTest::test_format_str() {
+
+    std::string s = cm_util::format_str("%02d %02d %02d %03d %03d", 5, 4, 3, 2, 1);
+    CPPUNIT_ASSERT( s == "05 04 03 002 001");
+}
 
 void utilTest::test_format() {
 

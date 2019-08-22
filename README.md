@@ -16,3 +16,11 @@ Debian/Ubuntu:
 $ sudo apt-get install libcppunit-doc libcppunit-dev
 </pre>
 
+### Install libxml2-dev for XML parsing
+
+Debian/Ubuntu:
+<pre>
+$ sudo apt-get install libxml2-deV
+
+</pre>
+
