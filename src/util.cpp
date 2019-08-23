@@ -64,7 +64,7 @@ std::string &cm_util::format(std::string& s, const char *fmt, ...) {
 // Convert binary bytes to hex-ASCII.
 //-------------------------------------------------------------------------
 
-size_t cm_util::bin2hex(const unsigned char *bin, size_t bin_len, char *hex, size_t hex_len) {
+size_t cm_util::bin2hex(const unsigned char *bin, size_t bin_len, char *hex, size_t hex_len, bool lowercase) {
  
 	size_t out_size = bin_len * 2 + 1;
 
@@ -76,7 +76,9 @@ size_t cm_util::bin2hex(const unsigned char *bin, size_t bin_len, char *hex, siz
         memset(hex, 0, hex_len);
 
         size_t j = 0;
-        const char *digits = "0123456789ABCDEF";
+        const char *upper = "0123456789ABCDEF";
+        const char *lower = "0123456789abcdef";
+        const char *digits = lowercase ? lower : upper;
         for (size_t i = 0; i < bin_len; i++) {
                 j = i * 2;
                 hex[j]   = digits[bin[i] >> 4];

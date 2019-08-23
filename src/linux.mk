@@ -45,6 +45,7 @@ LDFLAGS = -pthread -ldl $(DEBUG)
 CC=g++
 
 CM_OBJS = OBJDIR_$(WORD_SIZE)/config.o \
+        OBJDIR_$(WORD_SIZE)/queue.o \
 	OBJDIR_$(WORD_SIZE)/store.o \
 	OBJDIR_$(WORD_SIZE)/util.o \
 	OBJDIR_$(WORD_SIZE)/log.o \

@@ -44,9 +44,11 @@ void utilTest::test_bin2hex() {
 
 	// output string is the expected hex-ASCII value
 	CPPUNIT_ASSERT( string(out) == "DEADBEEFDEADBEEF" );
-	
-}
 
+        // test lowercase output
+        len = cm_util::bin2hex((const unsigned char *) bin, 8, out, sizeof(out), true);
+        CPPUNIT_ASSERT( string(out) == "deadbeefdeadbeef" );	
+}
 
 void utilTest::test_format_local_timestamp() {
 
