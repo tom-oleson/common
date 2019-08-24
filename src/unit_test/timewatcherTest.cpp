@@ -57,13 +57,21 @@ void timewatcherTest::test_total_millis() {
 void timewatcherTest::test_duration() {
 
     timespec delay = {3, 500000000};   // 3.5 seconds
+    timespec remainder = {0,0};
 
     timespec start = cm_time::clock_time();
-    nanosleep(&delay, NULL);
+    
+    while(nanosleep(&delay, &remainder) == -1) {
+        delay = remainder;
+        remainder = {0,0};
+    }
     timespec finish = cm_time::clock_time();
  
     double diff = cm_time::duration(start, finish);
 
-    CPPUNIT_ASSERT( diff > 3.5f && diff < 3.6f );
+    // diff must be within a 10th of a second accurate since
+    // timewatcher caputures the clock 10x per second
+    CPPUNIT_ASSERT( diff >= 3.4f);
+    CPPUNIT_ASSERT( diff <= 3.6f);
 }
 

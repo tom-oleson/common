@@ -62,8 +62,7 @@ struct ps_process {
 	}
 
 	const std::string to_string() {
-		std::string ss;
-		return cm_util::format(ss, "ps_process: pid=[%d], name=[%s]", pid, name.c_str());
+		return cm_util::format("ps_process: pid=[%d], name=[%s]", pid, name.c_str());
 	}
 
 	void dump() {

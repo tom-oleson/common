@@ -34,8 +34,6 @@
 
 void memory_config_example() {
 
-    std::string s;
-
     cm_config::set("host", cm_util::get_hostname());
 
     std::string host = cm_config::get("host");
@@ -43,19 +41,18 @@ void memory_config_example() {
 
     bool found = cm_config::check("host");
     if(found) {
-        cm_log::info(cm_util::format(s, "host: [%s]", host.c_str()));
+        cm_log::info(cm_util::format("host: [%s]", host.c_str()));
     }
 
     // default value when key is not present
     std::string some_option = cm_config::get("some_option", "none" );
-    cm_log::info(cm_util::format(s, "some_option: [%s]", some_option.c_str())); 
+    cm_log::info(cm_util::format("some_option: [%s]", some_option.c_str())); 
 
 }
 
 
 void file_config_example() {
 
-    std::string s;
     std::string path = "./example_config.cfg";
 
     cm_config::file_config config_file(path);
@@ -71,7 +68,7 @@ void file_config_example() {
     // access nested sub-section option
     std::string subsection_option = cm_config::get("section.subsection.option", "none");
    
-    cm_log::info(cm_util::format(s, "1: [%s], 2: [%s], 3: [%s]", 
+    cm_log::info(cm_util::format("1: [%s], 2: [%s], 3: [%s]", 
         option.c_str(), section_option.c_str(), subsection_option.c_str())); 
 
 }

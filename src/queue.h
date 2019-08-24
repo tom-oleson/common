@@ -37,9 +37,14 @@
 
 namespace cm_queue {
 
+// Implements a double sided FIFO queue that decouples input from output.
+// In other words, publisher threads will not continuously contend with locks
+// from consumer threads. The input deque can fill while the output deque is
+// being consumed. When the output deque is empty, the input deque will be
+// swaped to the output side.
 
 template<class valueT>
-class info_queue {
+class double_queue {
 
 protected:
     std::deque<valueT> in;
@@ -50,11 +55,48 @@ protected:
 
 public:
 
+    bool empty() const { return in.empty() && out.empty(); }
+    size_t size() const { return (size_t) in.size() + (size_t) out.size(); }
 
+    void push_back(const valueT &value) {
+        in_mutex.lock();
+        in.push_back(value);
+        in_mutex.unlock();
+    }
+
+    void push_back(std::deque<valueT> &q) {
+        in_mutex.lock();
+        for(auto value : q) {
+            in.push_back(value);
+        }               
+        in_mutex.unlock();
+    }
+
+    valueT pop_front() {
+        out_mutex.lock();
+        if(out.empty() && !in.empty()) _swap();
+        valueT value = out.front();
+        out.pop_front();
+        out_mutex.unlock();
+        return value;
+    }
+
+    void swap_out(std::deque<valueT> &q) {
+        out_mutex.lock();
+        if(out.empty() && !in.empty()) _swap();
+        out.swap(q);
+        out_mutex.unlock();
+    }
+
+    void _swap() {
+        in_mutex.lock();
+        in.swap(out);
+        in_mutex.unlock();
+    }
 };
 
 
-extern info_queue<std::string> mem_queue;
+extern double_queue<std::string> mem_queue;
 
 } // namespace cm_queue
 

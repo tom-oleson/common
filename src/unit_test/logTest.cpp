@@ -151,11 +151,10 @@ void logTest::test_rotate() {
     set_default_logger(&log);
 
     int count = 1;
-    std::string s;
     timespec delay = {1,0};   // 1 second
 
     while(count <= 18) {
-        cm_log::info(cm_util::format(s, "Message #%d in the log file.", count));
+        cm_log::info(cm_util::format("Message #%d in the log file.", count));
         count++;
         nanosleep(&delay, NULL);
     }

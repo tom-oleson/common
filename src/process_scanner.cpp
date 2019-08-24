@@ -74,20 +74,19 @@ int cm_process::process_scanner::scan_name(pid_t pid, std::string &_name) {
 	  std::string pathname;
 	  std::fstream fs;
 	  char pr_fname[256] = {'\0'};
-	  std::string s;
 
-	  cm_util::format(pathname, "/proc/%d/status", (int)pid);
+	  cm_util::format_string(pathname, "/proc/%d/status", (int)pid);
 
 	  fs.open(pathname.c_str(), std::fstream::in);
 	  if (!fs.is_open()) {
-	        cm_log::error( cm_util::format(s,"%s open failed: %s", pathname.c_str(), strerror(errno)));
+	        cm_log::error( cm_util::format("%s open failed: %s", pathname.c_str(), strerror(errno)));
 		return -1;
 	  }
 
 	  fs.getline(pr_fname, sizeof(pr_fname));
 
 	  if (fs.bad()) {
-	        cm_log::error( cm_util::format(s,"%s getline failed: %s", pathname.c_str(), strerror(errno)));
+	        cm_log::error( cm_util::format("%s getline failed: %s", pathname.c_str(), strerror(errno)));
 		fs.close();
 	    	return -2;
 	  }
@@ -108,17 +107,16 @@ int cm_process::process_scanner::scan_name(pid_t pid, std::string &_name) {
   std::string pathname;
   int fd;
   psinfo_t  psinfo;
-  std::string s;
 
   cm_util::format(pathname, "/proc/%d/psinfo", (int)pid);
 
   if ((fd = open(pathname.c_str(), O_RDONLY)) < 0) {
-        cm_log::error( cm_util::format(s,"%s open failed: %s", pathname.c_str(), strerror(errno)));
+        cm_log::error( cm_util::format("%s open failed: %s", pathname.c_str(), strerror(errno)));
         return -1;
   }
 
   if (read(fd, &psinfo, sizeof (psinfo)) != sizeof (psinfo)) {
-        cm_log::error(  cm_util::format(s, "%s read failed", pathname.c_str(), strerror(errno)));
+        cm_log::error(  cm_util::format("%s read failed", pathname.c_str(), strerror(errno)));
         (void) close(fd);
         return -2;
   }
@@ -134,14 +132,12 @@ int cm_process::process_scanner::scan_name(pid_t pid, std::string &_name) {
 
 int cm_process::process_scanner::scan_one(pid_t pid, std::string &_name) {
 
-  std::string s;
-
   int result = scan_name(pid, _name);
   if(result < 0) return result;
 
-  CM_LOG_TRACE { cm_log::trace( cm_util::format(s, "process_name=[%s]", _name.c_str())); }
+  CM_LOG_TRACE { cm_log::trace( cm_util::format("process_name=[%s]", _name.c_str())); }
   if(0 == strncmp(name.c_str(), _name.c_str(), name.length())) {
-  cm_log::info( cm_util::format(s, "found: %s, pid=[%d]", _name.c_str(), (int)pid));
+  cm_log::info( cm_util::format("found: %s, pid=[%d]", _name.c_str(), (int)pid));
 	process_id = pid;
 	return 1;
   }
@@ -153,20 +149,19 @@ int cm_process::process_scanner::scan_all(const std::string &_name) {
   pid_t pid = 1;
   DIR *dp;
   struct dirent *d;
-  std::string s;
 
   if (NULL == (dp = opendir("/proc"))) {
-    cm_log::error( cm_util::format(s, "/proc opendir failed: %s", strerror(errno)));
+    cm_log::error( cm_util::format("/proc opendir failed: %s", strerror(errno)));
 	return -2;
   }
 
   int match = 0;
   while (NULL != (d = readdir(dp))) {
-    CM_LOG_TRACE { cm_log::trace( cm_util::format(s, "dir=[%s]", d->d_name)); }
+    CM_LOG_TRACE { cm_log::trace( cm_util::format("dir=[%s]", d->d_name)); }
 	pid = atoi(d->d_name);
 
 	if(pid > 0) {
-	 CM_LOG_TRACE { cm_log::trace( cm_util::format(s, "pid=[%d]", (int)pid)); }
+	 CM_LOG_TRACE { cm_log::trace( cm_util::format("pid=[%d]", (int)pid)); }
 
 		std::string find_name(_name);
 		//match = scan_one(pid, _find_name);
@@ -185,7 +180,7 @@ int cm_process::process_scanner::scan_all(const std::string &_name) {
   }
 
     if(-1 == closedir(dp)) {
-        cm_log::error( cm_util::format(s, "/proc closedir failed: %s", strerror(errno)));
+        cm_log::error( cm_util::format("/proc closedir failed: %s", strerror(errno)));
     }
 
   return match;

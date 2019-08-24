@@ -53,22 +53,22 @@ void process_scannerTest::tearDown() {
 }
 
 void process_scannerTest::test_constructors() {
-	std::string s;
+
 	std::string name = "run_tests";
 
 	pid_t pid = getpid();
-	cm_log::info(cm_util::format(s, "pid = [%d]", pid));
+	cm_log::info(cm_util::format("pid = [%d]", pid));
 
 	cm_process::process_scanner pid_ps(pid);
-	cm_log::info(cm_util::format(s, "pid_ps.name = [%s]", pid_ps.get_name().c_str()));
-	cm_log::info(cm_util::format(s, "pid_ps.pid = [%d]", pid_ps.get_process_id()));
+	cm_log::info(cm_util::format("pid_ps.name = [%s]", pid_ps.get_name().c_str()));
+	cm_log::info(cm_util::format("pid_ps.pid = [%d]", pid_ps.get_process_id()));
 
 	CPPUNIT_ASSERT( pid_ps.get_name() == name );
 	CPPUNIT_ASSERT( pid_ps.get_process_id() == pid);
 
 	cm_process::process_scanner name_ps(name);
-	cm_log::info(cm_util::format(s, "name_ps.name = [%s]", name_ps.get_name().c_str()));
-	cm_log::info(cm_util::format(s, "name_ps.pid = [%d]", name_ps.get_process_id()));
+	cm_log::info(cm_util::format("name_ps.name = [%s]", name_ps.get_name().c_str()));
+	cm_log::info(cm_util::format("name_ps.pid = [%d]", name_ps.get_process_id()));
 
 	CPPUNIT_ASSERT( name_ps.get_name() == name);  
 	CPPUNIT_ASSERT( name_ps.get_process_id() == pid);
@@ -76,12 +76,11 @@ void process_scannerTest::test_constructors() {
 }
 
 void process_scannerTest::test_multi() {
-    std::string s;
     std::string name = "watchdog";
 
     cm_process::process_scanner name_ps(name);
-    cm_log::info(cm_util::format(s, "name_ps.name = [%s]", name_ps.get_name().c_str()));
-    cm_log::info(cm_util::format(s, "name_ps.pid = [%d]", name_ps.get_process_id()));
+    cm_log::info(cm_util::format("name_ps.name = [%s]", name_ps.get_name().c_str()));
+    cm_log::info(cm_util::format("name_ps.pid = [%d]", name_ps.get_process_id()));
 
     CPPUNIT_ASSERT( name_ps.get_name() == name);	//
     CPPUNIT_ASSERT( name_ps.get_process_id() > 0);

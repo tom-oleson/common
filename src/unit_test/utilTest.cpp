@@ -17,16 +17,16 @@ CPPUNIT_TEST_SUITE_REGISTRATION( utilTest );
 //void utilTest::setUp() { }
 //void utilTest::tearDown() { }
 
-void utilTest::test_format_str() {
+void utilTest::test_format() {
 
-    std::string s = cm_util::format_str("%02d %02d %02d %03d %03d", 5, 4, 3, 2, 1);
+    std::string s = cm_util::format("%02d %02d %02d %03d %03d", 5, 4, 3, 2, 1);
     CPPUNIT_ASSERT( s == "05 04 03 002 001");
 }
 
-void utilTest::test_format() {
+void utilTest::test_format_str() {
 
     std::string s;
-    cm_util::format(s, "%02d %02d %02d %03d %03d", 5, 4, 3, 2, 1);
+    cm_util::format_string(s,"%02d %02d %02d %03d %03d", 5, 4, 3, 2, 1);
     CPPUNIT_ASSERT( s == "05 04 03 002 001");
 }
 
@@ -178,14 +178,13 @@ void utilTest::test_dir_scan() {
     // note: use of raw string literal to avoid need escape \ in regex
     cm_util::dir_scan("./log", R"(.+\.log$)", matches);
 
-    std::string s;
     std::vector<std::string>::iterator p = matches.begin();
     while(p != matches.end()) {
         std::string name = *p;
-        cm_log::info(cm_util::format(s, "%s", name.c_str() ));
+        cm_log::info(cm_util::format("%s", name.c_str() ));
         p++;
     }
-    cm_log::info(cm_util::format(s, "matched: %d", matches.size()));
+    cm_log::info(cm_util::format("matched: %d", matches.size()));
 
     CPPUNIT_ASSERT( matches.size() > 0 );
 }

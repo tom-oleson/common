@@ -38,7 +38,6 @@ void format_example() {
     get_default_logger().set_message_format("${date_time}${millis} [${lvl}]: ${msg}");
 
     timespec delay = {1, 500000000};   // 1.5 seconds
-    std::string s;
 
     timespec start, last, now;
     clock_gettime(CLOCK_REALTIME, &start);
@@ -54,7 +53,7 @@ void format_example() {
         double delta = total - ((double) n * 1.5);
         last = now;
 
-        cm_log::info(cm_util::format(s, "pass: %7.4lf secs   total: %7.4lf secs   delta: %7.4lf secs", diff, total, delta));
+        cm_log::info(cm_util::format("pass: %7.4lf secs   total: %7.4lf secs   delta: %7.4lf secs", diff, total, delta));
 
     }
 }

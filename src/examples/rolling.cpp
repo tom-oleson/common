@@ -41,11 +41,10 @@ int main( int argc, char* argv[] ) {
     // set it as the default logger to be used by package macros
     set_default_logger(&log);
 
-    std::string s;
     int count = 1;
 
     while(count <= 1200) {
-        cm_log::info(cm_util::format(s, "Message #%d for the log file.", count));
+        cm_log::info(cm_util::format("Message #%d for the log file.", count));
         sleep(1);
         count++;
     }

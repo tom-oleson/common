@@ -30,6 +30,6 @@
 #include "queue.h"
 
 // globals
-cm_queue::info_queue<std::string> cm_queue::mem_queue;
+cm_queue::double_queue<std::string> cm_queue::mem_queue;
 void *default_queue = &cm_queue::mem_queue;
 
