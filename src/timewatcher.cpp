@@ -33,7 +33,7 @@ extern "C" {
 // read realtime clock 10x per second
 void *timewatcher::handler(void *p) {
         timewatcher *tw = (timewatcher*)p;
-        timespec ts = {0, 100000000};
+        timespec ts = {0, 100000000};  // 100ms
         while (true) {
         	clock_gettime(CLOCK_REALTIME, &tw->now);
 		nanosleep(&ts, NULL);
