@@ -17,20 +17,17 @@ CPPUNIT_TEST_SUITE_REGISTRATION( threadTest );
 //void threadTest::setUp() { }
 //void threadTest::tearDown() { }
 
-class unit_thread: public cm_thread::basic_thread {
+struct unit_thread: public cm_thread::basic_thread {
 
     int count = 0;
 
     bool process() {
 
-        // if count reached, end the thread (return false)
-        if(count++ > 100)
-            return false;
-
-        cm_log::info(cm_util::format("count = [%d]", count));
-        
-        // signal continue (return true)
-        return true;
+        for(int x = 0; x < 10000; x++) {
+            if(++count % 10000 == 0)
+                cm_log::info(cm_util::format("count = [%d]", count));
+        } 
+        return count < 1000000;
     }  
 };
 
@@ -48,6 +45,7 @@ void threadTest::test_thread() {
 
     sleep(2);
 
+    CPPUNIT_ASSERT( thread.count == 1000000 );
     CPPUNIT_ASSERT( thread.is_done() == true );
 
 }
