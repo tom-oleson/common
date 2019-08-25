@@ -30,25 +30,54 @@
 #include "thread.h"
 
 extern "C" {
-void *cm_thread::basic_thread::handler(void *p) {
-    cm_thread::basic_thread *tp = (cm_thread::basic_thread*)tp;
-    while (tp->process()) {
-        nanosleep(&tp->delay, NULL);
+
+void cm_thread::basic_thread::cleanup_handler(void *p) {
+    cm_thread::basic_thread *tp = (cm_thread::basic_thread*)p;
+    tp->cleanup();
+    tp->done = true;
+}
+
+void *cm_thread::basic_thread::run_handler(void *p) {
+    cm_thread::basic_thread *tp = (cm_thread::basic_thread*)p;
+
+    pthread_cleanup_push(cleanup_handler, p);
+
+    if(tp->setup()) {
+        tp->started = true;
+        while(tp->process()) {
+            nanosleep(&tp->delay, NULL);    /* cancellation point */
+        }
     }
+
+    pthread_cleanup_pop(1); /* pop and call cleanup_handler */
     return NULL;
-}}
+}
+
+}
 
 
-cm_thread::basic_thread::basic_thread() {
-    pthread_create(&tid, NULL, &handler, (void*) this);
+cm_thread::basic_thread::basic_thread(bool auto_start) {
+    if(auto_start) start();
 }
 
 cm_thread::basic_thread::~basic_thread() {
-    pthread_cancel(tid);	/* request thread cancel */
-    pthread_join(tid, NULL);/* wait here until its done */
+    if(!is_done()) stop();
 }
 
-bool cm_thread::basic_thread::process() {
-    return true;
+void cm_thread::basic_thread::start() {
+    pthread_create(&tid, NULL, &run_handler, (void*) this);
 }
+
+void cm_thread::basic_thread::stop() {
+    if(pthread_self() == tid) {
+        // self terminating
+        pthread_exit(NULL);
+    }
+    else {
+        // being terminated by another thread
+        pthread_cancel(tid);        /* request thread cancel */
+        pthread_join(tid, NULL);/* wait here until its done */
+    }
+}
+
 

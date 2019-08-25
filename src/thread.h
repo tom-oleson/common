@@ -45,16 +45,32 @@ class basic_thread {
 protected:
 
     pthread_t tid;
-    timespec delay = {0, 10000000};
+    timespec delay = {0, 1000000}; /* 1ms delay between process calls */
+    bool started = false;
+    bool done = false;
 
+    static void cleanup_handler(void *);    
+    static void *run_handler(void*);
 
-    static void *handler(void*); /* thread handler */ 
+    void set_delay(timespec &ts) { delay = ts; }
+    timespec get_delay() { return delay; }
+
+    virtual bool setup() { return true; }
+    virtual void cleanup() { }
+    virtual bool process() {  return true; }
 
 public:
-    basic_thread();
+    basic_thread(bool auto_start = false);
     ~basic_thread();
 
-    virtual bool process();
+    bool is_started() { return started; }
+    bool is_done() { return done; }
+
+    // starts thread if not already started
+    void start();
+
+    // stops running thread
+    void stop();
 
 };
 
