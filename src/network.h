@@ -27,86 +27,32 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef __STORE_H
-#define __STORE_H
+#ifndef __NETWORK_H
+#define __NETWORK_H
 
-#include <string>
-#include <unordered_map>
+#include <sys/types.h>
+#include <sys/socket.h>
+#include <unistd.h>
+#include <netdb.h>
+#include <arpa/inet.h>
 
-#include "mutex.h"
+#include <vector>
 
-namespace cm_store {
+#include "util.h"
+#include "thread.h"
+#include "log.h"
 
+#define CM_NET_OK 0
+#define CM_NET_ERR -1
 
-template<class keyT, class valueT>
-class info_store: protected cm::mutex {
+namespace cm_net {
 
-protected:
-    // unordered map for fast access using buckets
-    std::unordered_map<keyT,valueT> _map;
+int create_socket();
+int server_socket(int host_port);
+void close_socket(int fd);
+int accept_connection(int host_socket, sockaddr *client_hint, socklen_t *client_sz);
 
-public:
-
-    bool check(const keyT &name) {
-        lock();
-        bool b = _map.find(name) != _map.end();
-        unlock();
-        return b;
-    }
-
-    bool set(const keyT &name, const valueT &value) {
-        lock();
-        _map[name] = value;
-        unlock();
-    }
-
-    valueT find(const keyT &name) {
-        valueT value;
-        lock();
-        if( _map.find(name) != _map.end() ) {
-            value = _map[name];
-        }
-        unlock();
-        return value;
-    }
-
-    valueT get(const keyT &name, const valueT &_default) {
-        valueT value = _default;
-        lock();
-        if(_map.find(name) != _map.end()) {
-           value = _map[name]; 
-        }
-        unlock();
-        return value;
-    }
-    
-    size_t remove(const keyT &name) {
-        lock();
-        size_t num_erased = _map.erase(name);
-        unlock();
-        return num_erased;   
-    }
-
-    size_t size() {
-        lock();
-        size_t size = _map.size();
-        unlock();
-        return size;
-    }
-
-};
+} // namespace cm_net
 
 
-extern info_store<std::string,std::string> mem_store;
-
-} // namespace cm_store
-
-extern void *default_store;
-
-inline void *get_default_store() { return default_store; }
-inline void set_default_store(void *_store) {
-    default_store = _store;
-}
-
-#endif	// __STORE_H
-
+#endif

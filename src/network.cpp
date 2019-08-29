@@ -27,86 +27,63 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef __STORE_H
-#define __STORE_H
-
-#include <string>
-#include <unordered_map>
-
-#include "mutex.h"
-
-namespace cm_store {
+#include "network.h"
 
 
-template<class keyT, class valueT>
-class info_store: protected cm::mutex {
+int cm_net::create_socket() {
 
-protected:
-    // unordered map for fast access using buckets
-    std::unordered_map<keyT,valueT> _map;
-
-public:
-
-    bool check(const keyT &name) {
-        lock();
-        bool b = _map.find(name) != _map.end();
-        unlock();
-        return b;
-    }
-
-    bool set(const keyT &name, const valueT &value) {
-        lock();
-        _map[name] = value;
-        unlock();
-    }
-
-    valueT find(const keyT &name) {
-        valueT value;
-        lock();
-        if( _map.find(name) != _map.end() ) {
-            value = _map[name];
-        }
-        unlock();
-        return value;
-    }
-
-    valueT get(const keyT &name, const valueT &_default) {
-        valueT value = _default;
-        lock();
-        if(_map.find(name) != _map.end()) {
-           value = _map[name]; 
-        }
-        unlock();
-        return value;
-    }
-    
-    size_t remove(const keyT &name) {
-        lock();
-        size_t num_erased = _map.erase(name);
-        unlock();
-        return num_erased;   
-    }
-
-    size_t size() {
-        lock();
-        size_t size = _map.size();
-        unlock();
-        return size;
-    }
-
-};
-
-
-extern info_store<std::string,std::string> mem_store;
-
-} // namespace cm_store
-
-extern void *default_store;
-
-inline void *get_default_store() { return default_store; }
-inline void set_default_store(void *_store) {
-    default_store = _store;
+    int fd = socket(AF_INET, SOCK_STREAM, 0 /*protocol*/);
+    return fd;
 }
 
-#endif	// __STORE_H
+int cm_net::server_socket(int host_port) {
+
+    // create host socket
+    
+    int host_socket = cm_net::create_socket();
+    if(-1 == host_socket) {
+        cm_log::error("failed to create socket");
+        return CM_NET_ERR;
+    }
+
+    // bind socket to IP/port
+
+    sockaddr_in server_hint;
+    server_hint.sin_family = AF_INET;
+    server_hint.sin_port = htons(host_port);
+    server_hint.sin_addr.s_addr = htonl(INADDR_ANY);
+
+    if(-1 == bind(host_socket, (sockaddr *) &server_hint, sizeof(server_hint))) {
+        cm_log::error("failed to bind to IP/port");
+        return CM_NET_ERR;
+    }
+
+    // mark socket for listening
+
+   if(-1 == listen(host_socket, SOMAXCONN)) {
+        cm_log::error("listen call failed");
+        close(host_socket);
+        return CM_NET_ERR;
+   } 
+
+    return host_socket;
+
+}
+
+void cm_net::close_socket(int fd) {
+
+    if(fd != -1) close(fd);
+}
+
+int cm_net::accept_connection(int host_socket, sockaddr *client_hint, socklen_t *client_sz) {
+
+    int fd = -1;
+
+    while(-1 == (fd = ::accept(host_socket, client_hint, client_sz))) {
+        if(errno != EINTR) return CM_NET_ERR;
+        /* blocking accept interrupted, loop for retry */
+    }
+
+    return fd;
+}
 
