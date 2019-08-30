@@ -29,7 +29,6 @@
 
 #include "network.h"
 
-
 int cm_net::create_socket() {
 
     int fd = socket(AF_INET, SOCK_STREAM, 0 /*protocol*/);
@@ -42,7 +41,7 @@ int cm_net::server_socket(int host_port) {
     
     int host_socket = cm_net::create_socket();
     if(-1 == host_socket) {
-        cm_log::error("failed to create socket");
+        cm_net::err("failed to create socket", errno);
         return CM_NET_ERR;
     }
 
@@ -56,20 +55,19 @@ int cm_net::server_socket(int host_port) {
     server_hint.sin_addr.s_addr = htonl(INADDR_ANY);
 
     if(-1 == bind(host_socket, (sockaddr *) &server_hint, sizeof(server_hint))) {
-        cm_log::error("failed to bind to IP/port");
+        cm_net::err("error on bind to IP/port", errno);
         return CM_NET_ERR;
     }
 
     // mark socket for listening
 
    if(-1 == listen(host_socket, SOMAXCONN)) {
-        cm_log::error("listen call failed");
-        close(host_socket);
+        cm_net::close_socket(host_socket);
+        cm_net::err("error on listen", errno);
         return CM_NET_ERR;
    } 
 
-    return host_socket;
-
+   return host_socket;
 }
 
 void cm_net::close_socket(int fd) {
@@ -82,7 +80,10 @@ int cm_net::accept(int host_socket, sockaddr *client_hint, socklen_t *client_sz)
     int fd = -1;
 
     while(-1 == (fd = ::accept(host_socket, client_hint, client_sz))) {
-        if(errno != EINTR) return CM_NET_ERR;
+        if(errno != EINTR) {
+            cm_net::err("error on accept", errno);
+            return CM_NET_ERR;
+        }
         /* blocking accept interrupted, loop for retry */
     }
 
@@ -95,7 +96,7 @@ int cm_net::connect(const std::string &host, int host_port) {
 
     int fd = cm_net::create_socket();
     if(-1 == fd) {
-        cm_log::error("failed to create socket");
+        cm_net::err("failed to create socket", errno);
         return CM_NET_ERR;
     }
 
@@ -103,7 +104,7 @@ int cm_net::connect(const std::string &host, int host_port) {
 
     hostent *host_ent;
     if(NULL == (host_ent = gethostbyname(host.c_str())) ) {
-        cm_log::error(cm_util::format("gethostbyname failed: %s", host.c_str()));
+        cm_net:err(cm_util::format("gethostbyname failed: %s", host.c_str()), errno);
         return CM_NET_ERR;
     }
 
@@ -113,13 +114,12 @@ int cm_net::connect(const std::string &host, int host_port) {
     server_hint.sin_port = htons(host_port);
     server_hint.sin_addr = *((in_addr *) host_ent->h_addr);
     bzero(&(server_hint.sin_zero), 8);
-    
 
     if(-1 == ::connect(fd, (sockaddr *) &server_hint, sizeof(server_hint))) {
-        cm_log::error("failed to connect to IP/port");
+        cm_net::err("failed to connect to IP/port", errno);
+        cm_net::close_socket(fd);
         return CM_NET_ERR;
     }
 
     return fd;
-
 }

@@ -35,8 +35,10 @@
 #include <unistd.h>
 #include <netdb.h>
 #include <arpa/inet.h>
+#include <string.h>
 
 #include <vector>
+#include <string>
 
 #include "util.h"
 #include "thread.h"
@@ -52,6 +54,12 @@ int server_socket(int host_port);
 void close_socket(int fd);
 int accept(int host_socket, sockaddr *client_hint, socklen_t *client_sz);
 int connect(const std::string &host, int host_port);
+
+inline void err(const std::string &msg, int errnum) {
+    char buf[128] = {'\0'};
+    strerror_r(errnum, buf, sizeof(buf));
+    cm_log::error(cm_util::format("%s: %s", msg.c_str(), buf));
+}
 
 } // namespace cm_net
 
