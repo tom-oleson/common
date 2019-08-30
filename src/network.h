@@ -50,7 +50,8 @@ namespace cm_net {
 int create_socket();
 int server_socket(int host_port);
 void close_socket(int fd);
-int accept_connection(int host_socket, sockaddr *client_hint, socklen_t *client_sz);
+int accept(int host_socket, sockaddr *client_hint, socklen_t *client_sz);
+int connect(const std::string &host, int host_port);
 
 } // namespace cm_net
 

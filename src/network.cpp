@@ -49,6 +49,8 @@ int cm_net::server_socket(int host_port) {
     // bind socket to IP/port
 
     sockaddr_in server_hint;
+    bzero(&server_hint, sizeof(server_hint));
+
     server_hint.sin_family = AF_INET;
     server_hint.sin_port = htons(host_port);
     server_hint.sin_addr.s_addr = htonl(INADDR_ANY);
@@ -75,7 +77,7 @@ void cm_net::close_socket(int fd) {
     if(fd != -1) close(fd);
 }
 
-int cm_net::accept_connection(int host_socket, sockaddr *client_hint, socklen_t *client_sz) {
+int cm_net::accept(int host_socket, sockaddr *client_hint, socklen_t *client_sz) {
 
     int fd = -1;
 
@@ -87,3 +89,37 @@ int cm_net::accept_connection(int host_socket, sockaddr *client_hint, socklen_t 
     return fd;
 }
 
+int cm_net::connect(const std::string &host, int host_port) {
+
+    // create socket
+
+    int fd = cm_net::create_socket();
+    if(-1 == fd) {
+        cm_log::error("failed to create socket");
+        return CM_NET_ERR;
+    }
+
+    // get host info
+
+    hostent *host_ent;
+    if(NULL == (host_ent = gethostbyname(host.c_str())) ) {
+        cm_log::error(cm_util::format("gethostbyname failed: %s", host.c_str()));
+        return CM_NET_ERR;
+    }
+
+    sockaddr_in server_hint;
+    bzero(&server_hint, sizeof(server_hint));
+    server_hint.sin_family = AF_INET;
+    server_hint.sin_port = htons(host_port);
+    server_hint.sin_addr = *((in_addr *) host_ent->h_addr);
+    bzero(&(server_hint.sin_zero), 8);
+    
+
+    if(-1 == ::connect(fd, (sockaddr *) &server_hint, sizeof(server_hint))) {
+        cm_log::error("failed to connect to IP/port");
+        return CM_NET_ERR;
+    }
+
+    return fd;
+
+}
