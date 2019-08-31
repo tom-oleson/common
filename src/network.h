@@ -52,7 +52,7 @@ namespace cm_net {
 int create_socket();
 int server_socket(int host_port);
 void close_socket(int fd);
-int accept(int host_socket, sockaddr *client_hint, socklen_t *client_sz);
+int accept(int host_socket, std::string &info);
 int connect(const std::string &host, int host_port);
 
 inline void err(const std::string &msg, int errnum) {

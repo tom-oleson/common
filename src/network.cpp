@@ -75,17 +75,36 @@ void cm_net::close_socket(int fd) {
     if(fd != -1) close(fd);
 }
 
-int cm_net::accept(int host_socket, sockaddr *client_hint, socklen_t *client_sz) {
+int cm_net::accept(int host_socket, std::string &info) { 
 
     int fd = -1;
 
-    while(-1 == (fd = ::accept(host_socket, client_hint, client_sz))) {
+    sockaddr_in client_hint;
+    socklen_t client_sz = sizeof(client_hint);
+    bzero(&client_hint, sizeof(client_hint));
+
+    char host[NI_MAXHOST] = { '\0' };
+    char serv[NI_MAXSERV] = { '\0' };
+    char info_buf[NI_MAXHOST + NI_MAXSERV + 1] = { '\0' };
+
+    while(-1 == (fd = ::accept(host_socket, (sockaddr *) &client_hint, &client_sz))) {
         if(errno != EINTR) {
             cm_net::err("error on accept", errno);
             return CM_NET_ERR;
         }
         /* blocking accept interrupted, loop for retry */
     }
+
+    if( 0 == getnameinfo( (sockaddr *) &client_hint, sizeof(client_hint),
+        host, sizeof(host), serv, sizeof(serv), 0 /*flags*/) ) {
+        snprintf(info_buf, sizeof(info_buf), "%s:%s", host, serv);
+    }
+    else if( NULL != inet_ntop(AF_INET, &client_hint, host, sizeof(host) ))  {
+        // no name info available, use info from client connection...
+        snprintf(info_buf, sizeof(info_buf), "%s:%d", host, ntohs(client_hint.sin_port));
+    }
+
+    info.assign(info_buf);
 
     return fd;
 }
