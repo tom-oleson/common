@@ -142,3 +142,112 @@ int cm_net::connect(const std::string &host, int host_port) {
 
     return fd;
 }
+
+
+//////////////////// server_thread ////////////////////////////////
+
+cm_net::server_thread::server_thread(int port): host_port(port) {
+    // start processing thread
+    start();
+}
+
+cm_net::server_thread::~server_thread() {
+    // stop processing thread
+    stop();
+
+    // if there are clients, shut them down
+}
+
+
+bool cm_net::server_thread::setup() {
+
+    host_socket = cm_net::server_socket(host_port);
+    if(-1 == host_socket) {
+        return false;
+    }
+    return true;
+}
+
+void cm_net::server_thread::cleanup() {
+
+    cm_net::close_socket(host_socket);
+}
+
+int cm_net::server_thread::accept() {
+
+    // wait for and accept a client connection
+    return cm_net::accept(host_socket, info);
+}
+
+
+bool cm_net::server_thread::process() {
+
+    int socket = accept();
+    if(-1 == socket) {
+        cm_log::critical("accept failed in server thread, ending thread process");
+        return false;
+    }
+
+    service_connection(socket, info);
+
+
+    return true;
+}
+
+
+void cm_net::server_thread::service_connection(int socket, const std::string info) {
+
+    cm_log::info(cm_util::format("client connection: %s", info.size() > 0 ? info.c_str():
+        "host?:serv?"));
+ 
+    // create connection handling thread
+}
+
+/////////////////////// connection_thread ////////////////////////////
+
+bool cm_net::connection_thread::setup() {
+    return true;
+}
+
+void cm_net::connection_thread::cleanup() {
+    cm_net::close_socket(socket);
+}
+
+cm_net::connection_thread::connection_thread(int _socket, const std::string _info) {
+    socket = _socket;
+    info = _info;
+    // start processing thread
+    start();
+}
+
+cm_net::connection_thread::~connection_thread() {
+    // stop processing thread
+    stop();
+
+    // if there are clients, shut them down
+}
+
+bool cm_net::connection_thread::process() {
+
+    // block until next request received
+    bzero(rbuf, sizeof(rbuf));
+    int num_bytes = recv(socket, rbuf, sizeof(rbuf), 0 /*flags*/);
+    if(-1 == num_bytes) {
+        cm_net::err("recv error", errno);
+        return false;
+    }
+
+    if(0 == num_bytes) {
+            // client disconnected, tell thread to die (return false)
+            return false;
+    }
+
+    //process_request(std::string(rbuf, 0, num_bytes));
+
+    // send response
+    //send(socket, sbuf, sizeof(sbuf), 0 /*flags*/);
+
+
+    return true;
+}
+

@@ -61,6 +61,48 @@ inline void err(const std::string &msg, int errnum) {
     cm_log::error(cm_util::format("%s: %s", msg.c_str(), buf));
 }
 
+
+class server_thread: cm_thread::basic_thread  {
+
+protected:
+
+    int host_port;
+    int host_socket;
+    std::string info;
+
+    bool setup();
+    void cleanup();
+    bool process();
+
+    int accept();
+
+public:
+    server_thread(int port);
+    ~server_thread();
+
+    void service_connection(int socket, const std::string info);
+
+};
+
+class connection_thread: cm_thread::basic_thread {
+
+    int socket;
+    std::string info;
+
+    char rbuf[4096] = { '\0' };
+    char sbuf[4096] = { '\0' };
+
+    bool setup();
+    void cleanup();
+    bool process();
+
+public:
+    connection_thread(int socket, const std::string info);
+    ~connection_thread();
+
+};
+
+
 } // namespace cm_net
 
 
