@@ -80,6 +80,9 @@ public:
     connection_thread(int socket, const std::string info);
     ~connection_thread();
 
+    void receive(const char *buf, size_t sz);
+    void send(const std::string &msg);
+
 };
 
 

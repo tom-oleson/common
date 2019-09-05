@@ -37,6 +37,7 @@ class utilTest : public CPPUNIT_NS::TestFixture {
     CPPUNIT_TEST( test_next_midnight );
     CPPUNIT_TEST( test_next_hour );
     CPPUNIT_TEST( test_next_calendar_time );
+    CPPUNIT_TEST( test_strlcpy );
   CPPUNIT_TEST_SUITE_END();
 
 public:
@@ -60,6 +61,7 @@ protected:
     void test_next_hour();
     void test_next_calendar_time();
     void test_dir_scan();
+    void test_strlcpy();
 };
 
 

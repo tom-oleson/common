@@ -188,3 +188,17 @@ void utilTest::test_dir_scan() {
 
     CPPUNIT_ASSERT( matches.size() > 0 );
 }
+
+void utilTest::test_strlcpy() {
+
+    char buf[10+1] = { '\0' };
+
+    // copy string that will fit
+    CPPUNIT_ASSERT( cm_util::strlcpy(buf, "0123456789", sizeof(buf)) == 10);
+
+    // copy string that will NOT fit
+    CPPUNIT_ASSERT( cm_util::strlcpy(buf, "0123456789012345", sizeof(buf)) == 10);
+
+
+}
+

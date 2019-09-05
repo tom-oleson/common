@@ -114,8 +114,6 @@ int cm_net::accept(int host_socket, std::string &info) {
         /* blocking accept interrupted, loop for retry */
     }
 
-
-
     if( 0 == getnameinfo( (sockaddr *) &client_hint, sizeof(client_hint),
         host, sizeof(host), serv, sizeof(serv), 0 /*flags*/) ) {
         snprintf(info_buf, sizeof(info_buf), "%s:%s", host, serv);
@@ -164,7 +162,7 @@ int cm_net::connect(const std::string &host, int host_port) {
     return fd;
 }
 
-//////////////////// server_thread ///////////////////////////////
+//////////////////// server_thread //////////////////////////////
 
 cm_net::server_thread::server_thread(int port): host_port(port) {
     // start processing thread
@@ -255,6 +253,18 @@ cm_net::connection_thread::~connection_thread() {
     stop();
 }
 
+void cm_net::connection_thread::send(const std::string &msg) {
+
+    bzero(sbuf, sizeof(sbuf));
+    cm_util::strlcpy(sbuf, msg.c_str(), sizeof(sbuf));
+    ::send(socket, sbuf, sizeof(sbuf), 0 /*flags*/);
+}
+
+void cm_net::connection_thread::receive(const char *buf, size_t sz) {
+
+    //processor->receive(buf, sz);
+}
+
 bool cm_net::connection_thread::process() {
 
     // block until next request received
@@ -270,11 +280,7 @@ bool cm_net::connection_thread::process() {
             return false;
     }
 
-    //process_request(std::string(rbuf, 0, num_bytes));
-
-    // send response
-    //send(socket, sbuf, sizeof(sbuf), 0 /*flags*/);
-
+    receive(rbuf, num_bytes);
 
     return true;
 }
