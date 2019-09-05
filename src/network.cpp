@@ -29,9 +29,28 @@
 
 #include "network.h"
 
+
+int cm_net::enable_reuseaddr(int fd) {
+    int enable = 1;
+    if (-1 == setsockopt(fd, SOL_SOCKET, SO_REUSEADDR, &enable, sizeof(enable))) {
+        cm_net::err("setsockopt: SO_REUSEADDR", errno);
+        return CM_NET_ERR;
+    }
+    return CM_NET_OK;
+}
+
 int cm_net::create_socket() {
 
     int fd = socket(AF_INET, SOCK_STREAM, 0 /*protocol*/);
+
+    // we must do this on *all* sockets we create or we will get
+    // a bind error when we try to use the same local address again
+    // (e.g., after a restart)
+    if(CM_NET_ERR == cm_net::enable_reuseaddr(fd)) {
+        close_socket(fd);
+        return CM_NET_ERR;
+    }
+
     return fd;
 }
 
@@ -40,7 +59,7 @@ int cm_net::server_socket(int host_port) {
     // create host socket
     
     int host_socket = cm_net::create_socket();
-    if(-1 == host_socket) {
+    if(CM_NET_ERR == host_socket) {
         cm_net::err("failed to create socket", errno);
         return CM_NET_ERR;
     }
@@ -95,6 +114,8 @@ int cm_net::accept(int host_socket, std::string &info) {
         /* blocking accept interrupted, loop for retry */
     }
 
+
+
     if( 0 == getnameinfo( (sockaddr *) &client_hint, sizeof(client_hint),
         host, sizeof(host), serv, sizeof(serv), 0 /*flags*/) ) {
         snprintf(info_buf, sizeof(info_buf), "%s:%s", host, serv);
@@ -143,8 +164,7 @@ int cm_net::connect(const std::string &host, int host_port) {
     return fd;
 }
 
-
-//////////////////// server_thread ////////////////////////////////
+//////////////////// server_thread ///////////////////////////////
 
 cm_net::server_thread::server_thread(int port): host_port(port) {
     // start processing thread
@@ -197,13 +217,23 @@ bool cm_net::server_thread::process() {
 
 void cm_net::server_thread::service_connection(int socket, const std::string info) {
 
+    // create connection handling thread and add to list
+    auto p = std::make_unique<cm_net::connection_thread>(socket, info);
+    connections.push_back(std::move(p));
+
     cm_log::info(cm_util::format("client connection: %s", info.size() > 0 ? info.c_str():
         "host?:serv?"));
- 
-    // create connection handling thread
+
+    // cleanup connections list
+    for(auto i = connections.begin(); i != connections.end(); i++) {
+        if((*i)->is_done()) {
+            connections.erase(i);
+        }
+    }
+
 }
 
-/////////////////////// connection_thread ////////////////////////////
+///////////////////// connection_thread //////////////////////////
 
 bool cm_net::connection_thread::setup() {
     return true;
@@ -223,8 +253,6 @@ cm_net::connection_thread::connection_thread(int _socket, const std::string _inf
 cm_net::connection_thread::~connection_thread() {
     // stop processing thread
     stop();
-
-    // if there are clients, shut them down
 }
 
 bool cm_net::connection_thread::process() {
@@ -238,7 +266,7 @@ bool cm_net::connection_thread::process() {
     }
 
     if(0 == num_bytes) {
-            // client disconnected, tell thread to die (return false)
+            // client disconnected
             return false;
     }
 

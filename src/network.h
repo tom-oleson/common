@@ -39,6 +39,7 @@
 
 #include <vector>
 #include <string>
+#include <memory>
 
 #include "util.h"
 #include "thread.h"
@@ -49,6 +50,7 @@
 
 namespace cm_net {
 
+int enable_reuseaddr(int fd);
 int create_socket();
 int server_socket(int host_port);
 void close_socket(int fd);
@@ -62,9 +64,30 @@ inline void err(const std::string &msg, int errnum) {
 }
 
 
-class server_thread: cm_thread::basic_thread  {
+class connection_thread: public cm_thread::basic_thread {
+
+    int socket;
+    std::string info;
+
+    char rbuf[4096] = { '\0' };
+    char sbuf[4096] = { '\0' };
+
+    bool setup();
+    void cleanup();
+    bool process();
+
+public:
+    connection_thread(int socket, const std::string info);
+    ~connection_thread();
+
+};
+
+
+class server_thread: public cm_thread::basic_thread  {
 
 protected:
+
+    std::vector<std::unique_ptr<connection_thread>> connections;
 
     int host_port;
     int host_socket;
@@ -81,24 +104,6 @@ public:
     ~server_thread();
 
     void service_connection(int socket, const std::string info);
-
-};
-
-class connection_thread: cm_thread::basic_thread {
-
-    int socket;
-    std::string info;
-
-    char rbuf[4096] = { '\0' };
-    char sbuf[4096] = { '\0' };
-
-    bool setup();
-    void cleanup();
-    bool process();
-
-public:
-    connection_thread(int socket, const std::string info);
-    ~connection_thread();
 
 };
 
