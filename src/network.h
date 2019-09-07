@@ -40,6 +40,7 @@
 #include <vector>
 #include <string>
 #include <memory>
+#include <algorithm>
 
 #include "util.h"
 #include "thread.h"
@@ -63,11 +64,14 @@ inline void err(const std::string &msg, int errnum) {
     cm_log::error(cm_util::format("%s: %s", msg.c_str(), buf));
 }
 
+#define CM_NET_RECEIVE(fn) void (*fn)(char *buf, size_t sz)
 
 class connection_thread: public cm_thread::basic_thread {
 
     int socket;
     std::string info;
+
+    CM_NET_RECEIVE(receive_fn) = nullptr;
 
     char rbuf[4096] = { '\0' };
     char sbuf[4096] = { '\0' };
@@ -77,14 +81,13 @@ class connection_thread: public cm_thread::basic_thread {
     bool process();
 
 public:
-    connection_thread(int socket, const std::string info);
+    connection_thread(int socket, const std::string info, CM_NET_RECEIVE(fn));
     ~connection_thread();
 
-    void receive(const char *buf, size_t sz);
     void send(const std::string &msg);
+    void receive(const char *buf, size_t sz);
 
 };
-
 
 class server_thread: public cm_thread::basic_thread  {
 
@@ -96,14 +99,21 @@ protected:
     int host_socket;
     std::string info;
 
+    CM_NET_RECEIVE(receive_fn) = nullptr;
+
     bool setup();
     void cleanup();
     bool process();
 
     int accept();
 
+    std::unique_ptr<connection_thread>
+    create_connection_thread(int socket, const std::string info) {
+        return std::make_unique<connection_thread>(socket, info, receive_fn);
+    }
+
 public:
-    server_thread(int port);
+    server_thread(int port, CM_NET_RECEIVE(fn));
     ~server_thread();
 
     void service_connection(int socket, const std::string info);

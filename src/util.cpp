@@ -325,14 +325,11 @@ int cm_util::dir_scan(const std::string &dir_name, const std::string &pattern,
 // safe version of strncpy; always ensures string is null terminated
 size_t cm_util::strlcpy(char * dst, const char * src, size_t max) {
 	size_t sz = 0;
-
 	while(sz < max - 1 && src[sz] != '\0'){
 		dst[sz] = src[sz];
 		sz++;
 	}
-
 	dst[sz] = '\0';
-
 	return sz;
 }
 

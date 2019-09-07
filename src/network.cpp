@@ -60,7 +60,7 @@ int cm_net::server_socket(int host_port) {
     
     int host_socket = cm_net::create_socket();
     if(CM_NET_ERR == host_socket) {
-        cm_net::err("failed to create socket", errno);
+        cm_net::err("create socket", errno);
         return CM_NET_ERR;
     }
 
@@ -134,7 +134,7 @@ int cm_net::connect(const std::string &host, int host_port) {
 
     int fd = cm_net::create_socket();
     if(-1 == fd) {
-        cm_net::err("failed to create socket", errno);
+        cm_net::err("create socket", errno);
         return CM_NET_ERR;
     }
 
@@ -164,7 +164,9 @@ int cm_net::connect(const std::string &host, int host_port) {
 
 //////////////////// server_thread //////////////////////////////
 
-cm_net::server_thread::server_thread(int port): host_port(port) {
+cm_net::server_thread::server_thread(int port, CM_NET_RECEIVE(fn)):
+     host_port(port), receive_fn(fn) {
+
     // start processing thread
     start();
 }
@@ -215,8 +217,7 @@ bool cm_net::server_thread::process() {
 
 void cm_net::server_thread::service_connection(int socket, const std::string info) {
 
-    // create connection handling thread and add to list
-    auto p = std::make_unique<cm_net::connection_thread>(socket, info);
+    auto p = create_connection_thread(socket, info);
     connections.push_back(std::move(p));
 
     cm_log::info(cm_util::format("client connection: %s", info.size() > 0 ? info.c_str():
@@ -241,9 +242,13 @@ void cm_net::connection_thread::cleanup() {
     cm_net::close_socket(socket);
 }
 
-cm_net::connection_thread::connection_thread(int _socket, const std::string _info) {
+cm_net::connection_thread::connection_thread(int _socket, const std::string _info,
+    CM_NET_RECEIVE(fn)) {
+
     socket = _socket;
     info = _info;
+    receive_fn = fn;
+
     // start processing thread
     start();
 }
@@ -256,13 +261,13 @@ cm_net::connection_thread::~connection_thread() {
 void cm_net::connection_thread::send(const std::string &msg) {
 
     bzero(sbuf, sizeof(sbuf));
-    cm_util::strlcpy(sbuf, msg.c_str(), sizeof(sbuf));
-    ::send(socket, sbuf, sizeof(sbuf), 0 /*flags*/);
+    size_t sz = std::min(msg.size(),sizeof(sbuf));
+    cm_util::strlcpy(sbuf, msg.c_str(), sz);
+    ::send(socket, sbuf, sz, 0 /*flags*/);
 }
 
 void cm_net::connection_thread::receive(const char *buf, size_t sz) {
-
-    //processor->receive(buf, sz);
+    // processor->receive(buf, sz);
 }
 
 bool cm_net::connection_thread::process() {
