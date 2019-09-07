@@ -267,7 +267,7 @@ void cm_net::connection_thread::send(const std::string &msg) {
 }
 
 void cm_net::connection_thread::receive(const char *buf, size_t sz) {
-    // processor->receive(buf, sz);
+    receive_fn(buf, sz);
 }
 
 bool cm_net::connection_thread::process() {

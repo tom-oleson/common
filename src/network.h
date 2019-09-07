@@ -64,7 +64,7 @@ inline void err(const std::string &msg, int errnum) {
     cm_log::error(cm_util::format("%s: %s", msg.c_str(), buf));
 }
 
-#define CM_NET_RECEIVE(fn) void (*fn)(char *buf, size_t sz)
+#define CM_NET_RECEIVE(fn) void (*fn)(const char *buf, size_t sz)
 
 class connection_thread: public cm_thread::basic_thread {
 
