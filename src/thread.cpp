@@ -61,19 +61,24 @@ cm_thread::basic_thread::basic_thread(bool auto_start) {
 }
 
 cm_thread::basic_thread::~basic_thread() {
-    if(!is_done()) stop();
+    if(is_started() && !is_done()) stop();
 }
 
 void cm_thread::basic_thread::start() {
     pthread_create(&tid, NULL, &run_handler, (void*) this);
+
+    while(!is_started()) {
+        nanosleep(&delay, NULL);
+    }
 }
 
 void cm_thread::basic_thread::stop() {
+
     if(pthread_self() == tid) {
         // self terminating
         pthread_exit(NULL);
     }
-    else {
+    else if(is_started()) {
         // being terminated by another thread
         pthread_cancel(tid);        /* request thread cancel */
         pthread_join(tid, NULL);/* wait here until its done */

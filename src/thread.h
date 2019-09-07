@@ -44,7 +44,7 @@ class basic_thread {
 
 protected:
 
-    pthread_t tid;
+    pthread_t tid = 0;
     timespec delay = {0, 1000000}; /* 1ms delay between process calls */
     bool started = false;
     bool done = false;

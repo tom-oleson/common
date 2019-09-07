@@ -14,17 +14,25 @@
 
 CPPUNIT_TEST_SUITE_REGISTRATION( networkTest );
 
-//void networkTest::setUp() { }
-//void networkTest::tearDown() { }
 
+// receive function called by connection_threads
+void receive(const char *buf, size_t sz) {
+
+
+}
+
+cm_log::file_logger server_log("./log/network_test.log");
 
 void networkTest::test_network() {
 
-    cm_log::file_logger log("./log/network_test.log");
-    set_default_logger(&log);
+    set_default_logger(&server_log);
+
+    cm_log::info("test_network");
+
+    cm_net::server_thread server(56000 /* port */, receive);
 
 
-    CPPUNIT_ASSERT( true  == true );
+    CPPUNIT_ASSERT( server.is_started() == true );
 
 }
 

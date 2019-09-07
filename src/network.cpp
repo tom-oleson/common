@@ -77,16 +77,18 @@ int cm_net::server_socket(int host_port) {
         cm_net::err("error on bind to IP/port", errno);
         return CM_NET_ERR;
     }
-
+    
     // mark socket for listening
 
-   if(-1 == listen(host_socket, SOMAXCONN)) {
+    if(-1 == listen(host_socket, SOMAXCONN)) {
         cm_net::close_socket(host_socket);
         cm_net::err("error on listen", errno);
         return CM_NET_ERR;
-   } 
+    } 
+   
+    cm_log::info(cm_util::format("server: listening on %d", host_port)); 
 
-   return host_socket;
+    return host_socket;
 }
 
 void cm_net::close_socket(int fd) {
@@ -261,7 +263,7 @@ cm_net::connection_thread::~connection_thread() {
 void cm_net::connection_thread::send(const std::string &msg) {
 
     bzero(sbuf, sizeof(sbuf));
-    size_t sz = std::min(msg.size(),sizeof(sbuf));
+    size_t sz = std::min(msg.size()+1,sizeof(sbuf));
     cm_util::strlcpy(sbuf, msg.c_str(), sz);
     ::send(socket, sbuf, sz, 0 /*flags*/);
 }

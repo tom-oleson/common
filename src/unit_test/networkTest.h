@@ -5,8 +5,8 @@
 **********************************************************************/
 
 
-#ifndef CPP_UNIT_SOCKETS_TEST_H
-#define CPP_UNIT_SOCKETS_TEST_H
+#ifndef CPP_UNIT_NETWORK_TEST_H
+#define CPP_UNIT_NETWORK_TEST_H
 
 #include <cppunit/extensions/HelperMacros.h>
 
