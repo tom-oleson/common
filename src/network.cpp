@@ -265,8 +265,8 @@ cm_net::connection_thread::~connection_thread() {
 void cm_net::send(int socket, char *buf, size_t buf_size, const std::string &msg) {
 
     bzero(buf, buf_size);
-    size_t sz = std::min(msg.size()+1,buf_size);
-    cm_util::strlcpy(buf, msg.c_str(), sz);
+    size_t sz = std::min(msg.size(),buf_size);
+    memcpy(buf, msg.c_str(), sz);
     ::send(socket, buf, sz, 0 /*flags*/);
 }
 

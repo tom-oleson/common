@@ -60,6 +60,18 @@ struct client_thread: public cm_thread::basic_thread {
 // receive function called by server connection_threads
 void receive(const char *buf, size_t sz) {
 
+    char rbuf[1024];
+    bzero(rbuf, sizeof(rbuf));
+    memcpy(rbuf, buf, sz);
+
+    cm_log::info(std::string(rbuf, sz));
+
+
+    char hex_buf[1024];
+    bzero(hex_buf, sizeof(hex_buf));
+    cm_util::bin2hex((unsigned char *) rbuf, sz, hex_buf, sizeof(hex_buf), true);
+    cm_log::info(cm_util::format("%s", hex_buf));
+    
 
 }
 
@@ -68,6 +80,7 @@ cm_log::file_logger server_log("./log/network_test.log");
 void networkTest::test_network() {
 
     set_default_logger(&server_log);
+    server_log.set_message_format("${date_time}${millis} [${lvl}] <${thread}> ${file}:${line}: ${msg}");
 
     cm_log::info("test_network");
 
@@ -75,10 +88,12 @@ void networkTest::test_network() {
     CPPUNIT_ASSERT( server.is_started() == true );
 
 
-    client_thread client;
-    CPPUNIT_ASSERT( client.is_started() == true);
-    
+    //client_thread client;
+    //CPPUNIT_ASSERT( client.is_started() == true);
 
-    sleep(3);
+    client_thread client[4];
+
+    sleep(4);
+
 }
 
