@@ -42,6 +42,10 @@ int cm_net::enable_reuseaddr(int fd) {
 int cm_net::create_socket() {
 
     int fd = socket(AF_INET, SOCK_STREAM, 0 /*protocol*/);
+     if(-1 == fd) {
+        cm_net::err("create socket", errno);
+        return CM_NET_ERR;
+    }   
 
     // we must do this on *all* sockets we create or we will get
     // a bind error when we try to use the same local address again
@@ -60,7 +64,6 @@ int cm_net::server_socket(int host_port) {
     
     int host_socket = cm_net::create_socket();
     if(CM_NET_ERR == host_socket) {
-        cm_net::err("create socket", errno);
         return CM_NET_ERR;
     }
 
@@ -135,8 +138,7 @@ int cm_net::connect(const std::string &host, int host_port) {
     // create socket
 
     int fd = cm_net::create_socket();
-    if(-1 == fd) {
-        cm_net::err("create socket", errno);
+    if(CM_NET_ERR == fd) {
         return CM_NET_ERR;
     }
 
@@ -260,12 +262,17 @@ cm_net::connection_thread::~connection_thread() {
     stop();
 }
 
+void cm_net::send(int socket, char *buf, size_t buf_size, const std::string &msg) {
+
+    bzero(buf, buf_size);
+    size_t sz = std::min(msg.size()+1,buf_size);
+    cm_util::strlcpy(buf, msg.c_str(), sz);
+    ::send(socket, buf, sz, 0 /*flags*/);
+}
+
 void cm_net::connection_thread::send(const std::string &msg) {
 
-    bzero(sbuf, sizeof(sbuf));
-    size_t sz = std::min(msg.size()+1,sizeof(sbuf));
-    cm_util::strlcpy(sbuf, msg.c_str(), sz);
-    ::send(socket, sbuf, sz, 0 /*flags*/);
+    cm_net::send(socket, sbuf, sizeof(sbuf), msg);
 }
 
 void cm_net::connection_thread::receive(const char *buf, size_t sz) {

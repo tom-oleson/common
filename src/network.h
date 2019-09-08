@@ -57,6 +57,7 @@ int server_socket(int host_port);
 void close_socket(int fd);
 int accept(int host_socket, std::string &info);
 int connect(const std::string &host, int host_port);
+void send(int socket, char *buf, size_t buf_size, const std::string &msg);
 
 inline void err(const std::string &msg, int errnum) {
     char buf[128] = {'\0'};
