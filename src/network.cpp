@@ -107,10 +107,6 @@ int cm_net::accept(int host_socket, std::string &info) {
     socklen_t client_sz = sizeof(client_hint);
     bzero(&client_hint, sizeof(client_hint));
 
-    char host[NI_MAXHOST] = { '\0' };
-    char serv[NI_MAXSERV] = { '\0' };
-    char info_buf[NI_MAXHOST + NI_MAXSERV + 1] = { '\0' };
-
     while(-1 == (fd = ::accept(host_socket, (sockaddr *) &client_hint, &client_sz))) {
         if(errno != EINTR) {
             cm_net::err("error on accept", errno);
@@ -118,6 +114,10 @@ int cm_net::accept(int host_socket, std::string &info) {
         }
         /* blocking accept interrupted, loop for retry */
     }
+
+    char host[NI_MAXHOST] = { '\0' };
+    char serv[NI_MAXSERV] = { '\0' };
+    char info_buf[NI_MAXHOST + NI_MAXSERV + 1] = { '\0' };
 
     if( 0 == getnameinfo( (sockaddr *) &client_hint, sizeof(client_hint),
         host, sizeof(host), serv, sizeof(serv), 0 /*flags*/) ) {
@@ -133,7 +133,7 @@ int cm_net::accept(int host_socket, std::string &info) {
     return fd;
 }
 
-int cm_net::connect(const std::string &host, int host_port) {
+int cm_net::connect(const std::string &host, int host_port, std::string &info) {
 
     // create socket
 
@@ -162,6 +162,28 @@ int cm_net::connect(const std::string &host, int host_port) {
         cm_net::close_socket(fd);
         return CM_NET_ERR;
     }
+
+    // get info for client connection. we are after the port the server selected
+    // for our connect()
+
+    sockaddr_in client_hint;
+    char _host[NI_MAXHOST] = { '\0' };
+    char _serv[NI_MAXSERV] = { '\0' };
+    char info_buf[NI_MAXHOST + NI_MAXSERV + 1] = { '\0' };
+    socklen_t client_len = sizeof(client_hint);
+
+    if( 0 == getsockname(fd, (sockaddr *) &client_hint, &client_len)) { 
+        if(0 == getnameinfo( (sockaddr *) &client_hint, sizeof(client_hint),
+            _host, sizeof(_host), _serv, sizeof(_serv), 0 /*flags*/) ) {
+            snprintf(info_buf, sizeof(info_buf), "%s:%s", _host, _serv);
+        }
+        else if( NULL != inet_ntop(AF_INET, &client_hint, _host, sizeof(_host) ))  {
+            // no name info available, use info from client connection...
+            snprintf(info_buf, sizeof(info_buf), "%s:%d", _host, ntohs(client_hint.sin_port));
+        }
+    }
+
+    info.assign(info_buf);
 
     return fd;
 }

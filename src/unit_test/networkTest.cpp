@@ -28,19 +28,20 @@ struct client_thread: public cm_thread::basic_thread {
 
     bool setup() {
 
+        std::string info;
+
         // connect to server
-        if(CM_NET_ERR == (socket = cm_net::connect("127.0.0.1", 56000))) {
+        if(CM_NET_ERR == (socket = cm_net::connect("127.0.0.1", 56000, info))) {
             cm_log::error("client failed to connect");
             return false;
         }
 
-        cm_log::info("client_thread running: connected to server");
+        cm_log::info(cm_util::format("client_thread running: connected to server: %s", info.c_str()));
 
         //wait for connection to stablize before we start sending data
 
         timespec delay = {0, 100000000};   // 0.1 seconds
         nanosleep(&delay, NULL);
-
 
         return true;
     }
