@@ -14,7 +14,6 @@
 
 CPPUNIT_TEST_SUITE_REGISTRATION( networkTest );
 
-
 struct client_thread: public cm_thread::basic_thread {
 
     int count = 0;
@@ -37,6 +36,12 @@ struct client_thread: public cm_thread::basic_thread {
 
         cm_log::info("client_thread running: connected to server");
 
+        //wait for connection to stablize before we start sending data
+
+        timespec delay = {0, 100000000};   // 0.1 seconds
+        nanosleep(&delay, NULL);
+
+
         return true;
     }
 
@@ -55,45 +60,31 @@ struct client_thread: public cm_thread::basic_thread {
     }
 };
 
-
-
 // receive function called by server connection_threads
 void receive(const char *buf, size_t sz) {
 
-    char rbuf[1024];
-    bzero(rbuf, sizeof(rbuf));
-    memcpy(rbuf, buf, sz);
-
-    cm_log::info(std::string(rbuf, sz));
-
+    cm_log::info(std::string(buf, sz));
 
     char hex_buf[1024];
     bzero(hex_buf, sizeof(hex_buf));
-    cm_util::bin2hex((unsigned char *) rbuf, sz, hex_buf, sizeof(hex_buf), true);
+    cm_util::bin2hex((unsigned char *) buf, sz, hex_buf, sizeof(hex_buf), true);
     cm_log::info(cm_util::format("%s", hex_buf));
-    
 
 }
 
-cm_log::file_logger server_log("./log/network_test.log");
-
 void networkTest::test_network() {
 
+    cm_log::file_logger server_log("./log/network_test.log");
     set_default_logger(&server_log);
     server_log.set_message_format("${date_time}${millis} [${lvl}] <${thread}> ${file}:${line}: ${msg}");
-
-    cm_log::info("test_network");
-
+    
+    // startup tcp server thread
     cm_net::server_thread server(56000 /* port */, receive);
     CPPUNIT_ASSERT( server.is_started() == true );
 
-
-    //client_thread client;
-    //CPPUNIT_ASSERT( client.is_started() == true);
-
-    client_thread client[4];
+    // run multiple client threads to feed data to server thread
+    client_thread client[6];
 
     sleep(4);
-
 }
 
