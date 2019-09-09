@@ -90,15 +90,12 @@ size_t cm_util::bin2hex(const unsigned char *bin, size_t bin_len, char *hex, siz
 
 void cm_util::bin2hex_line(char *out_buf, int out_len, const void *src_addr, const int src_len, const int width, const char *digits) {
 
-    // src_len = 16
+    // width = 16
     // out_buf will be of the form:
     // "00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00   ................\0"
-    //  |_____out_buf                                     |____ out_buf + 50 (src_len * 3 + 2)
-    //         (hex bytes region, 48)                     (ascii printable region, 16)
-    //  out_len must be atleast 65 (48 + 16 + 1 = 65); or src_len * 3 + src_len + 1
 
     int hex_sz = width * 3 + 2;
-    int ascii_sz = src_len;
+    int ascii_sz = width;
 
     if(out_len < (hex_sz + ascii_sz + 1)) return;
     
