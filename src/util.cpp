@@ -64,30 +64,62 @@ std::string &cm_util::format_string(std::string& s, const char *fmt, ...) {
 // Convert binary bytes to hex-ASCII.
 //-------------------------------------------------------------------------
 
+
 size_t cm_util::bin2hex(const unsigned char *bin, size_t bin_len, char *hex, size_t hex_len, bool lowercase) {
  
-	size_t out_size = bin_len * 2 + 1;
+   int out_size = bin_len * 2 + 1;
 
-        if (bin == NULL || bin_len == 0 || hex == NULL ||
-                hex_len == 0 || (hex_len < out_size)) {
-                return 0;
-        }
+    if (bin == NULL || bin_len == 0 || hex == NULL ||
+            hex_len == 0 || (hex_len < out_size)) {
+            return 0;
+    }
 
-        memset(hex, 0, hex_len);
+    memset(hex, 0, hex_len);
 
-        size_t j = 0;
-        const char *upper = "0123456789ABCDEF";
-        const char *lower = "0123456789abcdef";
-        const char *digits = lowercase ? lower : upper;
-        for (size_t i = 0; i < bin_len; i++) {
-                j = i * 2;
-                hex[j]   = digits[bin[i] >> 4];
-                hex[j+1] = digits[bin[i] & 0x0F];
-        }
-        hex[out_size-1] = '\0';
+    int j = 0;
+    const char *digits = lowercase ? hex_lower : hex_upper;
+    for (int i = 0; i < bin_len; i++) {
+            j = i * 2;
+            byte2hex(bin[i], &hex[j], digits);
+    }
+    hex[out_size-1] = '\0';
 
-        return out_size;
+    return out_size;
 }
+
+
+void cm_util::bin2hex_line(char *out_buf, int out_len, const void *src_addr, const int src_len, const int width, const char *digits) {
+
+    // src_len = 16
+    // out_buf will be of the form:
+    // "00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00   ................\0"
+    //  |_____out_buf                                     |____ out_buf + 50 (src_len * 3 + 2)
+    //         (hex bytes region, 48)                     (ascii printable region, 16)
+    //  out_len must be atleast 65 (48 + 16 + 1 = 65); or src_len * 3 + src_len + 1
+
+    int hex_sz = width * 3 + 2;
+    int ascii_sz = src_len;
+
+    if(out_len < (hex_sz + ascii_sz + 1)) return;
+    
+    memset(out_buf, ' ', hex_sz);
+    out_buf[hex_sz] = '\0';
+
+    const unsigned char *pc = (const unsigned char*)src_addr;
+    char *cp = out_buf;
+    char *bp = out_buf + hex_sz;
+        
+    for(int i = 0, j = 0; i < width && i < src_len; i++, j+=3) {
+        byte2hex(pc[i], &cp[j], digits);
+                
+        // put printable character in ascii region
+        bp[i] = (pc[i] < 0x20) || (pc[i] > 0x7e) ? '.' : pc[i];
+        bp[i + 1] = '\0';
+    }
+
+}
+
+//----------------------------------------------------------------------------
 
 time_t cm_util::next_midnight(time_t seconds) {
 

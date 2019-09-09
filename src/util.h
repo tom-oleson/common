@@ -82,6 +82,17 @@ time_t next_interval(time_t seconds, time_t interval);
 time_t next_calendar_time(time_t seconds, int hour, int min, int sec);
 
 size_t strlcpy(char *dst, const char *src, size_t max);
+
+static const char *hex_upper = "0123456789ABCDEF";
+static const char *hex_lower = "0123456789abcdef";
+
+
+inline void byte2hex(const unsigned char byte, char hex[], const char *digits) {
+	hex[0]  = digits[byte >> 4];
+    hex[1] = digits[byte & 0x0F];
+}
+
+void bin2hex_line(char *out_buf, int out_len, const void *src_addr, const int src_len, const int width, const char *digits);
  
 } // namespace cm_util
 
