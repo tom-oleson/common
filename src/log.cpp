@@ -220,6 +220,28 @@ void cm_log::log(cm_log::extra ext, cm_log::level::en lvl, const std::string &ms
 	((cm_log::logger *)default_logger)->log(ext, lvl, msg);
 }
 
+
+void cm_log::_hex_dump(cm_log::level::en lvl, const void *buf, int buf_sz) {
+
+    
+    //cm_log::log(lvl, msg);
+}
+
+void cm_log::_hex_dump(cm_log::extra ext, cm_log::level::en lvl, const void *buf, int buf_sz) {
+
+    int sz = buf_sz;
+    char out_buf[128] = {'\0'};
+    const unsigned char *cp = (unsigned char *) buf;
+    for(int i = 0; i < buf_sz; i++) {
+        if(i % 16 == 0) {
+            cm_util::bin2hex_line(out_buf, sizeof(out_buf), &cp[i], sz, 16, cm_util::hex_lower);
+            cm_log::log(ext, lvl, out_buf);
+            sz -= 16;
+        }
+    }
+}
+
+
 //-------------------------------------------------------------------------
 // cm_log error (output to stderr)
 //-------------------------------------------------------------------------
@@ -363,4 +385,5 @@ void cm_log::rolling_file_logger::log(cm_log::extra ext, cm_log::level::en lvl, 
     cm_log::file_logger::log(ext, lvl, msg);
 
 }
+
 

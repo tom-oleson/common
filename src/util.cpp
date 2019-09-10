@@ -87,7 +87,6 @@ size_t cm_util::bin2hex(const unsigned char *bin, size_t bin_len, char *hex, siz
     return out_size;
 }
 
-
 void cm_util::bin2hex_line(char *out_buf, int out_len, const void *src_addr, const int src_len, const int width, const char *digits) {
 
     // width = 16
