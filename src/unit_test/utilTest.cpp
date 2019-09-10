@@ -58,13 +58,13 @@ void utilTest::test_bin2hex_line() {
     char buf[512] = { '\0'};
     const char *str = "Hello, world!";
 
-    cm_util::bin2hex_line(buf, sizeof(buf), str, strlen(str), 13, cm_util::hex_lower);
+    cm_util::bin2hex_line(buf, sizeof(buf), str, strlen(str), 16, cm_util::hex_lower);
     cm_log::info(buf);
 
     //CPPUNIT_ASSERT( std::string(buf) == "48 65 6c 6c 6f 2c 20 77 6f 72 6c 64 21   Hello, world!");
 
     str = "Now is the time for all good men to come to the aid of their country.";
-    cm_log::hex_dump(cm_log::level::info, str, strlen(str)+1);
+    cm_log::hex_dump(cm_log::level::info, str, strlen(str)+1, 16);
 }
 
 void utilTest::test_format_local_timestamp() {

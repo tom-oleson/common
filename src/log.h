@@ -93,8 +93,8 @@ struct extra {
 void log(cm_log::level::en lvl, const std::string &msg);
 void log(cm_log::extra ext, cm_log::level::en lvl, const std::string &msg);
 
-void _hex_dump(cm_log::level::en lvl, const void *buf, int sz);
-void _hex_dump(cm_log::extra ext, cm_log::level::en lvl, const void *buf, int sz);
+void _hex_dump(cm_log::level::en lvl, const void *buf, int sz, int width);
+void _hex_dump(cm_log::extra ext, cm_log::level::en lvl, const void *buf, int sz, int width);
 
 
 #define log_always(logger) if(logger.ok_to_log(cm_log::level::always))
@@ -128,7 +128,7 @@ void _hex_dump(cm_log::extra ext, cm_log::level::en lvl, const void *buf, int sz
 #define debug(msg) log(CM_LOG_EXTRA, cm_log::level::debug, msg)
 #define trace(msg) log(CM_LOG_EXTRA, cm_log::level::trace, msg)
 
-#define hex_dump(lvl, buf, buf_sz) _hex_dump(CM_LOG_EXTRA, lvl, buf, buf_sz)
+#define hex_dump(lvl, buf, buf_sz, width) _hex_dump(CM_LOG_EXTRA, lvl, buf, buf_sz, width)
 
 
 #else
@@ -142,7 +142,7 @@ void _hex_dump(cm_log::extra ext, cm_log::level::en lvl, const void *buf, int sz
 #define debug(msg) log(cm_log::level::debug, msg)
 #define trace(msg) log(cm_log::level::trace, msg)
 
-#define hex_dump(lvl, buf, buf_sz) _hex_dump(lvl, buf, buf_sz)
+#define hex_dump(lvl, buf, buf_sz, width) _hex_dump(lvl, buf, buf_sz, width)
 
 #endif
 

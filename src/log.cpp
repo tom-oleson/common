@@ -221,22 +221,31 @@ void cm_log::log(cm_log::extra ext, cm_log::level::en lvl, const std::string &ms
 }
 
 
-void cm_log::_hex_dump(cm_log::level::en lvl, const void *buf, int buf_sz) {
-
-    
-    //cm_log::log(lvl, msg);
-}
-
-void cm_log::_hex_dump(cm_log::extra ext, cm_log::level::en lvl, const void *buf, int buf_sz) {
+void cm_log::_hex_dump(cm_log::level::en lvl, const void *buf, int buf_sz, int width) {
 
     int sz = buf_sz;
-    char out_buf[128] = {'\0'};
+    char out_buf[1024] = {'\0'};
     const unsigned char *cp = (unsigned char *) buf;
     for(int i = 0; i < buf_sz; i++) {
-        if(i % 16 == 0) {
-            cm_util::bin2hex_line(out_buf, sizeof(out_buf), &cp[i], sz, 16, cm_util::hex_lower);
+        if(i % width == 0) {
+            cm_util::bin2hex_line(out_buf, sizeof(out_buf), &cp[i], sz, width, cm_util::hex_lower);
+            cm_log::log(lvl, out_buf);
+            sz -= width;
+        }
+    }
+  
+}
+
+void cm_log::_hex_dump(cm_log::extra ext, cm_log::level::en lvl, const void *buf, int buf_sz, int width) {
+
+    int sz = buf_sz;
+    char out_buf[1024] = {'\0'};
+    const unsigned char *cp = (unsigned char *) buf;
+    for(int i = 0; i < buf_sz; i++) {
+        if(i % width == 0) {
+            cm_util::bin2hex_line(out_buf, sizeof(out_buf), &cp[i], sz, width, cm_util::hex_lower);
             cm_log::log(ext, lvl, out_buf);
-            sz -= 16;
+            sz -= width;
         }
     }
 }
