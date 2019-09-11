@@ -40,6 +40,7 @@ void include_source_location_example();
 void date_time_format_example();
 void multiplexed_logs_example();
 void set_message_format_example();
+void hex_dump_to_log_example();
 
 
 #endif

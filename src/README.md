@@ -201,6 +201,29 @@ Output:
 07/31/2019 02:34:00.306 [info] <30761>: This log message will go to the file example.log.
 </pre>
 
+Output data to log in hexidecimal format. Very handy for debugging issues related to
+external data sources (such as outside servers).
+<pre>
+void hex_dump_to_log_example() {
+
+    cm_log::file_logger log("./hex_dump_example.log");
+    set_default_logger(&log);
+
+    const char *str = "This string will be\n\rdumped to the log file in\n\r hexidecimal format.\n\r";
+    cm_log::hex_dump(cm_log::level::info, str, strlen(str), 16);
+
+}
+</pre>
+Output:
+
+<pre>
+09/10/2019 21:42:08 [info]: 54 68 69 73 20 73 74 72 69 6e 67 20 77 69 6c 6c   This string will
+09/10/2019 21:42:08 [info]: 20 62 65 0a 0d 64 75 6d 70 65 64 20 74 6f 20 74    be..dumped to t
+09/10/2019 21:42:08 [info]: 68 65 20 6c 6f 67 20 66 69 6c 65 20 69 6e 0a 0d   he log file in..
+09/10/2019 21:42:08 [info]: 20 68 65 78 69 64 65 63 69 6d 61 6c 20 66 6f 72    hexidecimal for
+09/10/2019 21:42:08 [info]: 6d 61 74 2e 0a 0d                                 mat...
+</pre>
+
 Output source code location where the log message was generated:
 <pre>
 void include_source_location_example() {

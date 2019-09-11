@@ -34,6 +34,7 @@
 //-------------------------------------------------------------------------
 // printf style string formatter(s) 
 //-------------------------------------------------------------------------
+
 std::string cm_util::format(const char *fmt, ...) {
     char c_format_buf[_SPRINTF_BUF_SZ];
     memset(c_format_buf, 0, sizeof(c_format_buf));
@@ -64,7 +65,6 @@ std::string &cm_util::format_string(std::string& s, const char *fmt, ...) {
 // Convert binary bytes to hex-ASCII.
 //-------------------------------------------------------------------------
 
-
 size_t cm_util::bin2hex(const unsigned char *bin, size_t bin_len, char *hex, size_t hex_len, bool lowercase) {
  
    int out_size = bin_len * 2 + 1;
@@ -88,7 +88,7 @@ size_t cm_util::bin2hex(const unsigned char *bin, size_t bin_len, char *hex, siz
 }
 
 void cm_util::bin2hex_line(char *out_buf, int out_len, const void *src_addr, const int src_len, const int width, const char *digits) {
-
+    
     // width = 16
     // out_buf will be of the form:
     // "00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00   ................\0"
@@ -360,5 +360,3 @@ size_t cm_util::strlcpy(char * dst, const char * src, size_t max) {
 	dst[sz] = '\0';
 	return sz;
 }
-
-

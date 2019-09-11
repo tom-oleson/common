@@ -144,3 +144,14 @@ void set_message_format_example() {
 
 }
 
+
+void hex_dump_to_log_example() {
+
+    cm_log::file_logger log("./hex_dump_example.log");
+    set_default_logger(&log);
+
+    const char *str = "This string will be\n\rdumped to the log file in\n\r hexidecimal format.\n\r";
+    cm_log::hex_dump(cm_log::level::info, str, strlen(str), 16);
+
+}
+

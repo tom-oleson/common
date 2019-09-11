@@ -41,7 +41,6 @@ int main( int argc, char* argv[] ) {
 
     format_example();
 
-
     // log examples
 
     stdout_default_logger_example();
@@ -50,6 +49,7 @@ int main( int argc, char* argv[] ) {
     date_time_format_example();
     multiplexed_logs_example();
     set_message_format_example();
+    hex_dump_to_log_example();
 
 }
 
