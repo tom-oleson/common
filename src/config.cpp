@@ -163,11 +163,11 @@ void cm_config::file_config::do_assign(std::string &lvalue, std::string &rvalue)
     if(!sections.empty()) {
 
         std::string prefix;
-        std::deque<std::string>::iterator p = sections.begin();
-        while(p != sections.end()) {
-            prefix += (*p) + ".";
-            p++;
+
+        for(auto &section: sections) {
+            prefix += section + ".";
         }
+
         set(prefix + lvalue, rvalue);
     }
     else {

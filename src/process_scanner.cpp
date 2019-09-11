@@ -53,14 +53,11 @@ cm_process::process_scanner::~process_scanner() {
 
 void cm_process::process_scanner::free_match_list() {
 
-	std::vector<ps_process*>::iterator p = match_list.begin();
-        while (p != match_list.end()) {
-                ps_process *ps = (*p);
-                delete ps;
-                p++;
-        }
+    for(auto &ps: match_list) {
+    	delete ps;
+    }
 
-        match_list.clear();
+    match_list.clear();
 }
 
 bool cm_process::process_scanner::is_process_running(pid_t pid) {

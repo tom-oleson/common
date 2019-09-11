@@ -63,11 +63,10 @@ std::string cm_log::format_log_message(cm_log::extra ext, const std::string &dat
     time_t seconds, millis;
     seconds = cm_time::clock_seconds(&millis, NULL);
 
-    std::vector<std::string>::iterator p = msg_fmt.begin(); 
-    while(p != msg_fmt.end()) {
-        std::string &part = *p;
-        // if we have a $n specifier
-        if(part.size() > 1 && part[0] == '$' && std::isdigit((unsigned char)part[1])) {
+    for(auto &part: msg_fmt) {
+        if(part.size() > 1 && part[0] == '$' &&
+            std::isdigit((unsigned char)part[1])) {
+            
             const char *pch = part.c_str();
             int n = std::atoi(&pch[1]);
 
@@ -121,8 +120,6 @@ std::string cm_log::format_log_message(cm_log::extra ext, const std::string &dat
         else {
             ss << part;
         }
-        
-        p++;
     }
 
     return ss.str();
