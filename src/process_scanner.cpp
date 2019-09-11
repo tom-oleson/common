@@ -47,6 +47,7 @@ cm_process::process_scanner::process_scanner(const char *_name) : name(_name), p
 	scan_all(name.c_str());
 }
 
+/*
 cm_process::process_scanner::~process_scanner() {
 	free_match_list();
 }
@@ -59,6 +60,7 @@ void cm_process::process_scanner::free_match_list() {
 
     match_list.clear();
 }
+*/
 
 bool cm_process::process_scanner::is_process_running(pid_t pid) {
 
@@ -169,9 +171,12 @@ int cm_process::process_scanner::scan_all(const std::string &_name) {
 		
 		if(scan_one(pid, find_name) > 0) {
 			match++;
-			ps_process *ps = new ps_process(pid, find_name);
-			match_list.push_back(ps);
+			//ps_process *ps = new ps_process(pid, find_name);
+			std::unique_ptr<ps_process> ps = std::make_unique<ps_process>(pid, find_name);
+			//match_list.push_back(ps);
 			ps->dump();
+			match_list.push_back(std::move(ps));
+			//ps->dump();
 		}
 	}
   }

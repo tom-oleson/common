@@ -38,6 +38,8 @@
 #include <string.h>
 #include <errno.h>
 
+#include <memory>
+
 #ifndef __LINUX_BOX__
 #include <procfs.h>
 #endif
@@ -51,22 +53,11 @@ namespace cm_process {
 
 struct ps_process {
 
-	ps_process() {}
 	ps_process(pid_t _pid, const std::string &_name) : name(_name), pid(_pid) { }
 	ps_process(const ps_process &pr) : name(pr.name), pid(pr.pid) { } 
 
-	ps_process &operator = (const ps_process &pr) {
-		name.assign(pr.name);
-		pid = pr.pid;	
-		return *this;
-	}
-
-	const std::string to_string() {
-		return cm_util::format("ps_process: pid=[%d], name=[%s]", pid, name.c_str());
-	}
-
 	void dump() {
-		cm_log::trace(to_string());
+		cm_log::info(cm_util::format("ps_process: pid=[%d], name=[%s]", pid, name.c_str()));
 	}
 
 	std::string name;
@@ -78,7 +69,8 @@ private:
 
 class process_scanner  {
 
-	std::vector<ps_process *> match_list;	// list of matched processes
+	// list of matched processes in scan_all()
+	std::vector<std::unique_ptr<ps_process>> match_list;
 
 	pid_t process_id;
 	std::string name;
@@ -92,15 +84,12 @@ public:
 	process_scanner(std::string &_name);
 	process_scanner(const char *_name);
 
-	~process_scanner();
-	void free_match_list();
-
 	bool is_process_running(pid_t pid);
 	pid_t get_process_id() { return process_id; }
 	std::string get_name() { return name; }
 
 	// return a list of processes that matched in scan_all()
-	std::vector<ps_process *> &get_match_list() { return match_list; }
+	std::vector<std::unique_ptr<ps_process>> &get_match_list() { return match_list; }
 };
 
 }

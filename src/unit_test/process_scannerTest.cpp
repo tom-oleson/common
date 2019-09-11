@@ -86,11 +86,8 @@ void process_scannerTest::test_multi() {
     CPPUNIT_ASSERT( name_ps.get_process_id() > 0);
 
     // dump all processes in match list...
-    std::vector<cm_process::ps_process*>::iterator p = name_ps.get_match_list().begin();
-    while (p != name_ps.get_match_list().end()) {
-        cm_process::ps_process *ps = (*p);
+    for(auto &ps: name_ps.get_match_list()) {
         ps->dump();
-        p++;
     }
 }
 
