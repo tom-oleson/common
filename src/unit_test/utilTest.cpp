@@ -63,8 +63,13 @@ void utilTest::test_bin2hex_line() {
 
     CPPUNIT_ASSERT( std::string(buf) == "48 65 6c 6c 6f 2c 20 77 6f 72 6c 64 21            Hello, world!");
 
+    // test through the default logger
     str = "Now is the time for all good men to come to the aid of their country.";
     cm_log::hex_dump(cm_log::level::info, str, strlen(str)+1, 16);
+
+    // test through logger reference
+    str = "Now is the time for all good men to come to the aid of their country, again and again.";
+    log.hex_dump(cm_log::level::info, str, strlen(str)+1, 16);
 }
 
 void utilTest::test_format_local_timestamp() {

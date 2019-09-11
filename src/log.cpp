@@ -37,6 +37,7 @@ static const char *log_part[] = CM_LOG_PART_NAMES;
 cm_log::console_logger cm_log::console;
 void *default_logger = &cm_log::console;
 
+
 //-------------------------------------------------------------------------
 // message formatter
 //-------------------------------------------------------------------------
@@ -221,35 +222,60 @@ void cm_log::log(cm_log::extra ext, cm_log::level::en lvl, const std::string &ms
 }
 
 
+
 void cm_log::_hex_dump(cm_log::level::en lvl, const void *buf, int buf_sz, int width) {
 
-    int sz = buf_sz;
-    char out_buf[1024] = {'\0'};
-    const unsigned char *cp = (unsigned char *) buf;
-    for(int i = 0; i < buf_sz; i++) {
-        if(i % width == 0) {
-            cm_util::bin2hex_line(out_buf, sizeof(out_buf), &cp[i], sz, width, cm_util::hex_lower);
-            cm_log::log(lvl, out_buf);
-            sz -= width;
-        }
-    }
+    // call the configured logger
+    ((cm_log::logger *)default_logger)->_hex_dump(lvl, buf, buf_sz, width);
   
 }
 
 void cm_log::_hex_dump(cm_log::extra ext, cm_log::level::en lvl, const void *buf, int buf_sz, int width) {
 
+    // call the configured logger
+    ((cm_log::logger *)default_logger)->_hex_dump(ext, lvl, buf, buf_sz, width);
+
+}
+
+//-------------------------------------------------------------------------
+// logger hex_dump
+//-------------------------------------------------------------------------
+
+void cm_log::logger::_hex_dump(cm_log::level::en lvl, const void *buf, int buf_sz, int width) {
+
+    smart_lock_transaction_start();
+
     int sz = buf_sz;
-    char out_buf[1024] = {'\0'};
+    char out_buf[4 * width + width + 1] = {'\0'};
     const unsigned char *cp = (unsigned char *) buf;
     for(int i = 0; i < buf_sz; i++) {
         if(i % width == 0) {
             cm_util::bin2hex_line(out_buf, sizeof(out_buf), &cp[i], sz, width, cm_util::hex_lower);
-            cm_log::log(ext, lvl, out_buf);
+            log(lvl, out_buf);
             sz -= width;
         }
     }
+
+    smart_lock_transaction_end();
 }
 
+void cm_log::logger::_hex_dump(cm_log::extra ext, cm_log::level::en lvl, const void *buf, int buf_sz, int width) {
+
+    smart_lock_transaction_start();
+
+    int sz = buf_sz;
+    char out_buf[4 * width + width + 1] = {'\0'};
+    const unsigned char *cp = (unsigned char *) buf;
+    for(int i = 0; i < buf_sz; i++) {
+        if(i % width == 0) {
+            cm_util::bin2hex_line(out_buf, sizeof(out_buf), &cp[i], sz, width, cm_util::hex_lower);
+            log(ext, lvl, out_buf);
+            sz -= width;
+        }
+    }
+
+    smart_lock_transaction_end();
+}
 
 //-------------------------------------------------------------------------
 // cm_log error (output to stderr)
@@ -268,22 +294,22 @@ void cm_log::console_logger::log(cm_log::level::en lvl, const std::string &msg) 
 
 	if(!ok_to_log(lvl)) return;
 
-	lock();
+	smart_lock();
     std::cout << cm_log::format_log_message(cm_log::extra(), date_time_fmt, parsed_msg_fmt, lvl, msg, gmt) << std::endl;
 	//fprintf(stdout, "%s: %s", ::log_level[lvl], msg.c_str());
-	unlock();
+	smart_unlock();
 }
 
 void cm_log::console_logger::log(cm_log::extra ext, cm_log::level::en lvl, const std::string &msg) {
 
 	if(!ok_to_log(lvl)) return;
 
-	lock();
+	smart_lock();
 
     std::cout << cm_log::format_log_message(ext, date_time_fmt, parsed_msg_fmt, lvl, msg, gmt) << std::endl;
 
 	//fprintf(stdout, "%s [%s:%d:%s]: %s", ::log_level[lvl], ext.file, ext.line, ext.func, msg.c_str());
-	unlock();
+	smart_unlock();
 }
 
 //-------------------------------------------------------------------------
@@ -294,26 +320,26 @@ void cm_log::file_logger::log(cm_log::level::en lvl, const std::string &msg) {
 
     if(!ok_to_log(lvl)) return;
 
-    lock();
+    smart_lock();
     open_log();
 
 	*this << cm_log::format_log_message(cm_log::extra(), date_time_fmt, parsed_msg_fmt, lvl, msg, gmt) << "\n";
     flush();
 
-    unlock();
+    smart_unlock();
 }
 
 void cm_log::file_logger::log(cm_log::extra ext, cm_log::level::en lvl, const std::string &msg) {
 
     if(!ok_to_log(lvl)) return;
 
-    lock();
+    smart_lock();
     open_log();
 
     *this << cm_log::format_log_message(ext, date_time_fmt, parsed_msg_fmt, lvl, msg, gmt) << "\n"; 
     flush();
 
-    unlock();
+    smart_unlock();
 }
 
 //-------------------------------------------------------------------------
@@ -357,7 +383,7 @@ void cm_log::rolling_file_logger::rotate() {
     // create timestamp part for target path
     std::string timestamp = cm_util::format_filename_timestamp(this_rotate_time, gmt); //YYYYMMDD_HHMMSS
 
-    lock();
+    smart_lock();
 
     // build the target path
     std::string rotate_path = build_rotate_path(timestamp);
@@ -378,7 +404,7 @@ void cm_log::rolling_file_logger::rotate() {
         }
     }
 
-    unlock();
+    smart_unlock();
 }
 
 void cm_log::rolling_file_logger::log(cm_log::level::en lvl, const std::string &msg) {

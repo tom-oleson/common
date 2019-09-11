@@ -191,7 +191,7 @@ std::string format_log_message( const std::string &date_time_fmt, const std::str
          cm_log::level::en lvl, const std::string &msg, bool gmt);
 
 
-class logger {
+class logger: public cm::mutex {
 
 protected:
     std::string name;
@@ -202,6 +202,23 @@ protected:
     std::vector<std::string> parsed_msg_fmt;
 
     void *save_default_logger;
+
+    bool use_lock = true;;
+
+    void smart_lock() { if(use_lock) lock(); }
+    void smart_unlock() { if(use_lock) unlock(); }
+
+
+#define smart_lock_transaction_start() \
+    smart_lock();\
+    bool __smart_lock_save = use_lock; \
+    use_lock = false;
+
+
+#define smart_lock_transaction_end() \
+    use_lock = __smart_lock_save; \
+    smart_unlock();
+
 
 public:
 	logger():
@@ -237,10 +254,14 @@ public:
 	
 	virtual void log(cm_log::level::en lvl, const std::string &msg) = 0;
 	virtual void log(cm_log::extra ext, cm_log::level::en lvl, const std::string &msg) = 0;
+
+    // transactional, multi-line ouputs
+    void _hex_dump(cm_log::level::en lvl, const void *buf, int sz, int width);
+    void _hex_dump(cm_log::extra ext, cm_log::level::en lvl, const void *buf, int sz, int width);
 };
 
 
-class console_logger : public logger, protected cm::mutex {
+class console_logger : public logger /*, protected cm::mutex */{
 	
 public:
 	console_logger(): logger() { name = "console-logger"; }
@@ -251,7 +272,7 @@ public:
 };
 
 
-class file_logger : public logger, protected cm::mutex, protected std::ofstream {
+class file_logger : public logger /*, protected cm::mutex*/, protected std::ofstream {
 
 protected:
 	std::string log_path;
@@ -393,6 +414,7 @@ public:
 
 
 extern console_logger console;
+//extern bool use_lock;
 
 
 } // namespace cm_log
@@ -401,6 +423,7 @@ inline cm_log::logger &get_default_logger() { return *(cm_log::logger*)default_l
 inline void set_default_logger(cm_log::logger *_logger) {
     default_logger = _logger;
 }
+
 
 #endif	// __LOG_H
 
