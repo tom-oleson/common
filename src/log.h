@@ -203,23 +203,6 @@ protected:
 
     void *save_default_logger;
 
-    bool use_lock = true;;
-
-    void smart_lock() { if(use_lock) lock(); }
-    void smart_unlock() { if(use_lock) unlock(); }
-
-
-#define smart_lock_transaction_start() \
-    smart_lock();\
-    bool __smart_lock_save = use_lock; \
-    use_lock = false;
-
-
-#define smart_lock_transaction_end() \
-    use_lock = __smart_lock_save; \
-    smart_unlock();
-
-
 public:
 	logger():
 		log_level(cm_log::level::info), gmt(false), date_time_fmt("%m/%d/%Y %H:%M:%S"),

@@ -188,6 +188,18 @@ int cm_net::connect(const std::string &host, int host_port, std::string &info) {
     return fd;
 }
 
+int cm_net::recv(int socket, char *buf, size_t buf_size) {
+
+    bzero(buf, buf_size);
+    int num_bytes = ::recv(socket, buf, buf_size, 0 /*flags*/);
+    if(-1 == num_bytes) {
+        cm_net::err("recv error", errno);
+        return CM_NET_ERR;
+    }
+    return num_bytes;
+}
+
+
 //////////////////// server_thread //////////////////////////////
 
 cm_net::server_thread::server_thread(int port, CM_NET_RECEIVE(fn)):
@@ -200,8 +212,6 @@ cm_net::server_thread::server_thread(int port, CM_NET_RECEIVE(fn)):
 cm_net::server_thread::~server_thread() {
     // stop processing thread
     stop();
-
-    // if there are clients, shut them down
 }
 
 
@@ -220,7 +230,6 @@ void cm_net::server_thread::cleanup() {
 }
 
 int cm_net::server_thread::accept() {
-
     // wait for and accept a client connection
     return cm_net::accept(host_socket, info);
 }
@@ -234,8 +243,8 @@ bool cm_net::server_thread::process() {
         return false;
     }
 
+    // start a thread to handle this new connection
     service_connection(socket, info);
-
 
     return true;
 }
@@ -246,10 +255,10 @@ void cm_net::server_thread::service_connection(int socket, const std::string inf
     auto p = create_connection_thread(socket, info);
     connections.push_back(std::move(p));
 
-    cm_log::info(cm_util::format("client connection: %s", info.size() > 0 ? info.c_str():
+    cm_log::info(cm_util::format("server: client connection: %s", info.size() > 0 ? info.c_str():
         "host?:serv?"));
 
-    // cleanup connections list
+    //cleanup connections list
     for(auto i = connections.begin(); i != connections.end(); i++) {
         if((*i)->is_done()) {
             connections.erase(i);
@@ -284,6 +293,12 @@ cm_net::connection_thread::~connection_thread() {
     stop();
 }
 
+void cm_net::send(int socket, const std::string &msg) {
+    
+    ::send(socket, msg.c_str(), msg.size(), 0 /*flags*/);
+}
+
+
 void cm_net::send(int socket, char *buf, size_t buf_size, const std::string &msg) {
 
     bzero(buf, buf_size);
@@ -298,16 +313,14 @@ void cm_net::connection_thread::send(const std::string &msg) {
 }
 
 void cm_net::connection_thread::receive(const char *buf, size_t sz) {
-    receive_fn(buf, sz);
+    receive_fn(socket, buf, sz);
 }
 
 bool cm_net::connection_thread::process() {
 
     // block until next request received
-    bzero(rbuf, sizeof(rbuf));
-    int num_bytes = recv(socket, rbuf, sizeof(rbuf), 0 /*flags*/);
-    if(-1 == num_bytes) {
-        cm_net::err("recv error", errno);
+    int num_bytes = cm_net::recv(socket, rbuf, sizeof(rbuf));
+    if(CM_NET_ERR == num_bytes) {
         return false;
     }
 
@@ -321,3 +334,55 @@ bool cm_net::connection_thread::process() {
     return true;
 }
 
+//////////////////// client_thread //////////////////////////////
+
+cm_net::client_thread::client_thread(const std::string _host, int port, CM_NET_RECEIVE(fn)):
+     host(_host), host_port(port), receive_fn(fn) {
+
+    // start processing thread
+    start();
+}
+
+cm_net::client_thread::~client_thread() {
+
+    // stop processing thread
+    stop();
+}
+
+bool cm_net::client_thread::setup() {
+
+    // connect to host
+    socket = cm_net::client_thread::connect();
+    if(-1 == socket) {
+        return false;
+    }
+    
+    connection = std::move(new cm_net::connection_thread(socket, info, receive_fn));
+
+    cm_log::info(cm_util::format("client: connected to: %s", info.size() > 0 ? info.c_str():
+        "host?:serv?"));
+
+    //wait for connection to stablize before we start sending data
+    timespec delay = {0, 100000000};   // 0.1 seconds
+    nanosleep(&delay, NULL);
+
+    return true;
+}
+
+void cm_net::client_thread::cleanup() {
+
+    cm_net::close_socket(socket);
+     if(connection != nullptr) {
+        delete connection;
+        connection = nullptr;
+    }
+}
+
+int cm_net::client_thread::connect() {
+    return cm_net::connect(host, host_port, info);
+}
+
+bool cm_net::client_thread::process() {
+    // we end this thread when our connection thread has ended
+    return connection->is_done() == false;
+}

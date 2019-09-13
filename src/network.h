@@ -30,6 +30,8 @@
 #ifndef __NETWORK_H
 #define __NETWORK_H
 
+#pragma once
+
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <unistd.h>
@@ -57,7 +59,9 @@ int server_socket(int host_port);
 void close_socket(int fd);
 int accept(int host_socket, std::string &info);
 int connect(const std::string &host, int host_port, std::string &info);
+void send(int socket, const std::string &msg);
 void send(int socket, char *buf, size_t buf_size, const std::string &msg);
+int recv(int socket, char *buf, size_t buf_size);
 
 inline void err(const std::string &msg, int errnum) {
     char buf[128] = {'\0'};
@@ -65,7 +69,7 @@ inline void err(const std::string &msg, int errnum) {
     cm_log::error(cm_util::format("%s: %s", msg.c_str(), buf));
 }
 
-#define CM_NET_RECEIVE(fn) void (*fn)(const char *buf, size_t sz)
+#define CM_NET_RECEIVE(fn) void (*fn)(int socket, const char *buf, size_t sz)
 
 class connection_thread: public cm_thread::basic_thread {
 
@@ -118,6 +122,47 @@ public:
     ~server_thread();
 
     void service_connection(int socket, const std::string info);
+
+};
+
+
+class client_thread: public cm_thread::basic_thread  {
+
+protected:
+
+    //std::unique_ptr<connection_thread> connection;
+    connection_thread *connection = nullptr;
+
+    std::string host;
+    int socket;
+    int host_port;
+    std::string info;
+
+    CM_NET_RECEIVE(receive_fn) = nullptr;
+
+    bool setup();
+    void cleanup();
+    bool process();
+
+    int connect();
+
+    void send(const std::string msg) {
+        connection->send(msg);
+    }   
+
+    // std::unique_ptr<connection_thread>
+    // create_connection_thread(int socket, const std::string info) {
+    //     return std::make_unique<connection_thread>(socket, info, receive_fn);
+    // }
+
+    // connection_thread *
+    // create_connection_thread(int socket, const std::string info) {
+    //     return new cm_net::connection_thread(socket, info, receive_fn);
+    // }
+
+public:
+    client_thread(const std::string host, int port, CM_NET_RECEIVE(fn));
+    ~client_thread();
 
 };
 

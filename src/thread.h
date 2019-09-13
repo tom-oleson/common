@@ -30,17 +30,20 @@
 #ifndef __THREAD_H
 #define __THREAD_H
 
+#pragma once
 
-#include "util.h"
 
 #include <pthread.h>
+
+#include "util.h"
+#include "mutex.h"
 
 namespace cm_thread {
 
 
-class basic_thread {
+class basic_thread: public cm::mutex {
 
-    basic_thread(const basic_thread &r) { /* do not implement */ }
+    //basic_thread(const basic_thread &r) { /* do not implement */ }
 
 protected:
 

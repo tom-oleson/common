@@ -29,12 +29,14 @@
 
 #include "thread.h"
 
+
 extern "C" {
 
 void cm_thread::basic_thread::cleanup_handler(void *p) {
     cm_thread::basic_thread *tp = (cm_thread::basic_thread*)p;
-    tp->cleanup();
+    tp->tid = 0;
     tp->done = true;
+    tp->cleanup();
 }
 
 void *cm_thread::basic_thread::run_handler(void *p) {
@@ -56,8 +58,9 @@ void *cm_thread::basic_thread::run_handler(void *p) {
 }
 
 
-cm_thread::basic_thread::basic_thread(bool auto_start) {
-    if(auto_start) start();
+cm_thread::basic_thread::basic_thread(bool auto_start):
+ tid(0), started(false), done(false) {
+    //if(auto_start) start();
 }
 
 cm_thread::basic_thread::~basic_thread() {
@@ -65,23 +68,29 @@ cm_thread::basic_thread::~basic_thread() {
 }
 
 void cm_thread::basic_thread::start() {
-    pthread_create(&tid, NULL, &run_handler, (void*) this);
 
-    while(!is_started()) {
-        nanosleep(&delay, NULL);
+    lock();
+    if(tid == 0) {
+        pthread_create(&tid, NULL, &run_handler, (void*) this);
+        while(!is_started()) {
+            nanosleep(&delay, NULL);
+        }
     }
+    unlock();
 }
 
 void cm_thread::basic_thread::stop() {
 
-    if(pthread_self() == tid) {
-        // self terminating
-        pthread_exit(NULL);
-    }
-    else if(is_started()) {
-        // being terminated by another thread
-        pthread_cancel(tid);        /* request thread cancel */
-        pthread_join(tid, NULL);/* wait here until its done */
+    if(tid != 0) {    
+        if(pthread_self() == tid) {
+            // self terminating
+            pthread_exit(NULL);
+        }
+        else if(is_started()) {
+            // being terminated by another thread
+            pthread_cancel(tid);        /* request thread cancel */
+            pthread_join(tid, NULL);/* wait here until its done */
+        }
     }
 }
 
