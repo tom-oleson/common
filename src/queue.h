@@ -66,7 +66,7 @@ public:
 
     void push_back(std::deque<valueT> &q) {
         in_mutex.lock();
-        for(auto value : q) {
+        for(auto &value : q) {
             in.push_back(value);
         }               
         in_mutex.unlock();

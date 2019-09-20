@@ -216,7 +216,7 @@ int cm_net::recv(int socket, char *buf, size_t buf_size) {
 }
 
 
-int cm_net::recv_non_block(int socket, char *buf, size_t buf_size) {
+int cm_net::recv_non_blocking(int socket, char *buf, size_t buf_size) {
 
     bzero(buf, buf_size);
     int num_bytes = ::recv(socket, buf, buf_size, MSG_DONTWAIT /*flags*/);
@@ -228,208 +228,6 @@ int cm_net::recv_non_block(int socket, char *buf, size_t buf_size) {
     }
     return num_bytes;
 }
-
-int cm_net::read(int fd, char *buf, size_t sz) {
-
-    // Read until sz bytes have been read (or error/EOF).
-    ssize_t num_bytes, total_bytes = 0;
-    while(total_bytes != sz) {
-        num_bytes = read(fd, buf, sz - total_bytes);
-        if (num_bytes == 0) return total_bytes;     // EOF
-        if (num_bytes == -1) return -1;             // error
-        total_bytes += num_bytes;
-        buf += num_bytes;
-    }
-
-    return total_bytes;
-}
-
-
-int cm_net::write(int fd, char *buf, size_t sz) {
-
-    // Write until sz bytes have been written (or error/EOF).
-    ssize_t num_bytes, total_bytes = 0;
-    while(total_bytes != sz) {
-        num_bytes = write(fd, buf, sz - total_bytes);
-        if (num_bytes == 0) return total_bytes;     // EOF
-        if (num_bytes == -1) return -1;             // error
-        total_bytes += num_bytes;
-        buf += num_bytes;
-    }
-
-    return total_bytes;
-}
-
-
-
-int cm_net::set_non_block(int fd, bool non_block) {
-
-    // get current flags for fd
-    int flags = fcntl(fd, F_GETFL);
-    if (-1 == flags) {
-        cm_net::err("fcntl(F_GETFL)", errno);
-        return CM_NET_ERR;
-    }
-
-    // merge in mask bits 
-    if (non_block) {
-        flags |= O_NONBLOCK;
-    }
-    else {
-        flags &= ~O_NONBLOCK;
-    }
-
-    // set flags for fd
-    if (-1 == fcntl(fd, F_SETFL, flags)) {
-        cm_net::err("fcntl(F_SETFL,O_NONBLOCK)", errno);
-        return CM_NET_ERR;
-    }
-
-    return CM_NET_OK;
-}
-
-
-// If set, disable the Nagle algorithm. This means that segments are always sent as
-// soon as possible, even if there is only a small amount of data. When not set, data
-// is buffered until there is a sufficient amount to send out, thereby avoiding the
-// frequent sending of small packets, which results in poor utilization of the network. 
-
-int cm_net::set_no_delay(int fd, int no_delay) {
-    int opt_nodelay = no_delay;
-    if (-1 == setsockopt(fd, IPPROTO_TCP, TCP_NODELAY, &opt_nodelay, sizeof(int))) {
-        cm_net::err("setsockopt TCP_NODELAY", errno);
-        return CM_NET_ERR;
-    }
-    return CM_NET_OK;
-}
-
-int cm_net::set_keep_alive(int fd) {
-
-    // Enable sending of keep-alive messages on connection-oriented
-    // sockets. Expects an integer boolean flag.
-    int opt_keepalive = 1;
-    if (-1 == setsockopt(fd, SOL_SOCKET, SO_KEEPALIVE, &opt_keepalive, sizeof(int))) {
-        cm_net::err("setsockopt: SO_KEEPALIVE", errno);
-        return CM_NET_ERR;
-    }
-    return CM_NET_OK;
-}
-
-int cm_net::set_keep_alive_interval(int fd, int interval) {
-
-    if (CM_NET_ERR == cm_net::set_keep_alive(fd)) {
-        return CM_NET_ERR;
-    }
-
-#define __LINUX_KEEP_ALIVE__
-#ifdef __LINUX_KEEP_ALIVE__
-
-    //The time (in seconds) the connection needs to remain idle before TCP
-    //starts sending keepalive probes, if the socket option SO_KEEPALIVE has
-    //been set on this socket. This option should not be used in code intended
-    //to be portable. 
-    int opt_keepidle = interval;
-    if (0 > setsockopt(fd, IPPROTO_TCP, TCP_KEEPIDLE, &opt_keepidle, sizeof(int))) {
-        cm_net::err("setsockopt: TCP_KEEPIDLE", errno);
-        return CM_NET_ERR;
-    }
-
-    //The time (in seconds) between individual keepalive probes. This option
-    // should not be used in code intended to be portable. 
-    int opt_keepintvl = interval/3;
-    if (opt_keepintvl == 0) opt_keepintvl = 1;
-    if (0 > setsockopt(fd, IPPROTO_TCP, TCP_KEEPINTVL, &opt_keepintvl, sizeof(int))) {
-        cm_net::err("setsockopt: TCP_KEEPINTVL", errno);
-        return CM_NET_ERR;
-    }
-
-    //The maximum number of keepalive probes TCP should send before dropping the
-    //connection. This option should not be used in code intended to be portable.
-    int opt_keepcnt = 3;
-    if (0 > setsockopt(fd, IPPROTO_TCP, TCP_KEEPCNT, &opt_keepcnt, sizeof(int)) < 0) {
-        cm_net::err("setsockopt: TCP_KEEPCNT", errno);
-        return CM_NET_ERR;
-    }
-#else
-    (void) interval;  // black hole
-#endif
-
-    return CM_NET_OK;
-}
-
-int cm_net::set_send_buffer(int fd, int size) {
-
-    // Sets the maximum socket send buffer in bytes. The kernel doubles 
-    // this value (to allow space for bookkeeping overhead) when
-    // it is set using setsockopt(2), and this doubled value is returned
-    // by getsockopt(2). The minimum (doubled) value for this option is 2048. 
-
-    int opt_buf_size = size;
-    if(opt_buf_size < 2048) opt_buf_size = 2048;
-    if(-1 == setsockopt(fd, SOL_SOCKET, SO_SNDBUF, &opt_buf_size, sizeof(int))) {
-        cm_net::err("setsockopt SO_SNDBUF", errno);
-        return CM_NET_ERR;
-    }
-    return CM_NET_OK;
-}
-
-int cm_net::set_receive_buffer(int fd, int size) {
-
-    // Sets the maximum socket receive buffer in bytes. The kernel doubles 
-    // this value (to allow space for bookkeeping overhead) when
-    // it is set using setsockopt(2), and this doubled value is returned
-    // by getsockopt(2). The minimum (doubled) value for this option is 256. 
-
-    int opt_buf_size = size;
-    if(opt_buf_size < 256) opt_buf_size = 256;
-    if(-1 == setsockopt(fd, SOL_SOCKET, SO_RCVBUF, &opt_buf_size, sizeof(int))) {
-        cm_net::err("setsockopt SO_RCVBUF", errno);
-        return CM_NET_ERR;
-    }
-    return CM_NET_OK;
-}
-
-int cm_net::set_send_timeout(int fd, long long millis) {
-
-    // Set the sending timeouts until reporting an error.
-    // If output function blocks for this period of time, and data has
-    // been sent, the return value of that function will be the amount
-    // of data transferred; if no data has been transferred and the timeout
-    // has been reached then -1 is returned with errno set. If the timeout
-    // is set to zero (the default) then the operation will never
-    // timeout.
-
-    struct timeval tv;
-    tv.tv_sec = millis / 1000;
-    tv.tv_usec = (millis % 1000) * 1000;
-    if (-1 == setsockopt(fd, SOL_SOCKET, SO_SNDTIMEO, &tv, sizeof(timeval))) {
-        cm_net::err("setsockopt SO_SNDTIMEO", errno);
-        return CM_NET_ERR;
-    }
-    return CM_NET_OK;
-}
-
-
-int cm_net::set_receive_timeout(int fd, long long millis) {
-
-    // Set the receiving timeouts until reporting an error.
-    // If input function blocks for this period of time, and data has
-    // been received, the return value of that function will be the amount
-    // of data transferred; if no data has been transferred and the timeout
-    // has been reached then -1 is returned with errno set. If the timeout
-    // is set to zero (the default) then the operation will never
-    // timeout.
-
-    struct timeval tv;
-    tv.tv_sec = millis / 1000;
-    tv.tv_usec = (millis % 1000) * 1000;
-    if (-1 == setsockopt(fd, SOL_SOCKET, SO_RCVTIMEO, &tv, sizeof(timeval))) {
-        cm_net::err("setsockopt SO_RCVTIMEO", errno);
-        return CM_NET_ERR;
-    }
-    return CM_NET_OK;
-}
-
 
 //////////////////// server_thread //////////////////////////////
 
@@ -509,8 +307,12 @@ void cm_net::connection_thread::cleanup() {
 }
 
 cm_net::connection_thread::connection_thread(int _socket, const std::string _info,
-    CM_NET_RECEIVE(fn)): socket(_socket), receive_fn(fn) {
+    CM_NET_RECEIVE(fn)) {
+
+    socket = _socket;
     info = _info;
+    receive_fn = fn;
+
     // start processing thread
     start();
 }
@@ -522,6 +324,7 @@ cm_net::connection_thread::~connection_thread() {
 
 
 void cm_net::connection_thread::send(const std::string &msg) {
+
     cm_net::send(socket, sbuf, sizeof(sbuf), msg);
 }
 
@@ -551,17 +354,15 @@ bool cm_net::connection_thread::process() {
 
 cm_net::client_thread::client_thread(const std::string _host, int port, CM_NET_RECEIVE(fn)):
      host(_host), host_port(port), receive_fn(fn) {
+
     // start processing thread
     start();
 }
 
 cm_net::client_thread::~client_thread() {
+
     // stop processing thread
     stop();
-}
-
-int cm_net::client_thread::connect() {
-    return cm_net::connect(host, host_port, info);
 }
 
 bool cm_net::client_thread::setup() {
@@ -591,6 +392,10 @@ void cm_net::client_thread::cleanup() {
         delete connection;
         connection = nullptr;
     }
+}
+
+int cm_net::client_thread::connect() {
+    return cm_net::connect(host, host_port, info);
 }
 
 bool cm_net::client_thread::process() {

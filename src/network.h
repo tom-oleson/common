@@ -37,6 +37,9 @@
 #include <unistd.h>
 #include <netdb.h>
 #include <arpa/inet.h>
+#include <netinet/in.h>
+#include <netinet/tcp.h>
+#include <fcntl.h>
 #include <string.h>
 
 #include <vector>
@@ -46,6 +49,7 @@
 
 #include "util.h"
 #include "thread.h"
+#include "queue.h"
 #include "log.h"
 
 #define CM_NET_OK 0
@@ -53,15 +57,34 @@
 
 namespace cm_net {
 
-int enable_reuseaddr(int fd);
+
 int create_socket();
 int server_socket(int host_port);
 void close_socket(int fd);
 int accept(int host_socket, std::string &info);
 int connect(const std::string &host, int host_port, std::string &info);
+
 void send(int socket, const std::string &msg);
 void send(int socket, char *buf, size_t buf_size, const std::string &msg);
+
 int recv(int socket, char *buf, size_t buf_size);
+int recv_non_block(int socket, char *buf, size_t buf_size);
+int read(int fd, char *buf, size_t sz);
+int write(int fd, char *buf, size_t sz);
+
+
+int enable_reuseaddr(int fd);
+int set_non_block(int fd, bool non_block);
+int set_keep_alive(int fd);
+int set_keep_alive_interval(int fd, int interval);
+int set_no_delay(int fd, int no_delay);
+int set_send_buffer(int fd, int size);
+int set_receive_buffer(int fd, int size);
+int set_send_timeout(int fd, long long millis);
+int set_receive_timeout(int fd, long long millis);
+int read(int fd, char *buf, size_t sz);
+int write(int fd, char *buf, size_t sz);
+
 
 inline void err(const std::string &msg, int errnum) {
     char buf[128] = {'\0'};
@@ -70,6 +93,8 @@ inline void err(const std::string &msg, int errnum) {
 }
 
 #define CM_NET_RECEIVE(fn) void (*fn)(int socket, const char *buf, size_t sz)
+
+#define CM_NET_ON_RECEIVE(fn) void (*fn)(int socket, const char *buf, size_t sz)
 
 class connection_thread: public cm_thread::basic_thread {
 
@@ -125,7 +150,6 @@ public:
 
 };
 
-
 class client_thread: public cm_thread::basic_thread  {
 
 protected:
@@ -167,7 +191,7 @@ public:
 };
 
 
-} // namespace cm_net
 
+} // namespace cm_net
 
 #endif
