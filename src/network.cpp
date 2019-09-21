@@ -43,7 +43,7 @@ int cm_net::create_socket() {
 
     int fd = socket(AF_INET, SOCK_STREAM, 0 /*protocol*/);
      if(-1 == fd) {
-        cm_net::err("create socket", errno);
+        cm_net::err("create socket failed", errno);
         return CM_NET_ERR;
     }   
 
@@ -77,7 +77,7 @@ int cm_net::server_socket(int host_port) {
     server_hint.sin_addr.s_addr = htonl(INADDR_ANY);
 
     if(-1 == bind(host_socket, (sockaddr *) &server_hint, sizeof(server_hint))) {
-        cm_net::err("error on bind to IP/port", errno);
+        cm_net::err("bind failed", errno);
         return CM_NET_ERR;
     }
     
@@ -85,11 +85,11 @@ int cm_net::server_socket(int host_port) {
 
     if(-1 == listen(host_socket, SOMAXCONN)) {
         cm_net::close_socket(host_socket);
-        cm_net::err("error on listen", errno);
+        cm_net::err("listen failed", errno);
         return CM_NET_ERR;
     } 
    
-    cm_log::info(cm_util::format("server: listening on %d", host_port)); 
+    cm_log::info(cm_util::format("listening on port %d", host_port)); 
 
     return host_socket;
 }
@@ -109,11 +109,10 @@ int cm_net::accept(int host_socket, std::string &info) {
 
     while(-1 == (fd = ::accept(host_socket, (sockaddr *) &client_hint, &client_sz))) {
         if(errno != EINTR) {
-            cm_net::err("error on accept", errno);
+            cm_net::err("accept failed", errno);
             return CM_NET_ERR;
         }
-        cm_log::info("accept interrupted, looping to retry");
-        /* blocking accept interrupted, loop for retry */
+        /* accept interrupted, loop for retry */
     }
 
     char host[NI_MAXHOST] = { '\0' };
@@ -128,9 +127,6 @@ int cm_net::accept(int host_socket, std::string &info) {
         // no name info available, use info from client connection...
         snprintf(info_buf, sizeof(info_buf), "%s:%d", host, ntohs(client_hint.sin_port));
     }
-
-    cm_log::info(cm_util::format("accept: new socket = %d", fd)); 
-
     info.assign(info_buf);
 
     return fd;
@@ -161,7 +157,7 @@ int cm_net::connect(const std::string &host, int host_port, std::string &info) {
     bzero(&(server_hint.sin_zero), 8);
 
     if(-1 == ::connect(fd, (sockaddr *) &server_hint, sizeof(server_hint))) {
-        cm_net::err("failed to connect to IP/port", errno);
+        cm_net::err("connect failed", errno);
         cm_net::close_socket(fd);
         return CM_NET_ERR;
     }
@@ -228,22 +224,6 @@ int cm_net::recv_non_block(int socket, char *buf, size_t buf_size) {
     }
     return num_bytes;
 }
-
-int cm_net::read(int fd, char *buf, size_t sz) {
-
-    // Read until sz bytes have been read (or error/EOF).
-    ssize_t num_bytes, total_bytes = 0;
-    while(total_bytes != sz) {
-        num_bytes = read(fd, buf, sz - total_bytes);
-        if (num_bytes == 0) return total_bytes;     // EOF
-        if (num_bytes == -1) return -1;             // error
-        total_bytes += num_bytes;
-        buf += num_bytes;
-    }
-
-    return total_bytes;
-}
-
 
 int cm_net::write(int fd, char *buf, size_t sz) {
 
@@ -448,54 +428,127 @@ cm_net::server_thread::~server_thread() {
 
 bool cm_net::server_thread::setup() {
 
-    host_socket = cm_net::server_socket(host_port);
-    if(-1 == host_socket) {
+
+    epollfd = epoll_create();
+    if(CM_NET_ERR == epollfd) {
         return false;
     }
+
+    listen_socket = cm_net::server_socket(host_port);
+    if(-1 == listen_socket) {
+        return false;
+    }
+
+    if(CM_NET_ERR == cm_net::add_socket(epollfd, listen_socket, EPOLLIN)) {
+        cm_net::close_socket(listen_socket);
+        return false;
+    }
+
     return true;
 }
 
 void cm_net::server_thread::cleanup() {
 
-    cm_net::close_socket(host_socket);
+    cm_net::close_socket(listen_socket);
 }
 
+
 int cm_net::server_thread::accept() {
-    // wait for and accept a client connection
-    return cm_net::accept(host_socket, info);
+    int fd = cm_net::accept(listen_socket, info);
+    
+    if(CM_NET_ERR == set_non_block(fd, true)) {
+        cm_net::close_socket(fd);
+        return CM_NET_ERR;
+    }
+
+    return fd;
 }
 
 
 bool cm_net::server_thread::process() {
 
-    int socket = accept();
-    if(-1 == socket) {
-        cm_log::critical("accept failed in server thread, ending thread process");
+    // fetch fds that are ready for I/O...
+    nfds = epoll_wait(epollfd, events, MAX_EVENTS, timeout);
+    if(-1 == nfds) {
+        cm_net::err("epoll_wait", errno);
         return false;
     }
 
-    // start a thread to handle this new connection
-    service_connection(socket, info);
+    // process the ready fds
+    for(int n = 0; n < nfds; ++n) {
+
+        int fd = events[n].data.fd;
+
+        if(fd == listen_socket) {
+           conn_sock = accept();
+           cm_net::add_socket(epollfd, conn_sock, EPOLLIN | EPOLLET);
+        }
+        else {
+            // handle IO event...
+            do_use(fd);
+        }
+    }
 
     return true;
 }
 
+int cm_net::read(int fd, char *buf, size_t sz) {
 
-void cm_net::server_thread::service_connection(int socket, const std::string info) {
+    // Read until sz bytes have been read (or error/EOF).
+    ssize_t num_bytes, total_bytes = 0;
+    while(total_bytes != sz) {
+        num_bytes = read(fd, buf, sz - total_bytes);
 
-    auto p = create_connection_thread(socket, info);
-    connections.push_back(std::move(p));
+        if (num_bytes == 0) return total_bytes;     // EOF/disconnect
 
-    cm_log::info(cm_util::format("server: client connection: %s", info.size() > 0 ? info.c_str():
-        "host?:serv?"));
+        // no more data... return what we have
+        if (num_bytes == -1 && errno == EAGAIN && total_bytes > 0)
+            return total_bytes; 
 
-    //cleanup connections list
-    for(auto i = connections.begin(); i != connections.end(); i++) {
-        if((*i)->is_done()) {
-            connections.erase(i);
-        }
+        if (num_bytes == -1) return -1;             // error
+
+        total_bytes += num_bytes;
+        buf += num_bytes;
     }
 
+    return total_bytes;
+}
+
+int cm_net::server_thread::do_use(int fd) {
+
+    while(1) {
+        
+        int num_bytes = cm_net::read(fd, rbuf, sizeof(rbuf));
+        
+        if(num_bytes == -1 && errno == EAGAIN) {
+            // back to caller for the next epoll_wait()
+            return CM_NET_OK;
+        }
+
+        if(num_bytes == 0) {
+            // EOF - client disconnected
+            // remove socket from interest list...
+            delete_socket(epollfd, fd);
+            cm_net::close_socket(fd);
+
+            cm_log::info(cm_util::format("<%d>: connection closed.", fd));
+            return CM_NET_OK;
+        }
+        
+        if(num_bytes > 0) {
+            // give data to callback function...
+            receive_fn(fd, rbuf, num_bytes);
+            return CM_NET_OK;
+        }
+
+        if(num_bytes == -1) {
+            cm_net::err("read", errno);
+            // remove bad connection from interest list...
+            delete_socket(epollfd, fd);
+            cm_net::close_socket(fd);
+            return CM_NET_ERR;
+        }
+    }
 }
 
 ///////////////////// connection_thread //////////////////////////
@@ -596,4 +649,49 @@ void cm_net::client_thread::cleanup() {
 bool cm_net::client_thread::process() {
     // we end this thread when our connection thread has ended
     return connection->is_done() == false;
+}
+
+
+/////////////////////// event-driven I/O /////////////////////////////////
+
+int cm_net::epoll_create() {
+    int fd = epoll_create1(0);
+    if(-1 == fd) {
+        cm_net::err("epoll_create", errno);
+        return CM_NET_ERR;
+    }
+    return fd;
+}
+
+int cm_net::add_socket(int epollfd, int fd, uint32_t flags) {
+    struct epoll_event ev;
+    ev.events = flags;
+    ev.data.fd = fd;
+    if (epoll_ctl(epollfd, EPOLL_CTL_ADD, fd, &ev) == -1) {
+        cm_net::err("epoll_ctl:ADD", errno);
+        return CM_NET_ERR;
+    }
+    return CM_NET_OK;
+}
+
+int cm_net::modify_socket(int epollfd, int fd, uint32_t flags) {
+    struct epoll_event ev;
+    ev.events = flags;
+    ev.data.fd = fd;
+    if (epoll_ctl(epollfd, EPOLL_CTL_MOD, fd, &ev) == -1) {
+        cm_net::err("epoll_ctl:MOD", errno);
+        return CM_NET_ERR;
+    }
+    return CM_NET_OK;
+}
+
+int cm_net::delete_socket(int epollfd, int fd) {
+    struct epoll_event ev;
+    ev.events = 0;
+    ev.data.fd = fd;
+    if (epoll_ctl(epollfd, EPOLL_CTL_DEL, fd, &ev) == -1) {
+        cm_net::err("epoll_ctl:DEL", errno);
+        return CM_NET_ERR;
+    }
+    return CM_NET_OK;
 }

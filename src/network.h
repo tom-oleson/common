@@ -39,6 +39,7 @@
 #include <arpa/inet.h>
 #include <netinet/in.h>
 #include <netinet/tcp.h>
+#include <sys/epoll.h>
 #include <fcntl.h>
 #include <string.h>
 
@@ -86,6 +87,14 @@ int read(int fd, char *buf, size_t sz);
 int write(int fd, char *buf, size_t sz);
 
 
+// event-driven I/O
+#define MAX_EVENTS  10
+int epoll_create();
+int add_socket(int epollfd, int fd, uint32_t flags);
+int modify_socket(int epollfd, int fd, uint32_t flags);
+int delete_socket(int epollfd, int fd);
+
+
 inline void err(const std::string &msg, int errnum) {
     char buf[128] = {'\0'};
     strerror_r(errnum, buf, sizeof(buf));
@@ -116,37 +125,35 @@ public:
 
     void send(const std::string &msg);
     void receive(const char *buf, size_t sz);
-
 };
 
 class server_thread: public cm_thread::basic_thread  {
 
 protected:
 
-    std::vector<std::unique_ptr<connection_thread>> connections;
-
     int host_port;
-    int host_socket;
     std::string info;
 
     CM_NET_RECEIVE(receive_fn) = nullptr;
+
+    char rbuf[4096] = { '\0' };
+    char sbuf[4096] = { '\0' };
+
+    int epollfd;
+    int listen_socket;
+    struct epoll_event ev, events[MAX_EVENTS];
+    int conn_sock, nfds, timeout = -1;    
 
     bool setup();
     void cleanup();
     bool process();
 
     int accept();
-
-    std::unique_ptr<connection_thread>
-    create_connection_thread(int socket, const std::string info) {
-        return std::make_unique<connection_thread>(socket, info, receive_fn);
-    }
-
+    int do_use(int fd);
+    
 public:
     server_thread(int port, CM_NET_RECEIVE(fn));
     ~server_thread();
-
-    void service_connection(int socket, const std::string info);
 
 };
 
