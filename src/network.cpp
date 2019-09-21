@@ -428,7 +428,6 @@ cm_net::server_thread::~server_thread() {
 
 bool cm_net::server_thread::setup() {
 
-
     epollfd = epoll_create();
     if(CM_NET_ERR == epollfd) {
         return false;
@@ -454,16 +453,18 @@ void cm_net::server_thread::cleanup() {
 
 
 int cm_net::server_thread::accept() {
-    int fd = cm_net::accept(listen_socket, info);
     
-    if(CM_NET_ERR == set_non_block(fd, true)) {
-        cm_net::close_socket(fd);
-        return CM_NET_ERR;
+    int fd = cm_net::accept(listen_socket, info);
+    if(CM_NET_ERR != fd) {
+    
+        if(CM_NET_ERR == set_non_block(fd, true)) {
+            cm_net::close_socket(fd);
+            return CM_NET_ERR;
+        }
     }
 
     return fd;
 }
-
 
 bool cm_net::server_thread::process() {
 
@@ -481,7 +482,9 @@ bool cm_net::server_thread::process() {
 
         if(fd == listen_socket) {
            conn_sock = accept();
-           cm_net::add_socket(epollfd, conn_sock, EPOLLIN | EPOLLET);
+            if(CM_NET_ERR != conn_sock) {
+                cm_net::add_socket(epollfd, conn_sock, EPOLLIN | EPOLLET);
+            }
         }
         else {
             // handle IO event...
@@ -497,7 +500,7 @@ int cm_net::read(int fd, char *buf, size_t sz) {
     // Read until sz bytes have been read (or error/EOF).
     ssize_t num_bytes, total_bytes = 0;
     while(total_bytes != sz) {
-        num_bytes = read(fd, buf, sz - total_bytes);
+        num_bytes = ::read(fd, buf, sz - total_bytes);
 
         if (num_bytes == 0) return total_bytes;     // EOF/disconnect
 
@@ -519,6 +522,12 @@ int cm_net::server_thread::do_use(int fd) {
     while(1) {
         
         int num_bytes = cm_net::read(fd, rbuf, sizeof(rbuf));
+
+        if(num_bytes > 0) {
+            // give data to callback function...
+            receive_fn(fd, rbuf, num_bytes);
+            return CM_NET_OK;
+        }
         
         if(num_bytes == -1 && errno == EAGAIN) {
             // back to caller for the next epoll_wait()
@@ -527,17 +536,15 @@ int cm_net::server_thread::do_use(int fd) {
 
         if(num_bytes == 0) {
             // EOF - client disconnected
+
             // remove socket from interest list...
             delete_socket(epollfd, fd);
             cm_net::close_socket(fd);
 
-            cm_log::info(cm_util::format("<%d>: connection closed.", fd));
-            return CM_NET_OK;
-        }
-        
-        if(num_bytes > 0) {
-            // give data to callback function...
-            receive_fn(fd, rbuf, num_bytes);
+            CM_LOG_TRACE {
+                cm_log::trace(cm_util::format("<%d>: connection closed.", fd));
+            }
+
             return CM_NET_OK;
         }
 

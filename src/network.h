@@ -98,7 +98,9 @@ int delete_socket(int epollfd, int fd);
 inline void err(const std::string &msg, int errnum) {
     char buf[128] = {'\0'};
     strerror_r(errnum, buf, sizeof(buf));
-    cm_log::error(cm_util::format("%s: %s", msg.c_str(), buf));
+    CM_LOG_ERROR {
+        cm_log::error(cm_util::format("%s: %s", msg.c_str(), buf));
+    }
 }
 
 #define CM_NET_RECEIVE(fn) void (*fn)(int socket, const char *buf, size_t sz)
@@ -150,6 +152,7 @@ protected:
 
     int accept();
     int do_use(int fd);
+
     
 public:
     server_thread(int port, CM_NET_RECEIVE(fn));

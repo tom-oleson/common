@@ -14,7 +14,7 @@
 
 CPPUNIT_TEST_SUITE_REGISTRATION( networkTest );
 
-// receive function called by server connection_threads
+
 void client_receive(int socket, const char *buf, size_t sz) {
 
     cm_log::info(cm_util::format("%d: received response:", socket));
@@ -46,7 +46,6 @@ struct unit_client: public cm_net::client_thread {
 };
 
 
-// receive function called by server connection_threads
 void server_receive(int socket, const char *buf, size_t sz) {
 
     cm_log::info(cm_util::format("%d: received request:", socket));
@@ -80,6 +79,9 @@ void networkTest::test_network() {
     unit_client client1;
     unit_client client2;
     unit_client clinet3;
+    unit_client clinet4;
+    unit_client clinet5;
+    unit_client clinet6;
     
     sleep(4);
    
