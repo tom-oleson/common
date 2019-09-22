@@ -76,15 +76,16 @@ void networkTest::test_network() {
     // these must not go in containers, the constructors will
     // get called multiple times
 
-    unit_client client1;
-    unit_client client2;
-    unit_client clinet3;
-    unit_client clinet4;
-    unit_client clinet5;
-    unit_client clinet6;
-    unit_client clinet7;
-    unit_client clinet8;
-    
-    sleep(3);
+    // unit_client client1;
+    // unit_client client2;
+    // unit_client clinet3;
+    // unit_client clinet4;
+    // unit_client clinet5;
+    // unit_client clinet6;
+    // unit_client clinet7;
+    // unit_client clinet8;
+    unit_client clinet[10];
+
+    sleep(4);
    
 }
