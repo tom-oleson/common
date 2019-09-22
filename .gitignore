@@ -56,4 +56,4 @@ dkms.conf
 */unit_test/run_tests
 *.log
 */examples/examples
-
+*/examples/rolling
