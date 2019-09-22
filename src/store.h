@@ -42,7 +42,7 @@ template<class keyT, class valueT>
 class info_store: protected cm::mutex {
 
 protected:
-    // unordered map for fast access using buckets
+    // unordered map for faster access vs. map using buckets
     std::unordered_map<keyT,valueT> _map;
 
 public:
