@@ -53,7 +53,8 @@
 #include "queue.h"
 #include "log.h"
 
-#define CM_NET_OK 0
+#define CM_NET_OK 1
+#define CM_NET_EOF 0
 #define CM_NET_ERR -1
 
 namespace cm_net {
@@ -105,30 +106,6 @@ inline void err(const std::string &msg, int errnum) {
 
 #define CM_NET_RECEIVE(fn) void (*fn)(int socket, const char *buf, size_t sz)
 
-#define CM_NET_ON_RECEIVE(fn) void (*fn)(int socket, const char *buf, size_t sz)
-
-class connection_thread: public cm_thread::basic_thread {
-
-    int socket;
-    std::string info;
-
-    CM_NET_RECEIVE(receive_fn) = nullptr;
-
-    char rbuf[4096] = { '\0' };
-    char sbuf[4096] = { '\0' };
-
-    bool setup();
-    void cleanup();
-    bool process();
-
-public:
-    connection_thread(int socket, const std::string info, CM_NET_RECEIVE(fn));
-    ~connection_thread();
-
-    void send(const std::string &msg);
-    void receive(const char *buf, size_t sz);
-};
-
 class server_thread: public cm_thread::basic_thread  {
 
 protected:
@@ -139,7 +116,6 @@ protected:
     CM_NET_RECEIVE(receive_fn) = nullptr;
 
     char rbuf[4096] = { '\0' };
-    char sbuf[4096] = { '\0' };
 
     int epollfd;
     int listen_socket;
@@ -151,55 +127,68 @@ protected:
     bool process();
 
     int accept();
-    int do_use(int fd);
-
+    int service_input_event(int fd);
     
 public:
     server_thread(int port, CM_NET_RECEIVE(fn));
     ~server_thread();
+};
 
+struct rx_thread: public cm_thread::basic_thread  {
+
+    int socket;
+    int epollfd;
+
+    struct epoll_event ev, events[MAX_EVENTS];
+    int nfds, timeout = -1;    
+
+    CM_NET_RECEIVE(receive_fn) = nullptr;
+    rx_thread *rx = nullptr;
+
+    char rbuf[4096] = { '\0' };
+   
+    bool setup();
+    void cleanup();
+    bool process();
+
+    int service_input_event(int fd);
+
+    rx_thread(int s, CM_NET_RECEIVE(fn));
+    ~rx_thread();
 };
 
 class client_thread: public cm_thread::basic_thread  {
 
 protected:
 
-    //std::unique_ptr<connection_thread> connection;
-    connection_thread *connection = nullptr;
-
     std::string host;
-    int socket;
-    int host_port;
     std::string info;
 
+    int socket;
+    int host_port;
+    
+    char rbuf[4096] = { '\0' };
+
+    struct epoll_event ev, events[MAX_EVENTS];
+    int nfds, timeout = -1;    
+
     CM_NET_RECEIVE(receive_fn) = nullptr;
+    rx_thread *rx = nullptr;
 
     bool setup();
     void cleanup();
     bool process();
 
     int connect();
-
-    void send(const std::string msg) {
-        connection->send(msg);
-    }   
-
-    // std::unique_ptr<connection_thread>
-    // create_connection_thread(int socket, const std::string info) {
-    //     return std::make_unique<connection_thread>(socket, info, receive_fn);
-    // }
-
-    // connection_thread *
-    // create_connection_thread(int socket, const std::string info) {
-    //     return new cm_net::connection_thread(socket, info, receive_fn);
-    // }
+    int service_input_event(int fd);
+    void send(const std::string msg);
 
 public:
     client_thread(const std::string host, int port, CM_NET_RECEIVE(fn));
     ~client_thread();
 
+    bool is_done() { return done || (nullptr != rx && rx->is_done()); }
 };
-
 
 
 } // namespace cm_net

@@ -29,7 +29,6 @@
 
 #include "network.h"
 
-
 int cm_net::enable_reuseaddr(int fd) {
     int enable = 1;
     if (-1 == setsockopt(fd, SOL_SOCKET, SO_REUSEADDR, &enable, sizeof(enable))) {
@@ -211,7 +210,6 @@ int cm_net::recv(int socket, char *buf, size_t buf_size) {
     return num_bytes;
 }
 
-
 int cm_net::recv_non_block(int socket, char *buf, size_t buf_size) {
 
     bzero(buf, buf_size);
@@ -240,8 +238,6 @@ int cm_net::write(int fd, char *buf, size_t sz) {
     return total_bytes;
 }
 
-
-
 int cm_net::set_non_block(int fd, bool non_block) {
 
     // get current flags for fd
@@ -267,7 +263,6 @@ int cm_net::set_non_block(int fd, bool non_block) {
 
     return CM_NET_OK;
 }
-
 
 // If set, disable the Nagle algorithm. This means that segments are always sent as
 // soon as possible, even if there is only a small amount of data. When not set, data
@@ -389,7 +384,6 @@ int cm_net::set_send_timeout(int fd, long long millis) {
     return CM_NET_OK;
 }
 
-
 int cm_net::set_receive_timeout(int fd, long long millis) {
 
     // Set the receiving timeouts until reporting an error.
@@ -425,7 +419,6 @@ cm_net::server_thread::~server_thread() {
     stop();
 }
 
-
 bool cm_net::server_thread::setup() {
 
     epollfd = epoll_create();
@@ -457,7 +450,7 @@ int cm_net::server_thread::accept() {
     int fd = cm_net::accept(listen_socket, info);
     if(CM_NET_ERR != fd) {
     
-        if(CM_NET_ERR == set_non_block(fd, true)) {
+        if(CM_NET_ERR == cm_net::set_non_block(fd, true)) {
             cm_net::close_socket(fd);
             return CM_NET_ERR;
         }
@@ -488,7 +481,7 @@ bool cm_net::server_thread::process() {
         }
         else {
             // handle IO event...
-            do_use(fd);
+            service_input_event(fd);
         }
     }
 
@@ -517,7 +510,7 @@ int cm_net::read(int fd, char *buf, size_t sz) {
     return total_bytes;
 }
 
-int cm_net::server_thread::do_use(int fd) {
+int cm_net::server_thread::service_input_event(int fd) {
 
     while(1) {
         
@@ -558,53 +551,100 @@ int cm_net::server_thread::do_use(int fd) {
     }
 }
 
-///////////////////// connection_thread //////////////////////////
+/////////////////////// rx_thread ///////////////////////////////
 
-bool cm_net::connection_thread::setup() {
-    return true;
-}
-
-void cm_net::connection_thread::cleanup() {
-    cm_net::close_socket(socket);
-}
-
-cm_net::connection_thread::connection_thread(int _socket, const std::string _info,
-    CM_NET_RECEIVE(fn)): socket(_socket), receive_fn(fn) {
-    info = _info;
+cm_net::rx_thread::rx_thread(int s, CM_NET_RECEIVE(fn)):
+     socket(s), receive_fn(fn) {
     // start processing thread
     start();
 }
 
-cm_net::connection_thread::~connection_thread() {
+cm_net::rx_thread::~rx_thread() {
     // stop processing thread
     stop();
 }
 
+bool cm_net::rx_thread::setup() {
 
-void cm_net::connection_thread::send(const std::string &msg) {
-    cm_net::send(socket, sbuf, sizeof(sbuf), msg);
-}
-
-void cm_net::connection_thread::receive(const char *buf, size_t sz) {
-    receive_fn(socket, buf, sz);
-}
-
-bool cm_net::connection_thread::process() {
-
-    // block until next request received
-    int num_bytes = cm_net::recv(socket, rbuf, sizeof(rbuf));
-    if(CM_NET_ERR == num_bytes) {
+    epollfd = epoll_create();
+    if(CM_NET_ERR == epollfd) {
+        return false;
+    }
+    
+    if(CM_NET_ERR == cm_net::add_socket(epollfd, socket, EPOLLIN)) {
+        cm_net::close_socket(socket);
         return false;
     }
 
-    if(0 == num_bytes) {
-            // client disconnected
-            return false;
+    return true;
+}
+
+void cm_net::rx_thread::cleanup() {
+
+    cm_net::close_socket(socket);
+}
+
+bool cm_net::rx_thread::process() {
+
+    // fetch fds that are ready for I/O...
+    nfds = epoll_wait(epollfd, events, MAX_EVENTS, timeout);
+    if(-1 == nfds) {
+        cm_net::err("epoll_wait", errno);
+        return false;
     }
 
-    receive(rbuf, num_bytes);
+    // process the ready fds
+    for(int n = 0; n < nfds; ++n) {
+        int fd = events[n].data.fd;
+        // handle IO event...
+        int result = service_input_event(fd);
+        if(CM_NET_ERR == result) {
+            cm_net::err("service_input_event", errno);
+        }
+    }
 
     return true;
+}
+
+int cm_net::rx_thread::service_input_event(int fd) {
+
+    while(1) {
+        
+        int num_bytes = cm_net::read(fd, rbuf, sizeof(rbuf));
+
+        if(num_bytes > 0) {
+            // give data to callback function...
+            receive_fn(fd, rbuf, num_bytes);
+            return CM_NET_OK;
+        }
+        
+        if(num_bytes == -1 && errno == EAGAIN) {
+            // back to caller for the next epoll_wait()
+            return CM_NET_OK;
+        }
+
+        if(num_bytes == 0) {
+            // EOF - client disconnected
+
+            // remove socket from interest list...
+            delete_socket(epollfd, fd);
+            cm_net::close_socket(fd);
+
+            CM_LOG_TRACE {
+                cm_log::trace(cm_util::format("<%d>: connection closed.", fd));
+            }
+
+            return CM_NET_EOF;
+        }
+
+        if(num_bytes == -1) {
+            cm_net::err("read", errno);
+            // remove bad connection from interest list...
+            delete_socket(epollfd, fd);
+            cm_net::close_socket(fd);
+            return CM_NET_ERR;
+        }
+    }
 }
 
 //////////////////// client_thread //////////////////////////////
@@ -621,43 +661,50 @@ cm_net::client_thread::~client_thread() {
 }
 
 int cm_net::client_thread::connect() {
-    return cm_net::connect(host, host_port, info);
+
+    int fd = cm_net::connect(host, host_port, info);
+    if(CM_NET_ERR != fd) {
+
+        if(CM_NET_ERR == set_non_block(fd, true)) {
+            cm_net::close_socket(fd);
+            return CM_NET_ERR;
+        }
+    }
+
+    return fd;
 }
 
 bool cm_net::client_thread::setup() {
-
-    // connect to host
+    
     socket = cm_net::client_thread::connect();
-    if(-1 == socket) {
+    if(CM_NET_ERR == socket) {
         return false;
     }
-    
-    connection = std::move(new cm_net::connection_thread(socket, info, receive_fn));
+
+    rx = new rx_thread(socket, receive_fn);
+    if(nullptr == rx) {
+        return false;
+    }
 
     cm_log::info(cm_util::format("client: connected to: %s", info.size() > 0 ? info.c_str():
         "host?:serv?"));
-
-    //wait for connection to stablize before we start sending data
-    timespec delay = {0, 100000000};   // 0.1 seconds
-    nanosleep(&delay, NULL);
 
     return true;
 }
 
 void cm_net::client_thread::cleanup() {
-
     cm_net::close_socket(socket);
-     if(connection != nullptr) {
-        delete connection;
-        connection = nullptr;
-    }
+    if(nullptr != rx) delete rx;
 }
 
 bool cm_net::client_thread::process() {
-    // we end this thread when our connection thread has ended
-    return connection->is_done() == false;
+
+    return true;
 }
 
+void cm_net::client_thread::send(const std::string msg) {
+    cm_net::send(socket, msg);
+}
 
 /////////////////////// event-driven I/O /////////////////////////////////
 

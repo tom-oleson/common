@@ -32,7 +32,7 @@ struct unit_client: public cm_net::client_thread {
 
         for(int x = 0; x < 10000; x++) {
             if(++count % 10000 == 0) {
-                    send(cm_util::format("count = [%d]", count));
+                    send(cm_util::format("count=[%d]", count));
                   
                     //timespec delay = {0, 100000000};   // 100 ms
                     timespec delay = {0, 2000000};   // 2 ms
@@ -82,7 +82,9 @@ void networkTest::test_network() {
     unit_client clinet4;
     unit_client clinet5;
     unit_client clinet6;
+    unit_client clinet7;
+    unit_client clinet8;
     
-    sleep(4);
+    sleep(3);
    
 }
