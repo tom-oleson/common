@@ -38,6 +38,9 @@
 #include "util.h"
 #include "mutex.h"
 
+#define THREAD_PAGE_SIZE 4096
+#define THREAD_STACK_SIZE (8 * THREAD_PAGE_SIZE)
+
 namespace cm_thread {
 
 
@@ -48,6 +51,9 @@ class basic_thread: public cm::mutex {
 protected:
 
     pthread_t tid = 0;
+    pthread_attr_t attr;
+    int rc = 0;
+
     timespec delay = {0, 1000000}; /* 1ms delay between process calls */
     bool started = false;
     bool done = false;
@@ -68,6 +74,7 @@ public:
 
     bool is_started() { return started; }
     bool is_done() { return done; }
+    bool is_valid() { return rc == 0; }
 
     // starts thread if not already started
     void start();

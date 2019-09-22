@@ -59,7 +59,7 @@ void *cm_thread::basic_thread::run_handler(void *p) {
 
 
 cm_thread::basic_thread::basic_thread(bool auto_start):
- tid(0), started(false), done(false) {
+ tid(0), started(false), done(false), rc(0) {
     //if(auto_start) start();
 }
 
@@ -69,14 +69,20 @@ cm_thread::basic_thread::~basic_thread() {
 
 void cm_thread::basic_thread::start() {
 
-    lock();
+    //lock();
     if(tid == 0) {
-        pthread_create(&tid, NULL, &run_handler, (void*) this);
+        rc = pthread_attr_init(&attr);
+
+        rc = pthread_attr_setstacksize(&attr, THREAD_STACK_SIZE);
+
+        rc = pthread_create(&tid, &attr, &run_handler, (void*) this);
+
+
         while(!is_started()) {
             nanosleep(&delay, NULL);
         }
     }
-    unlock();
+    //unlock();
 }
 
 void cm_thread::basic_thread::stop() {
