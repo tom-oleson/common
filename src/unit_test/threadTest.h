@@ -21,6 +21,7 @@ class threadTest : public CPPUNIT_NS::TestFixture {
 
   CPPUNIT_TEST_SUITE( threadTest );
     CPPUNIT_TEST( test_thread );
+    CPPUNIT_TEST( test_thread_pool );
   CPPUNIT_TEST_SUITE_END();
 
 public:
@@ -29,7 +30,7 @@ public:
 
 protected:
     void test_thread();
+    void test_thread_pool();
 };
-
 
 #endif

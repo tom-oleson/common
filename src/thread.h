@@ -47,7 +47,8 @@ namespace cm_thread {
 
 class basic_thread: public cm::mutex {
 
-    //basic_thread(const basic_thread &r) { /* do not implement */ }
+private:
+    basic_thread(const basic_thread &r) { /* do not implement */ }
 
 protected:
 
@@ -93,10 +94,12 @@ public:
 
 struct task {
 
+    task() {}
+
     task(CM_TASK_FP(fn), void *data):
         task_fn(fn), task_data(data), done(false) { }
-
     ~task() { }
+
 
     task(const task &r):
         task_fn(r.task_fn), task_data(r.task_data), done(r.done) { }
@@ -113,28 +116,68 @@ struct task {
 
 };
 
+class pool;
+
 class worker_thread: public basic_thread {
 
-    cm_queue::double_queue<task> *_que;
+    pool *_pool;    // pointer to thread pool
+    task _task;     // current task
 
     bool process();
 
 public:
-    worker_thread(cm_queue::double_queue<task> *q);
+    worker_thread(pool *p);
     ~worker_thread();    
 };
+
 
 class pool {
 
     std::vector<worker_thread *> threads;
     cm_queue::double_queue<task> work_queue;
 
+    cm::mutex   que_mutex;
+    cm::cond    que_access;
+
+    bool shutdown = false;
+
 public:
     pool(int size);
     ~pool();
 
-    size_t work_queue_size() { return work_queue.size(); }
-    void add_task(const task &t) { work_queue.push_back(t); }
+    size_t work_queue_count() { return work_queue.size(); }
+    size_t thread_count() { return threads.size(); }
+
+    void add_task(CM_TASK_FP(_fn), void *_data) {
+        task t(_fn, _data);
+
+        que_mutex.lock();
+        work_queue.push_back(t);
+        que_mutex.unlock();
+
+        que_access.signal();
+    }
+
+    bool next_task(task &t) {
+
+        if(shutdown) return false;
+
+        que_mutex.lock();
+        while(work_queue.empty()) {
+            if(shutdown) {
+                que_mutex.unlock();
+                return false;
+            }
+            que_access.wait(que_mutex);
+        }
+
+        t = work_queue.pop_front();
+
+        que_mutex.unlock();
+        que_access.signal();
+
+        return true;
+    }
 
 };
 

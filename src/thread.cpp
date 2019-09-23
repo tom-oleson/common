@@ -104,32 +104,44 @@ void cm_thread::basic_thread::stop() {
 ///////////////////// thread pool ////////////////////////////////
 
 bool cm_thread::worker_thread::process() {
-
-    task t = _que->pop_front();
-    t.task_fn(t.task_data);
-    t.done = true;
-
-    return true;
+    
+    bool do_work = _pool->next_task(_task);
+    if(do_work) {
+        _task.task_fn(_task.task_data);
+        _task.done = true;
+    }
+    return do_work;
 }
 
 
-cm_thread::worker_thread::worker_thread(cm_queue::double_queue<task> *q):
-    _que(q) {
+cm_thread::worker_thread::worker_thread(cm_thread::pool *p):
+    _pool(p) {
     start();
 }
 
 cm_thread::worker_thread::~worker_thread() { stop(); }
 
-cm_thread::pool::pool(int size) {
+cm_thread::pool::pool(int size): shutdown(false) {
 
     for(int n = 0; n < size; ++n) {
-        worker_thread *p = new worker_thread(&work_queue);
+        worker_thread *p = new worker_thread(this);
         threads.push_back(p);
     }
 }
 
 cm_thread::pool::~pool() {
+    shutdown = true;
+    que_access.broadcast();
+
     for(auto p: threads) {
-        delete p;
+        while(!p->is_done()) {
+            que_access.broadcast();
+        }
     }
+
+    for(auto it = threads.begin(); it != threads.end();) {
+        delete (*it);
+        it = threads.erase(it);
+    }
+
 }
