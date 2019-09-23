@@ -101,3 +101,35 @@ void cm_thread::basic_thread::stop() {
 }
 
 
+///////////////////// thread pool ////////////////////////////////
+
+bool cm_thread::worker_thread::process() {
+
+    task t = _que->pop_front();
+    t.task_fn(t.task_data);
+    t.done = true;
+
+    return true;
+}
+
+
+cm_thread::worker_thread::worker_thread(cm_queue::double_queue<task> *q):
+    _que(q) {
+    start();
+}
+
+cm_thread::worker_thread::~worker_thread() { stop(); }
+
+cm_thread::pool::pool(int size) {
+
+    for(int n = 0; n < size; ++n) {
+        worker_thread *p = new worker_thread(&work_queue);
+        threads.push_back(p);
+    }
+}
+
+cm_thread::pool::~pool() {
+    for(auto p: threads) {
+        delete p;
+    }
+}

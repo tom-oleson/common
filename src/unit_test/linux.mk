@@ -36,8 +36,8 @@ TOP=$(PWD)
 EXE = run_tests
 
 OBJS =	utilTest.o \
-    networkTest.o \
     threadTest.o \
+    networkTest.o \
     queueTest.o \
     storeTest.o \
     configTest.o \

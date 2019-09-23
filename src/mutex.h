@@ -46,15 +46,42 @@ public:
         return pthread_mutex_trylock(&_mutex) == 0 ? true : false;
     }
 
+    pthread_mutex_t _mutex;
 
 private:
-	pthread_mutex_t    _mutex; 
 
     // do not implement these constructors
     mutex(const mutex&);
     const mutex& operator=(const mutex&);
 
 };
+
+
+class cond {
+public:
+
+    cond() { pthread_cond_init(&_cond, NULL); }
+    ~cond() { pthread_cond_destroy(&_cond); }
+
+    int wait(mutex &m) { return pthread_cond_wait(&_cond, &m._mutex); }
+
+    int timed_wait(mutex &m, const struct timespec &ts) {
+        return pthread_cond_timedwait(&_cond, &m._mutex, &ts);} 
+
+    int signal(){ return pthread_cond_signal(&_cond);  }
+    int broadcast(){ return pthread_cond_broadcast(&_cond); }
+
+    pthread_cond_t _cond;
+
+private:
+   
+    // do not implement these constructors
+    cond(const cond&);
+    const cond& operator=(const cond&);
+
+};
+
+
 } // namespace cm
 
 #endif

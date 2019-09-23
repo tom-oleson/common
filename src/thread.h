@@ -37,6 +37,7 @@
 
 #include "util.h"
 #include "mutex.h"
+#include "queue.h"
 
 #define THREAD_PAGE_SIZE 4096
 #define THREAD_STACK_SIZE (8 * THREAD_PAGE_SIZE)
@@ -54,7 +55,7 @@ protected:
     pthread_attr_t attr;
     int rc = 0;
 
-    timespec delay = {0, 1000000}; /* 1ms delay between process calls */
+    timespec delay = {0, 1000000}; /* 1 ms delay between process calls */
     bool started = false;
     bool done = false;
 
@@ -81,6 +82,59 @@ public:
 
     // stops running thread
     void stop();
+
+};
+
+////////////////////// thread pool //////////////////////////////
+
+
+#define CM_TASK_FP(fn) void (*fn)(void *data)
+
+
+struct task {
+
+    task(CM_TASK_FP(fn), void *data):
+        task_fn(fn), task_data(data), done(false) { }
+
+    ~task() { }
+
+    task(const task &r):
+        task_fn(r.task_fn), task_data(r.task_data), done(r.done) { }
+    task &operator = (const task &r) {
+        task_fn = r.task_fn;
+        task_data = r.task_data;
+        done = r.done;
+        return *this;
+    }
+
+    CM_TASK_FP(task_fn) = nullptr;
+    void *task_data = nullptr;
+    bool done = false;
+
+};
+
+class worker_thread: public basic_thread {
+
+    cm_queue::double_queue<task> *_que;
+
+    bool process();
+
+public:
+    worker_thread(cm_queue::double_queue<task> *q);
+    ~worker_thread();    
+};
+
+class pool {
+
+    std::vector<worker_thread *> threads;
+    cm_queue::double_queue<task> work_queue;
+
+public:
+    pool(int size);
+    ~pool();
+
+    size_t work_queue_size() { return work_queue.size(); }
+    void add_task(const task &t) { work_queue.push_back(t); }
 
 };
 

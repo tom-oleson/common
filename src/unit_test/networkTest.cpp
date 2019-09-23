@@ -41,7 +41,15 @@ struct unit_client: public cm_net::client_thread {
                     //receieve response
                 }
         }
-        return count < 1000000;
+
+        bool finished = count < 1000000;
+        if(finished) {
+            // delay to allow server time to respond
+            timespec delay = {0, 100000000};   // 100 ms
+            nanosleep(&delay, NULL);            
+        }
+
+        return finished;
     }
 };
 
@@ -92,7 +100,7 @@ void networkTest::test_network() {
     // wait for all the threads to finish
     for(auto p: clients) {
         while( p->is_valid() && !p->is_done() ) {
-            timespec delay = {0, 10000000};   // 10 ms
+            timespec delay = {0, 100000000};   // 100 ms
             nanosleep(&delay, NULL);
         }
         delete p;
