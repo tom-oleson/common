@@ -34,21 +34,14 @@ struct unit_client: public cm_net::client_thread {
             if(++count % 10000 == 0) {
                     send(cm_util::format("count=[%d]\n", count));
                   
-                    //timespec delay = {0, 100000000};   // 100 ms
-                    timespec delay = {0, 2000000};   // 2 ms
+                    // delay to allow server time to respond
+                    timespec delay = {0, 100000000};   // 100 ms
                     nanosleep(&delay, NULL);
 
-                    //receieve response
                 }
         }
 
         bool finished = count < 1000000;
-        if(finished) {
-            // delay to allow server time to respond
-            timespec delay = {0, 100000000};   // 100 ms
-            nanosleep(&delay, NULL);            
-        }
-
         return finished;
     }
 };
@@ -86,7 +79,7 @@ void networkTest::test_network() {
 
     vector<unit_client *> clients;
 
-    for(int n = 0; n < 50; ++n) {
+    for(int n = 0; n < 30; ++n) {
         unit_client *p = new unit_client();
         CPPUNIT_ASSERT( p->is_valid() );
         clients.push_back(p);

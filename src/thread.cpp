@@ -100,22 +100,20 @@ void cm_thread::basic_thread::stop() {
     }
 }
 
-
 ///////////////////// thread pool ////////////////////////////////
 
 bool cm_thread::worker_thread::process() {
     
-    bool do_work = _pool->next_task(_task);
+    bool do_work = thread_pool->next_task(thread_work_task);
     if(do_work) {
-        _task.task_fn(_task.task_data);
-        _task.done = true;
+        thread_work_task.function(thread_work_task.arg);
+        thread_work_task.done = true;
     }
     return do_work;
 }
 
 
-cm_thread::worker_thread::worker_thread(cm_thread::pool *p):
-    _pool(p) {
+cm_thread::worker_thread::worker_thread(cm_thread::pool *p): thread_pool(p) {
     start();
 }
 
@@ -130,6 +128,7 @@ cm_thread::pool::pool(int size): shutdown(false) {
 }
 
 cm_thread::pool::~pool() {
+
     shutdown = true;
     que_access.broadcast();
 
@@ -144,4 +143,48 @@ cm_thread::pool::~pool() {
         it = threads.erase(it);
     }
 
+}
+
+void cm_thread::pool::add_task(cm_task_function(fn), void *arg) {
+
+    task work_task(fn, arg);
+
+    que_mutex.lock();
+    work_queue.push_back(work_task);
+    que_mutex.unlock();
+
+    que_access.signal();
+}
+
+
+bool cm_thread::pool::next_task(task &work_task) {
+
+    if(shutdown) return false;
+
+    que_mutex.lock();
+    while(work_queue.empty()) {
+        if(shutdown) {
+            que_mutex.unlock();
+            que_access.broadcast();
+            return false;
+        }
+        que_access.wait(que_mutex);
+    }
+
+    work_task = work_queue.pop_front();
+
+    que_mutex.unlock();
+    que_access.signal();
+
+    return true;
+}
+
+void cm_thread::pool::wait_all() {
+
+    que_mutex.lock();
+    while(!work_queue.empty()) {
+        que_access.wait(que_mutex);
+    }
+    que_mutex.unlock();
+    que_access.signal();
 }

@@ -89,30 +89,32 @@ public:
 ////////////////////// thread pool //////////////////////////////
 
 
-#define CM_TASK_FP(fn) void (*fn)(void *data)
+#define cm_task_function(fn) void (*fn)(void *)
 
 
 struct task {
 
+    cm_task_function(function) = nullptr;
+    void *arg = nullptr;
+    bool done = false;
+
     task() {}
 
-    task(CM_TASK_FP(fn), void *data):
-        task_fn(fn), task_data(data), done(false) { }
+    task(cm_task_function(fn), void *arg_): function(fn), arg(arg_),
+        done(false) { }
+
     ~task() { }
 
 
     task(const task &r):
-        task_fn(r.task_fn), task_data(r.task_data), done(r.done) { }
+        function(r.function), arg(r.arg), done(r.done) { }
+
     task &operator = (const task &r) {
-        task_fn = r.task_fn;
-        task_data = r.task_data;
+        function = r.function;
+        arg = r.arg;
         done = r.done;
         return *this;
     }
-
-    CM_TASK_FP(task_fn) = nullptr;
-    void *task_data = nullptr;
-    bool done = false;
 
 };
 
@@ -120,8 +122,8 @@ class pool;
 
 class worker_thread: public basic_thread {
 
-    pool *_pool;    // pointer to thread pool
-    task _task;     // current task
+    pool *thread_pool;  
+    task thread_work_task;
 
     bool process();
 
@@ -147,37 +149,9 @@ public:
 
     size_t work_queue_count() { return work_queue.size(); }
     size_t thread_count() { return threads.size(); }
-
-    void add_task(CM_TASK_FP(_fn), void *_data) {
-        task t(_fn, _data);
-
-        que_mutex.lock();
-        work_queue.push_back(t);
-        que_mutex.unlock();
-
-        que_access.signal();
-    }
-
-    bool next_task(task &t) {
-
-        if(shutdown) return false;
-
-        que_mutex.lock();
-        while(work_queue.empty()) {
-            if(shutdown) {
-                que_mutex.unlock();
-                return false;
-            }
-            que_access.wait(que_mutex);
-        }
-
-        t = work_queue.pop_front();
-
-        que_mutex.unlock();
-        que_access.signal();
-
-        return true;
-    }
+    void add_task(cm_task_function(fn), void *arg);
+    bool next_task(task &work_task);
+    void wait_all();
 
 };
 
