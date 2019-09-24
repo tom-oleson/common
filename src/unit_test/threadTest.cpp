@@ -66,24 +66,35 @@ void do_work(void *arg) {
             sz = snprintf(buf, sizeof(buf), "count = [%d]", count);
     }
 
-    cm_log::info(std::string(buf, sz));
+    //cm_log::info(std::string(buf, sz));
 }
 
 void threadTest::test_thread_pool() {
 
     cm_log::file_logger log("./log/pool_test.log");
+    log.set_message_format("${date_time}${millis} [${lvl}] <${thread}>: ${msg}");
     set_default_logger(&log);
 
-    cm_thread::pool thread_pool(10);
-    CPPUNIT_ASSERT( thread_pool.thread_count() == 10);
+    cm_thread::pool thread_pool(4);
+    CPPUNIT_ASSERT( thread_pool.thread_count() == 4);
 
 
     for(int n = 0; n < 1000; ++n) {
         thread_pool.add_task(do_work, nullptr);
     }
-
     // wait for threads to complete all work tasks
     thread_pool.wait_all();
+    thread_pool.log_counts();
+
+
+    // another set of work
+    for(int n = 0; n < 500; ++n) {
+        thread_pool.add_task(do_work, nullptr);
+    }
+    // wait for threads to complete all work tasks
+    thread_pool.wait_all();
+    thread_pool.log_counts();
+
 
     // all the work is done
     CPPUNIT_ASSERT( thread_pool.work_queue_count() == 0 );

@@ -38,6 +38,7 @@
 #include "util.h"
 #include "mutex.h"
 #include "queue.h"
+#include "log.h"
 
 #define THREAD_PAGE_SIZE 4096
 #define THREAD_STACK_SIZE (8 * THREAD_PAGE_SIZE)
@@ -73,6 +74,8 @@ protected:
 public:
     basic_thread(bool auto_start = false);
     ~basic_thread();
+
+    pthread_t thread_id() { return tid; }
 
     bool is_started() { return started; }
     bool is_done() { return done; }
@@ -124,12 +127,16 @@ class worker_thread: public basic_thread {
 
     pool *thread_pool;  
     task thread_work_task;
+    size_t task_count = 0;
 
     bool process();
 
 public:
     worker_thread(pool *p);
-    ~worker_thread();    
+    ~worker_thread();
+
+    size_t count() { return task_count; }  
+    void count_clear() { task_count = 0; }  
 };
 
 
@@ -149,9 +156,14 @@ public:
 
     size_t work_queue_count() { return work_queue.size(); }
     size_t thread_count() { return threads.size(); }
+
     void add_task(cm_task_function(fn), void *arg);
     bool next_task(task &work_task);
     void wait_all();
+
+    void log_counts();
+
+    size_t total_count = 0;
 
 };
 

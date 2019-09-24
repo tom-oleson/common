@@ -108,18 +108,21 @@ bool cm_thread::worker_thread::process() {
     if(do_work) {
         thread_work_task.function(thread_work_task.arg);
         thread_work_task.done = true;
+        task_count++;
+        thread_pool->total_count++;
     }
     return do_work;
 }
 
 
-cm_thread::worker_thread::worker_thread(cm_thread::pool *p): thread_pool(p) {
+cm_thread::worker_thread::worker_thread(cm_thread::pool *p): thread_pool(p),
+    task_count(0) {
     start();
 }
 
 cm_thread::worker_thread::~worker_thread() { stop(); }
 
-cm_thread::pool::pool(int size): shutdown(false) {
+cm_thread::pool::pool(int size): shutdown(false), total_count(0) {
 
     for(int n = 0; n < size; ++n) {
         worker_thread *p = new worker_thread(this);
@@ -187,4 +190,32 @@ void cm_thread::pool::wait_all() {
     }
     que_mutex.unlock();
     que_access.signal();
+
+    // Allow some time for current tasks to finish.
+    // The work queue is empty but worker threads
+    // could still be processing the last few taken.
+    for(int n = 0; n < threads.size()+2; ++n) {
+        timespec delay = {0, 100000000};   // 100 ms
+        nanosleep(&delay, NULL);
+    }
+}
+
+void cm_thread::pool::log_counts() {
+
+    size_t n = threads.size();
+    cm_log::info(cm_util::format("Threads in pool: %lu", n));
+    cm_log::info(cm_util::format("Total tasks completed: %lu", total_count));
+
+    for(auto p: threads) {
+        size_t count = p->count();
+        double percent = ((double) count / (double) total_count) * 100;
+        cm_log::info(cm_util::format("Thread(0x%016lx): %10lu:%7.2lf%%",
+             p->thread_id(), count, percent));
+
+        p->count_clear();
+    }
+
+    // clear for next report
+    total_count = 0;
+
 }
