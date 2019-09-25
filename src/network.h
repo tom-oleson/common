@@ -104,7 +104,8 @@ inline void err(const std::string &msg, int errnum) {
     }
 }
 
-#define CM_NET_RECEIVE(fn) void (*fn)(int socket, const char *buf, size_t sz)
+
+#define cm_net_receive(fn) void (*fn)(int socket, const char *buf, size_t sz)
 
 class server_thread: public cm_thread::basic_thread  {
 
@@ -113,7 +114,7 @@ protected:
     int host_port;
     std::string info;
 
-    CM_NET_RECEIVE(receive_fn) = nullptr;
+    cm_net_receive(receive_fn) = nullptr;
 
     char rbuf[4096] = { '\0' };
 
@@ -130,7 +131,7 @@ protected:
     int service_input_event(int fd);
     
 public:
-    server_thread(int port, CM_NET_RECEIVE(fn));
+    server_thread(int port, cm_net_receive(fn));
     ~server_thread();
 };
 
@@ -142,7 +143,7 @@ struct rx_thread: public cm_thread::basic_thread  {
     struct epoll_event ev, events[MAX_EVENTS];
     int nfds, timeout = -1;    
 
-    CM_NET_RECEIVE(receive_fn) = nullptr;
+    cm_net_receive(receive_fn) = nullptr;
     rx_thread *rx = nullptr;
 
     char rbuf[4096] = { '\0' };
@@ -153,7 +154,7 @@ struct rx_thread: public cm_thread::basic_thread  {
 
     int service_input_event(int fd);
 
-    rx_thread(int s, CM_NET_RECEIVE(fn));
+    rx_thread(int s, cm_net_receive(fn));
     ~rx_thread();
 };
 
@@ -170,7 +171,7 @@ protected:
     struct epoll_event ev, events[MAX_EVENTS];
     int nfds, timeout = -1;    
 
-    CM_NET_RECEIVE(receive_fn) = nullptr;
+    cm_net_receive(receive_fn) = nullptr;
     rx_thread *rx = nullptr;
 
     bool setup();
@@ -182,7 +183,7 @@ protected:
     void send(const std::string msg);
 
 public:
-    client_thread(const std::string host, int port, CM_NET_RECEIVE(fn));
+    client_thread(const std::string host, int port, cm_net_receive(fn));
     ~client_thread();
 
     bool is_done() { return done || (nullptr != rx && rx->is_done()); }

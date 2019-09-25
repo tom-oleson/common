@@ -407,7 +407,7 @@ int cm_net::set_receive_timeout(int fd, long long millis) {
 
 //////////////////// server_thread //////////////////////////////
 
-cm_net::server_thread::server_thread(int port, CM_NET_RECEIVE(fn)):
+cm_net::server_thread::server_thread(int port, cm_net_receive(fn)):
      host_port(port), receive_fn(fn) {
 
     // start processing thread
@@ -553,7 +553,7 @@ int cm_net::server_thread::service_input_event(int fd) {
 
 /////////////////////// rx_thread ///////////////////////////////
 
-cm_net::rx_thread::rx_thread(int s, CM_NET_RECEIVE(fn)):
+cm_net::rx_thread::rx_thread(int s, cm_net_receive(fn)):
      socket(s), receive_fn(fn) {
     // start processing thread
     start();
@@ -649,7 +649,7 @@ int cm_net::rx_thread::service_input_event(int fd) {
 
 //////////////////// client_thread //////////////////////////////
 
-cm_net::client_thread::client_thread(const std::string _host, int port, CM_NET_RECEIVE(fn)):
+cm_net::client_thread::client_thread(const std::string _host, int port, cm_net_receive(fn)):
      host(_host), host_port(port), receive_fn(fn) {
     // start processing thread
     start();

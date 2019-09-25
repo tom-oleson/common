@@ -1,27 +1,27 @@
 /**********************************************************************
 *
-* networkTest.h
+* threadTest.h
 *
 **********************************************************************/
 
 
-#ifndef CPP_UNIT_NETWORK_TEST_H
-#define CPP_UNIT_NETWORK_TEST_H
+#ifndef CPP_UNIT_THREAD_TEST_H
+#define CPP_UNIT_THREAD_TEST_H
 
 #include <cppunit/extensions/HelperMacros.h>
 
 #include <string.h>
-#include "network.h"
+#include "thread.h"
 #include "log.h" 
 
 
 using namespace std;
 
-class networkTest : public CPPUNIT_NS::TestFixture {
+class threadTest : public CPPUNIT_NS::TestFixture {
 
-  CPPUNIT_TEST_SUITE( networkTest );
-    CPPUNIT_TEST( test_network );
-    CPPUNIT_TEST( test_network_thread_pool );
+  CPPUNIT_TEST_SUITE( threadTest );
+    CPPUNIT_TEST( test_thread );
+    CPPUNIT_TEST( test_thread_pool );
   CPPUNIT_TEST_SUITE_END();
 
 public:
@@ -29,9 +29,8 @@ public:
   //void tearDown();
 
 protected:
-    void test_network();
-    void test_network_thread_pool();
+    void test_thread();
+    void test_thread_pool();
 };
-
 
 #endif
