@@ -554,7 +554,8 @@ int cm_net::single_thread_server::service_input_event(int fd) {
 /////////////////////// pool server //////////////////////////////
 
 cm_net::pool_server::pool_server(int port, cm_thread::pool *pool_,
-    cm_task_function(fn)): host_port(port), pool(pool_), receive_fn(fn) {
+    cm_task_function(fn), cm_task_dealloc(dealloc_)): host_port(port),
+     pool(pool_), receive_fn(fn), dealloc(dealloc_) {
 
     // start processing thread
     start();
@@ -645,7 +646,7 @@ int cm_net::pool_server::service_input_event(int fd) {
             // give the response fd and data to the thread pool
             input_event *event = new input_event(fd, std::string(rbuf, num_bytes));
             if(nullptr != event) {
-                pool->add_task(receive_fn, event);
+                pool->add_task(receive_fn, event, dealloc);
             }
             else {
                 cm_log::critical("pool_server: error: event allocation failed!");

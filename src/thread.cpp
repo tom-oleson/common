@@ -111,6 +111,9 @@ bool cm_thread::worker_thread::process() {
     if(do_work) {
         thread_work_task.function(thread_work_task.arg);
         thread_work_task.done = true;
+        if(thread_work_task.arg && thread_work_task.dealloc) {
+            thread_work_task.dealloc(thread_work_task.arg);
+        }
         task_count++;
         thread_pool->total_count++;
     }
@@ -148,12 +151,11 @@ cm_thread::pool::~pool() {
         delete (*it);
         it = threads.erase(it);
     }
-
 }
 
-void cm_thread::pool::add_task(cm_task_function(fn), void *arg) {
+void cm_thread::pool::add_task(cm_task_function(fn), void *arg, cm_task_dealloc(dealloc)) {
 
-    task work_task(fn, arg);
+    task work_task(fn, arg, dealloc);
 
     que_mutex.lock();
     work_queue.push_back(work_task);

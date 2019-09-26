@@ -193,8 +193,8 @@ public:
 /////////////////////////// pool server ///////////////////////////////
 
 struct input_event {
-    int fd = -1;
-    std::string msg;
+    int fd = -1;        // response socket
+    std::string msg;    // input data
 
     input_event() {}
     ~input_event() {}
@@ -217,6 +217,7 @@ protected:
 
     cm_thread::pool *pool = nullptr;
     cm_task_function(receive_fn) = nullptr;
+    cm_task_dealloc(dealloc) = nullptr;
 
     int epollfd;
     int listen_socket;
@@ -231,7 +232,8 @@ protected:
     int service_input_event(int fd);
     
 public:
-    pool_server(int port, cm_thread::pool *pool, cm_task_function(fn));
+    pool_server(int port, cm_thread::pool *pool,
+         cm_task_function(fn), cm_task_dealloc(dealloc_));
     ~pool_server();
 };
 

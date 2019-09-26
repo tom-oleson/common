@@ -94,29 +94,31 @@ public:
 
 
 #define cm_task_function(fn) void (*fn)(void *)
-
+#define cm_task_dealloc(fn) void (*fn)(void *)
 
 struct task {
 
     cm_task_function(function) = nullptr;
     void *arg = nullptr;
+    cm_task_dealloc(dealloc) = nullptr;
     bool done = false;
-
+    
     task() {}
 
-    task(cm_task_function(fn), void *arg_): function(fn), arg(arg_),
-        done(false) { }
+    task(cm_task_function(fn), void *arg_, cm_task_dealloc(dealloc_)):
+        function(fn), arg(arg_), done(false), dealloc(dealloc_) { }
 
     ~task() { }
 
 
     task(const task &r):
-        function(r.function), arg(r.arg), done(r.done) { }
+        function(r.function), arg(r.arg), done(r.done), dealloc(r.dealloc) { }
 
     task &operator = (const task &r) {
         function = r.function;
         arg = r.arg;
         done = r.done;
+        dealloc = r.dealloc;
         return *this;
     }
 
@@ -158,14 +160,13 @@ public:
     size_t work_queue_count() { return work_queue.size(); }
     size_t thread_count() { return threads.size(); }
 
-    void add_task(cm_task_function(fn), void *arg);
+    void add_task(cm_task_function(fn), void *arg, cm_task_dealloc(dealloc_) = nullptr);
     bool next_task(task &work_task);
     void wait_all();
 
     void log_counts();
 
     size_t total_count = 0;
-
 };
 
 

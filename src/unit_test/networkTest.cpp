@@ -46,7 +46,6 @@ struct unit_client: public cm_net::client_thread {
     }
 };
 
-
 void server_receive(int socket, const char *buf, size_t sz) {
 
     cm_log::info(cm_util::format("%d: received request:", socket));
@@ -59,7 +58,6 @@ void server_receive(int socket, const char *buf, size_t sz) {
     }
 
     cm_net::send(socket, response);
-
 }
 
 void networkTest::test_network() {
@@ -113,7 +111,7 @@ void request_handler(void *arg) {
     cm_net::input_event *event = (cm_net::input_event *) arg;
     std::string request = std::move(event->msg);
     int socket = event->fd;
-    delete event;
+    //delete event;
 
     cm_log::info(cm_util::format("%d: received request:", socket));
     cm_log::hex_dump(cm_log::level::info, request.c_str(), request.size(), 16);
@@ -125,28 +123,31 @@ void request_handler(void *arg) {
     }
 
     cm_net::send(socket, response);
+}
 
+void request_dealloc(void *arg) {
+    delete (cm_net::input_event *) arg;
 }
 
 void networkTest::test_network_thread_pool() {
 
     cm_log::file_logger server_log("./log/network_thread_pool_test.log");
     set_default_logger(&server_log);
-    //server_log.set_message_format("${date_time}${millis} [${lvl}] <${thread}> ${file}:${line}: ${msg}");
     server_log.set_message_format("${date_time}${millis} [${lvl}] <${thread}>: ${msg}");
 
+    // create thread pool that will do work for the server
     cm_thread::pool thread_pool(6);
 
     timespec start, now;
     clock_gettime(CLOCK_REALTIME, &start);
 
     // startup tcp server
-    cm_net::pool_server server(56000, &thread_pool, request_handler);
+    cm_net::pool_server server(56000, &thread_pool, request_handler,
+        request_dealloc);
+
     CPPUNIT_ASSERT( server.is_started() == true );
 
     // run multiple client threads to feed data to server thread
-    // these must not go in containers, the constructors will
-    // get called multiple times
 
     vector<unit_client *> clients;
 
@@ -155,8 +156,8 @@ void networkTest::test_network_thread_pool() {
         CPPUNIT_ASSERT( p->is_valid() );
         clients.push_back(p);
 
-        // let new client thread get stable!!!
-        // if we create them too quickly, things go south...
+        // allow new client thread to get stable in scheduler
+        // new threads need time to setup, don't create them too quickly
         timespec delay = {0, 50000000};   // 50 ms
         nanosleep(&delay, NULL);
     }
@@ -175,8 +176,7 @@ void networkTest::test_network_thread_pool() {
 
     cm_log::info(cm_util::format("total time: %7.4lf secs", total));
 
-     // wait for threads to complete all work tasks
+     // wait for pool_server threads to complete all work tasks
     thread_pool.wait_all();
     thread_pool.log_counts();
-      
 }
