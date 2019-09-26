@@ -54,6 +54,7 @@ private:
 protected:
 
     pthread_t tid = 0;
+    pid_t sys_tid = 0;
     pthread_attr_t attr;
     int rc = 0;
 
@@ -75,7 +76,7 @@ public:
     basic_thread(bool auto_start = false);
     ~basic_thread();
 
-    pthread_t thread_id() { return tid; }
+    pid_t thread_id() { return sys_tid; }
 
     bool is_started() { return started; }
     bool is_done() { return done; }

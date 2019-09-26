@@ -44,6 +44,8 @@ void *cm_thread::basic_thread::run_handler(void *p) {
 
     pthread_cleanup_push(cleanup_handler, p);
 
+    tp->sys_tid = cm_util::tid();
+
     if(tp->setup()) {
         tp->started = true;
         while(tp->process()) {
@@ -210,7 +212,7 @@ void cm_thread::pool::log_counts() {
     for(auto p: threads) {
         size_t count = p->count();
         double percent = ((double) count / (double) total_count) * 100;
-        cm_log::info(cm_util::format("Thread(0x%016lx): %10lu:%7.2lf%%",
+        cm_log::info(cm_util::format("Thread(%5d): %10lu:%7.2lf%%",
              p->thread_id(), count, percent));
 
         p->count_clear();

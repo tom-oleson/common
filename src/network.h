@@ -107,7 +107,7 @@ inline void err(const std::string &msg, int errnum) {
 
 #define cm_net_receive(fn) void (*fn)(int socket, const char *buf, size_t sz)
 
-class server_thread: public cm_thread::basic_thread  {
+class single_thread_server: public cm_thread::basic_thread  {
 
 protected:
 
@@ -131,8 +131,8 @@ protected:
     int service_input_event(int fd);
     
 public:
-    server_thread(int port, cm_net_receive(fn));
-    ~server_thread();
+    single_thread_server(int port, cm_net_receive(fn));
+    ~single_thread_server();
 };
 
 struct rx_thread: public cm_thread::basic_thread  {
@@ -146,7 +146,7 @@ struct rx_thread: public cm_thread::basic_thread  {
     cm_net_receive(receive_fn) = nullptr;
     rx_thread *rx = nullptr;
 
-    char rbuf[4096] = { '\0' };
+    //char rbuf[4096] = { '\0' };
    
     bool setup();
     void cleanup();
@@ -187,6 +187,52 @@ public:
     ~client_thread();
 
     bool is_done() { return done || (nullptr != rx && rx->is_done()); }
+};
+
+
+/////////////////////////// pool server ///////////////////////////////
+
+struct input_event {
+    int fd = -1;
+    std::string msg;
+
+    input_event() {}
+    ~input_event() {}
+
+    input_event(int fd_, std::string msg_): fd(fd_), msg(msg_) {}
+    input_event(const input_event &r): fd(r.fd), msg(r.msg) {}
+    input_event &operator = (const input_event &r) {
+        fd = r.fd;
+        msg = r.msg;
+        return *this;
+    }
+};
+
+class pool_server: public cm_thread::basic_thread  {
+
+protected:
+
+    int host_port;
+    std::string info;
+
+    cm_thread::pool *pool = nullptr;
+    cm_task_function(receive_fn) = nullptr;
+
+    int epollfd;
+    int listen_socket;
+    struct epoll_event ev, events[MAX_EVENTS];
+    int conn_sock, nfds, timeout = -1;    
+
+    bool setup();
+    void cleanup();
+    bool process();
+
+    int accept();
+    int service_input_event(int fd);
+    
+public:
+    pool_server(int port, cm_thread::pool *pool, cm_task_function(fn));
+    ~pool_server();
 };
 
 

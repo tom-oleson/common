@@ -1,0 +1,5 @@
+echo single thread server
+tail -1 log/network_test.log
+echo
+echo pool_server
+tail -9 log/network_thread_pool_test.log

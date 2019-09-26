@@ -68,9 +68,12 @@ void networkTest::test_network() {
     set_default_logger(&server_log);
     //server_log.set_message_format("${date_time}${millis} [${lvl}] <${thread}> ${file}:${line}: ${msg}");
     server_log.set_message_format("${date_time}${millis} [${lvl}] <${thread}>: ${msg}");
+
+    timespec start, now;
+    clock_gettime(CLOCK_REALTIME, &start);
     
     // startup tcp server thread
-    cm_net::server_thread server(56000 /* port */, server_receive);
+    cm_net::single_thread_server server(56000 /* port */, server_receive);
     CPPUNIT_ASSERT( server.is_started() == true );
 
     // run multiple client threads to feed data to server thread
@@ -99,7 +102,30 @@ void networkTest::test_network() {
         delete p;
     }
     
-   
+   clock_gettime(CLOCK_REALTIME, &now);
+   double total = cm_time::duration(start, now);
+
+   cm_log::info(cm_util::format("total time: %7.4lf secs", total));
+}
+
+void request_handler(void *arg) {
+
+    cm_net::input_event *event = (cm_net::input_event *) arg;
+    std::string request = std::move(event->msg);
+    int socket = event->fd;
+    delete event;
+
+    cm_log::info(cm_util::format("%d: received request:", socket));
+    cm_log::hex_dump(cm_log::level::info, request.c_str(), request.size(), 16);
+
+    std::string response("OK");
+    
+    if(request == "status") {
+        response = std::move(std::string("status: active"));
+    }
+
+    cm_net::send(socket, response);
+
 }
 
 void networkTest::test_network_thread_pool() {
@@ -108,9 +134,14 @@ void networkTest::test_network_thread_pool() {
     set_default_logger(&server_log);
     //server_log.set_message_format("${date_time}${millis} [${lvl}] <${thread}> ${file}:${line}: ${msg}");
     server_log.set_message_format("${date_time}${millis} [${lvl}] <${thread}>: ${msg}");
-    
-    // startup tcp server thread
-    cm_net::server_thread server(56000 /* port */, server_receive /*, 4*/);
+
+    cm_thread::pool thread_pool(6);
+
+    timespec start, now;
+    clock_gettime(CLOCK_REALTIME, &start);
+
+    // startup tcp server
+    cm_net::pool_server server(56000, &thread_pool, request_handler);
     CPPUNIT_ASSERT( server.is_started() == true );
 
     // run multiple client threads to feed data to server thread
@@ -138,6 +169,14 @@ void networkTest::test_network_thread_pool() {
         }
         delete p;
     }
-    
-   
+
+    clock_gettime(CLOCK_REALTIME, &now);
+    double total = cm_time::duration(start, now);
+
+    cm_log::info(cm_util::format("total time: %7.4lf secs", total));
+
+     // wait for threads to complete all work tasks
+    thread_pool.wait_all();
+    thread_pool.log_counts();
+      
 }
