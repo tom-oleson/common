@@ -17,8 +17,8 @@ CPPUNIT_TEST_SUITE_REGISTRATION( networkTest );
 
 void client_receive(int socket, const char *buf, size_t sz) {
 
-    cm_log::info(cm_util::format("%d: received response:", socket));
-    cm_log::hex_dump(cm_log::level::info, buf, sz, 16);
+    //cm_log::info(cm_util::format("%d: received response:", socket));
+    //cm_log::hex_dump(cm_log::level::info, buf, sz, 16);
 }
 
 struct unit_client: public cm_net::client_thread {
@@ -48,8 +48,8 @@ struct unit_client: public cm_net::client_thread {
 
 void server_receive(int socket, const char *buf, size_t sz) {
 
-    cm_log::info(cm_util::format("%d: received request:", socket));
-    cm_log::hex_dump(cm_log::level::info, buf, sz, 16);
+    //cm_log::info(cm_util::format("%d: received request:", socket));
+    //cm_log::hex_dump(cm_log::level::info, buf, sz, 16);
 
     std::string response("OK");
     
@@ -58,6 +58,10 @@ void server_receive(int socket, const char *buf, size_t sz) {
     }
 
     cm_net::send(socket, response);
+
+    // random delay between 1 and 50
+    //timespec delay = {0, (rand() % 51) * 1000000};   // 1-500 ms delay
+    //nanosleep(&delay, NULL);
 }
 
 void networkTest::test_network() {
@@ -66,6 +70,9 @@ void networkTest::test_network() {
     set_default_logger(&server_log);
     //server_log.set_message_format("${date_time}${millis} [${lvl}] <${thread}> ${file}:${line}: ${msg}");
     server_log.set_message_format("${date_time}${millis} [${lvl}] <${thread}>: ${msg}");
+
+    // initialize random seed
+    srand (time(NULL));
 
     timespec start, now;
     clock_gettime(CLOCK_REALTIME, &start);
@@ -94,7 +101,7 @@ void networkTest::test_network() {
     // wait for all the threads to finish
     for(auto p: clients) {
         while( p->is_valid() && !p->is_done() ) {
-            timespec delay = {0, 100000000};   // 100 ms
+            timespec delay = {0, 10000000};   // 10 ms
             nanosleep(&delay, NULL);
         }
         delete p;
@@ -111,10 +118,9 @@ void request_handler(void *arg) {
     cm_net::input_event *event = (cm_net::input_event *) arg;
     std::string request = std::move(event->msg);
     int socket = event->fd;
-    //delete event;
 
-    cm_log::info(cm_util::format("%d: received request:", socket));
-    cm_log::hex_dump(cm_log::level::info, request.c_str(), request.size(), 16);
+    //cm_log::info(cm_util::format("%d: received request:", socket));
+    //cm_log::hex_dump(cm_log::level::info, request.c_str(), request.size(), 16);
 
     std::string response("OK");
     
@@ -123,6 +129,10 @@ void request_handler(void *arg) {
     }
 
     cm_net::send(socket, response);
+
+    // random delay between 1 and 50
+    //timespec delay = {0, (rand() % 51) * 1000000};   // 1-500 ms delay
+    //nanosleep(&delay, NULL);
 }
 
 void request_dealloc(void *arg) {
@@ -134,6 +144,9 @@ void networkTest::test_network_thread_pool() {
     cm_log::file_logger server_log("./log/network_thread_pool_test.log");
     set_default_logger(&server_log);
     server_log.set_message_format("${date_time}${millis} [${lvl}] <${thread}>: ${msg}");
+
+    // initialize random seed
+    srand (time(NULL));
 
     // create thread pool that will do work for the server
     cm_thread::pool thread_pool(6);
@@ -165,18 +178,18 @@ void networkTest::test_network_thread_pool() {
     // wait for all the threads to finish
     for(auto p: clients) {
         while( p->is_valid() && !p->is_done() ) {
-            timespec delay = {0, 100000000};   // 100 ms
+            timespec delay = {0, 10000000};   // 10 ms
             nanosleep(&delay, NULL);
         }
         delete p;
     }
 
-    clock_gettime(CLOCK_REALTIME, &now);
-    double total = cm_time::duration(start, now);
-
-    cm_log::info(cm_util::format("total time: %7.4lf secs", total));
-
      // wait for pool_server threads to complete all work tasks
     thread_pool.wait_all();
+
+    clock_gettime(CLOCK_REALTIME, &now);
+    double total = cm_time::duration(start, now);    
+    cm_log::info(cm_util::format("total time: %7.4lf secs", total));
+
     thread_pool.log_counts();
 }

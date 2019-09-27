@@ -49,8 +49,7 @@ void *cm_thread::basic_thread::run_handler(void *p) {
     if(tp->setup()) {
         tp->started = true;
         while(tp->process()) {
-            pthread_yield();
-            nanosleep(&tp->delay, NULL);    /* cancellation point */
+            nanosleep(&tp->delay, NULL);
         }
     }
 
@@ -107,7 +106,7 @@ void cm_thread::basic_thread::stop() {
 
 bool cm_thread::worker_thread::process() {
     
-    bool do_work = thread_pool->next_task(thread_work_task);
+    bool do_work = thread_pool->next_task(thread_work_task, this);
     if(do_work) {
         thread_work_task.function(thread_work_task.arg);
         thread_work_task.done = true;
@@ -122,7 +121,7 @@ bool cm_thread::worker_thread::process() {
 
 
 cm_thread::worker_thread::worker_thread(cm_thread::pool *p): thread_pool(p),
-    task_count(0) {
+    task_count(0), idle(false) {
     start();
 }
 
@@ -165,7 +164,7 @@ void cm_thread::pool::add_task(cm_task_function(fn), void *arg, cm_task_dealloc(
 }
 
 
-bool cm_thread::pool::next_task(task &work_task) {
+bool cm_thread::pool::next_task(task &work_task, worker_thread *tp) {
 
     if(shutdown) return false;
 
@@ -176,10 +175,12 @@ bool cm_thread::pool::next_task(task &work_task) {
             que_access.broadcast();
             return false;
         }
+        tp->set_idle(true);
         que_access.wait(que_mutex);
     }
 
     work_task = work_queue.pop_front();
+    tp->set_idle(false);
 
     que_mutex.unlock();
     que_access.signal();
@@ -189,19 +190,17 @@ bool cm_thread::pool::next_task(task &work_task) {
 
 void cm_thread::pool::wait_all() {
 
-    que_mutex.lock();
     while(!work_queue.empty()) {
-        que_access.wait(que_mutex);
+        timespec delay = {0, 10000000};   // 10 ms
+        nanosleep(&delay, NULL);           
     }
-    que_mutex.unlock();
-    que_access.signal();
 
-    // Allow some time for current tasks to finish.
-    // The work queue is empty but worker threads
-    // could still be processing the last few taken.
-    for(int n = 0; n < threads.size()+2; ++n) {
-        timespec delay = {0, 100000000};   // 100 ms
-        nanosleep(&delay, NULL);
+    // wait for all worker threads to become idle
+    for(auto p: threads) {
+        while(!p->is_idle()) {
+           timespec delay = {0, 10000000};   // 10 ms
+           nanosleep(&delay, NULL);           
+        }
     }
 }
 

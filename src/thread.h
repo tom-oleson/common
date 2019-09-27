@@ -58,7 +58,7 @@ protected:
     pthread_attr_t attr;
     int rc = 0;
 
-    timespec delay = {0, 1000000}; /* 1 ms delay between process calls */
+    timespec delay = {0, 1000000}; 
     bool started = false;
     bool done = false;
 
@@ -131,6 +131,7 @@ class worker_thread: public basic_thread {
     pool *thread_pool;  
     task thread_work_task;
     size_t task_count = 0;
+    bool idle = false;
 
     bool process();
 
@@ -140,6 +141,8 @@ public:
 
     size_t count() { return task_count; }  
     void count_clear() { task_count = 0; }  
+    bool is_idle() { return idle; }
+    void set_idle(bool b) { idle = b; }
 };
 
 
@@ -161,7 +164,7 @@ public:
     size_t thread_count() { return threads.size(); }
 
     void add_task(cm_task_function(fn), void *arg, cm_task_dealloc(dealloc_) = nullptr);
-    bool next_task(task &work_task);
+    bool next_task(task &work_task, worker_thread *tp);
     void wait_all();
 
     void log_counts();

@@ -89,7 +89,7 @@ int write(int fd, char *buf, size_t sz);
 
 
 // event-driven I/O
-#define MAX_EVENTS  100
+#define MAX_EVENTS  64
 int epoll_create();
 int add_socket(int epollfd, int fd, uint32_t flags);
 int modify_socket(int epollfd, int fd, uint32_t flags);
