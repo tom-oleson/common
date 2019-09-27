@@ -17,8 +17,8 @@ CPPUNIT_TEST_SUITE_REGISTRATION( networkTest );
 
 void client_receive(int socket, const char *buf, size_t sz) {
 
-    //cm_log::info(cm_util::format("%d: received response:", socket));
-    //cm_log::hex_dump(cm_log::level::info, buf, sz, 16);
+    cm_log::info(cm_util::format("%d: received response:", socket));
+    cm_log::hex_dump(cm_log::level::info, buf, sz, 16);
 }
 
 struct unit_client: public cm_net::client_thread {
@@ -58,10 +58,6 @@ void server_receive(int socket, const char *buf, size_t sz) {
     }
 
     cm_net::send(socket, response);
-
-    // random delay between 1 and 50
-    //timespec delay = {0, (rand() % 51) * 1000000};   // 1-500 ms delay
-    //nanosleep(&delay, NULL);
 }
 
 void networkTest::test_network() {
@@ -129,10 +125,6 @@ void request_handler(void *arg) {
     }
 
     cm_net::send(socket, response);
-
-    // random delay between 1 and 50
-    //timespec delay = {0, (rand() % 51) * 1000000};   // 1-500 ms delay
-    //nanosleep(&delay, NULL);
 }
 
 void request_dealloc(void *arg) {
