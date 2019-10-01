@@ -100,6 +100,10 @@ bool cm_cache::scanner::next_token() {
                         token.id = identifier;
                         scan_identifier();
                     }
+                    else {
+                        token.id = raw;
+                        scan_raw();
+                    }
                     break;
     }
     return true;
@@ -107,16 +111,28 @@ bool cm_cache::scanner::next_token() {
 
 void cm_cache::scanner::scan_string(char quote_ch) { 
     char ch;
+    token.value.append(1,quote_ch);
     while((ch = buffer[index]) && ch != quote_ch) {
         token.value.append(1,ch);
         index++;
     }
-    if(ch == quote_ch) index++;
+    if(ch == quote_ch) {
+        token.value.append(1,quote_ch);
+        index++;
+    }
 }
 
 void cm_cache::scanner::scan_identifier() {
     char ch;
     while(is_ident(ch = buffer[index])) {
+        token.value.append(1,ch);
+        index++;
+    } 
+}
+
+void cm_cache::scanner::scan_raw() {
+    char ch;
+    while(ch = buffer[index]) {
         token.value.append(1,ch);
         index++;
     } 
@@ -132,7 +148,8 @@ bool cm_cache::cache::parse_add() {
         next_token();
         std::string rvalue = token.value;
 
-        if(token.id == cm_cache::string || token.id == cm_cache::identifier) {
+        if(token.id == cm_cache::string || token.id == cm_cache::raw ||
+            token.id == cm_cache::identifier) {
             return processor->do_add(lvalue, rvalue);
         }
     } 

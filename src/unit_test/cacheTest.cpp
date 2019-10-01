@@ -38,7 +38,7 @@ public:
         cm_log::info(cm_util::format("remove: %s", name.c_str()));
 
         int num = cm_store::mem_store.remove(name);
-        cm_log::info(cm_util::format("%d", num));
+        cm_log::info(cm_util::format("(%d)", num));
     }
 
     bool do_watch(const std::string &name, const std::string &tag) {
@@ -66,9 +66,15 @@ void cacheTest::test_cache() {
     cache.eval("-foo");         // remove
     cache.eval("$foo");         // read
     
-
     cache.eval("+name 'Tom Oleson'");
     cache.eval("$name");
+    cache.eval("-name");
+
+    cache.eval("+bin 'x:deadbeef'");
+    cache.eval("$bin");
+
+    cache.eval("-bin");
+    //cache.eval("-bin");
 
     CPPUNIT_ASSERT( true );
 }

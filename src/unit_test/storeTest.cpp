@@ -42,6 +42,6 @@ void storeTest::test_memory_store() {
     std::string value = cm_store::mem_store.find("deadbeef");
     CPPUNIT_ASSERT(value == "");
 
-    CPPUNIT_ASSERT( cm_store::mem_store.size() == 1);
+    CPPUNIT_ASSERT( cm_store::mem_store.size() >= 1);
 }
 

@@ -49,7 +49,8 @@ extern void *default_cache;
 namespace cm_cache {
 
 enum token_type {
-     input_end, error, comment, string, identifier, tk_add, tk_read, tk_remove, tk_watch, tk_tag
+     input_end, error, comment, string, identifier, raw,
+        tk_add, tk_read, tk_remove, tk_watch, tk_tag
 };
 
 struct token_t {
@@ -94,7 +95,8 @@ public:
     void skip_to_end() { while(buffer[index] != '\0') index++; }
 
     void scan_string(char quote_ch);
-    void scan_identifier();  
+    void scan_identifier();
+    void scan_raw();  
 
     void set_input(const char *p, size_t sz) { index = 0; buffer = p; buf_sz = sz;}
 };
