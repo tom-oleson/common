@@ -48,8 +48,8 @@ struct unit_client: public cm_net::client_thread {
 
 void server_receive(int socket, const char *buf, size_t sz) {
 
-    //cm_log::info(cm_util::format("%d: received request:", socket));
-    //cm_log::hex_dump(cm_log::level::info, buf, sz, 16);
+    cm_log::info(cm_util::format("%d: received request:", socket));
+    cm_log::hex_dump(cm_log::level::info, buf, sz, 16);
 
     std::string response("OK");
     
@@ -64,11 +64,7 @@ void networkTest::test_network() {
 
     cm_log::file_logger server_log("./log/network_test.log");
     set_default_logger(&server_log);
-    //server_log.set_message_format("${date_time}${millis} [${lvl}] <${thread}> ${file}:${line}: ${msg}");
     server_log.set_message_format("${date_time}${millis} [${lvl}] <${thread}>: ${msg}");
-
-    // initialize random seed
-    srand (time(NULL));
 
     timespec start, now;
     clock_gettime(CLOCK_REALTIME, &start);
@@ -83,7 +79,7 @@ void networkTest::test_network() {
 
     vector<unit_client *> clients;
 
-    for(int n = 0; n < 30; ++n) {
+    for(int n = 0; n < 50; ++n) {
         unit_client *p = new unit_client();
         CPPUNIT_ASSERT( p->is_valid() );
         clients.push_back(p);
@@ -115,8 +111,8 @@ void request_handler(void *arg) {
     std::string request = std::move(event->msg);
     int socket = event->fd;
 
-    //cm_log::info(cm_util::format("%d: received request:", socket));
-    //cm_log::hex_dump(cm_log::level::info, request.c_str(), request.size(), 16);
+    cm_log::info(cm_util::format("%d: received request:", socket));
+    cm_log::hex_dump(cm_log::level::info, request.c_str(), request.size(), 16);
 
     std::string response("OK");
     
@@ -156,7 +152,7 @@ void networkTest::test_network_thread_pool() {
 
     vector<unit_client *> clients;
 
-    for(int n = 0; n < 30; ++n) {
+    for(int n = 0; n < 50; ++n) {
         unit_client *p = new unit_client();
         CPPUNIT_ASSERT( p->is_valid() );
         clients.push_back(p);

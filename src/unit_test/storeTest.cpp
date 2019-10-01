@@ -32,8 +32,16 @@ void storeTest::test_memory_store() {
     std::string some_option = cm_store::mem_store.get("some_option", "none" );
     CPPUNIT_ASSERT(some_option == "none");
 
+    cm_store::mem_store.set("deadbeef", "deadbeef");
+    std::string bin = cm_store::mem_store.find("deadbeef");
+    CPPUNIT_ASSERT(bin == "deadbeef");
+
+    cm_store::mem_store.remove("deadbeef");
+
     // test for something not there
     std::string value = cm_store::mem_store.find("deadbeef");
     CPPUNIT_ASSERT(value == "");
+
+    CPPUNIT_ASSERT( cm_store::mem_store.size() == 1);
 }
 

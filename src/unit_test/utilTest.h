@@ -14,6 +14,7 @@
 #include "util.h"
 #include "log.h" 
 #include "timewatcher.h"
+#include "base64.h"
 
 
 using namespace std;
@@ -21,6 +22,7 @@ using namespace std;
 class utilTest : public CPPUNIT_NS::TestFixture {
 
   CPPUNIT_TEST_SUITE( utilTest );
+    CPPUNIT_TEST( test_base64 );
     CPPUNIT_TEST( test_format_str );
     CPPUNIT_TEST( test_format );
     CPPUNIT_TEST( test_bin2hex );
@@ -46,6 +48,7 @@ public:
   //void tearDown();
 
 protected:
+    void test_base64();
     void test_format_str();
     void test_format();
     void test_bin2hex();

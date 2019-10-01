@@ -17,6 +17,30 @@ CPPUNIT_TEST_SUITE_REGISTRATION( utilTest );
 //void utilTest::setUp() { }
 //void utilTest::tearDown() { }
 
+
+
+void utilTest::test_base64() {
+
+    std::string s1 = "abc";
+    std::string e1 = base64_encode(s1);
+    CPPUNIT_ASSERT( e1 == "YWJj" );
+    std::string d1 = base64_decode(e1);
+    CPPUNIT_ASSERT( d1 == s1 );
+
+    std::string s2 = "abcd";
+    std::string e2 = base64_encode(s2);
+    CPPUNIT_ASSERT( e2 == "YWJjZA==" );
+    std::string d2 = base64_decode(e2);
+    CPPUNIT_ASSERT( d2 == s2 );
+
+    std::string s3 = "abcde";
+    std::string e3 = base64_encode(s3);
+    CPPUNIT_ASSERT( e3 == "YWJjZGU=");
+    std::string d3 = base64_decode(e3);
+    CPPUNIT_ASSERT( d3 == s3 );
+
+}
+
 void utilTest::test_format() {
 
     std::string s = cm_util::format("%02d %02d %02d %03d %03d", 5, 4, 3, 2, 1);

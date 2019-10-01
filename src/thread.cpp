@@ -59,10 +59,9 @@ void *cm_thread::basic_thread::run_handler(void *p) {
 
 }
 
-
-cm_thread::basic_thread::basic_thread(bool auto_start):
+cm_thread::basic_thread::basic_thread():
  tid(0), started(false), done(false), rc(0) {
-    //if(auto_start) start();
+    
 }
 
 cm_thread::basic_thread::~basic_thread() {
@@ -70,8 +69,7 @@ cm_thread::basic_thread::~basic_thread() {
 }
 
 void cm_thread::basic_thread::start() {
-
-    //lock();
+   
     if(tid == 0) {
         rc = pthread_attr_init(&attr);
 
@@ -79,12 +77,10 @@ void cm_thread::basic_thread::start() {
 
         rc = pthread_create(&tid, &attr, &run_handler, (void*) this);
 
-
         while(!is_started()) {
             nanosleep(&delay, NULL);
         }
     }
-    //unlock();
 }
 
 void cm_thread::basic_thread::stop() {
@@ -106,7 +102,8 @@ void cm_thread::basic_thread::stop() {
 
 bool cm_thread::worker_thread::process() {
     
-    bool do_work = thread_pool->next_task(thread_work_task, this);
+    bool do_work = thread_pool->next_task(thread_work_task);
+    thread_pool->task_begin();
     if(do_work) {
         thread_work_task.function(thread_work_task.arg);
         thread_work_task.done = true;
@@ -114,20 +111,19 @@ bool cm_thread::worker_thread::process() {
             thread_work_task.dealloc(thread_work_task.arg);
         }
         task_count++;
-        thread_pool->total_count++;
     }
+    thread_pool->task_end();
     return do_work;
 }
 
-
 cm_thread::worker_thread::worker_thread(cm_thread::pool *p): thread_pool(p),
-    task_count(0), idle(false) {
+    task_count(0) {
     start();
 }
 
 cm_thread::worker_thread::~worker_thread() { stop(); }
 
-cm_thread::pool::pool(int size): shutdown(false), total_count(0) {
+cm_thread::pool::pool(int size): shutdown(false), running_count(0) {
 
     for(int n = 0; n < size; ++n) {
         worker_thread *p = new worker_thread(this);
@@ -163,8 +159,7 @@ void cm_thread::pool::add_task(cm_task_function(fn), void *arg, cm_task_dealloc(
     que_access.signal();
 }
 
-
-bool cm_thread::pool::next_task(task &work_task, worker_thread *tp) {
+bool cm_thread::pool::next_task(task &work_task) {
 
     if(shutdown) return false;
 
@@ -175,12 +170,10 @@ bool cm_thread::pool::next_task(task &work_task, worker_thread *tp) {
             que_access.broadcast();
             return false;
         }
-        tp->set_idle(true);
         que_access.wait(que_mutex);
     }
 
     work_task = work_queue.pop_front();
-    tp->set_idle(false);
 
     que_mutex.unlock();
     que_access.signal();
@@ -191,16 +184,8 @@ bool cm_thread::pool::next_task(task &work_task, worker_thread *tp) {
 void cm_thread::pool::wait_all() {
 
     while(!work_queue.empty()) {
-        timespec delay = {0, 10000000};   // 10 ms
+        timespec delay = {0, 100000000};   // 100 ms
         nanosleep(&delay, NULL);           
-    }
-
-    // wait for all worker threads to become idle
-    for(auto p: threads) {
-        while(!p->is_idle()) {
-           timespec delay = {0, 10000000};   // 10 ms
-           nanosleep(&delay, NULL);           
-        }
     }
 }
 
@@ -208,18 +193,21 @@ void cm_thread::pool::log_counts() {
 
     size_t n = threads.size();
     cm_log::info(cm_util::format("Threads in pool: %lu", n));
-    cm_log::info(cm_util::format("Total tasks completed: %lu", total_count));
+
+    size_t total_count = 0;
+    for(auto p: threads) {
+        total_count += p->count();
+    }
 
     for(auto p: threads) {
         size_t count = p->count();
         double percent = ((double) count / (double) total_count) * 100;
+
         cm_log::info(cm_util::format("Thread(%5d): %10lu:%7.2lf%%",
              p->thread_id(), count, percent));
 
         p->count_clear();
     }
 
-    // clear for next report
-    total_count = 0;
-
+    cm_log::info(cm_util::format("Total tasks completed: %lu", total_count));
 }

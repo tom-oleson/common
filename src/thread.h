@@ -73,7 +73,7 @@ protected:
     virtual bool process() {  return true; }
 
 public:
-    basic_thread(bool auto_start = false);
+    basic_thread();
     ~basic_thread();
 
     pid_t thread_id() { return sys_tid; }
@@ -131,8 +131,7 @@ class worker_thread: public basic_thread {
     pool *thread_pool;  
     task thread_work_task;
     size_t task_count = 0;
-    bool idle = false;
-
+  
     bool process();
 
 public:
@@ -141,8 +140,6 @@ public:
 
     size_t count() { return task_count; }  
     void count_clear() { task_count = 0; }  
-    bool is_idle() { return idle; }
-    void set_idle(bool b) { idle = b; }
 };
 
 
@@ -155,21 +152,24 @@ class pool {
     cm::cond    que_access;
 
     bool shutdown = false;
+    size_t running_count = 0;
 
 public:
     pool(int size);
     ~pool();
 
+    void task_begin() { running_count++; }
+    void task_end() { running_count--; }
+
     size_t work_queue_count() { return work_queue.size(); }
     size_t thread_count() { return threads.size(); }
 
     void add_task(cm_task_function(fn), void *arg, cm_task_dealloc(dealloc_) = nullptr);
-    bool next_task(task &work_task, worker_thread *tp);
+    bool next_task(task &work_task);
     void wait_all();
 
     void log_counts();
-
-    size_t total_count = 0;
+    
 };
 
 

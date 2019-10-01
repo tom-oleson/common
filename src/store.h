@@ -58,6 +58,7 @@ public:
         lock();
         _map[name] = value;
         unlock();
+        return true;
     }
 
     valueT find(const keyT &name) {
