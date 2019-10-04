@@ -13,7 +13,7 @@
 #include <string.h>
 #include "cache.h"
 #include "log.h" 
-
+#include "base64.h"
 
 using namespace std;
 

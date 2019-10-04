@@ -335,7 +335,7 @@ void cm_log::file_logger::log(cm_log::extra ext, cm_log::level::en lvl, const st
 }
 
 //-------------------------------------------------------------------------
-// multipex logger
+// multiplex logger
 //-------------------------------------------------------------------------
 
 // apply date_time format for all member loggers
