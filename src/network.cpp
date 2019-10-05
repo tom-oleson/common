@@ -624,6 +624,7 @@ bool cm_net::pool_server::process() {
            conn_sock = accept();
             if(CM_NET_ERR != conn_sock) {
                 cm_net::add_socket(epollfd, conn_sock, EPOLLIN | EPOLLET);
+                cm_log::info(cm_util::format("%d: connected: %s", conn_sock, info.c_str()));
             }
         }
         else {
@@ -666,10 +667,8 @@ int cm_net::pool_server::service_input_event(int fd) {
             // remove socket from interest list...
             delete_socket(epollfd, fd);
             cm_net::close_socket(fd);
+            cm_log::info(cm_util::format("%d: closed connection.", fd));
 
-            CM_LOG_TRACE {
-                cm_log::trace(cm_util::format("<%d>: connection closed.", fd));
-            }
 
             return CM_NET_OK;
         }
