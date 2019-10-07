@@ -144,7 +144,7 @@ void cm_cache::scanner::scan_raw() {
     } 
 }
 
-bool cm_cache::cache::parse_add() {
+bool cm_cache::cache::parse_add(std::string &result) {
 
     next_token();
 
@@ -155,21 +155,22 @@ bool cm_cache::cache::parse_add() {
         next_token();
         rvalue = std::move(token.value);
 
-        if(token.id == cm_cache::string || token.id == cm_cache::raw ) {
+        if(token.id == cm_cache::string || token.id == cm_cache::raw ||
+           token.id == cm_cache::identifier) {
 
             next_token();
 
             if(token.id == cm_cache::input_end) {
-                return processor->do_add(lvalue, rvalue);
+                return processor->do_add(lvalue, rvalue, result);
             }
-            return parse_error("expected end after value");
+            return parse_error("expected end after value", result);
         }
-        return parse_error("expected string or raw for value");
+        return parse_error("expected string, raw or identifier for value", result);
     } 
-    return parse_error("expected string or identifier for key");
+    return parse_error("expected string or identifier for key", result);
 }
 
-bool cm_cache::cache::parse_read() {
+bool cm_cache::cache::parse_read(std::string &result) {
 
     next_token();
 
@@ -180,15 +181,15 @@ bool cm_cache::cache::parse_read() {
         next_token();
 
         if(token.id == cm_cache::input_end) {
-            return processor->do_read(lvalue);
+            return processor->do_read(lvalue, result);
         }
-        return parse_error("expected end after value");
+        return parse_error("expected end after key", result);
     }
-    return parse_error("expected string or identifier for key");
+    return parse_error("expected string or identifier for key", result);
     
 }
 
-bool cm_cache::cache::parse_remove() {
+bool cm_cache::cache::parse_remove(std::string &result) {
 
     next_token();
 
@@ -199,14 +200,14 @@ bool cm_cache::cache::parse_remove() {
         next_token();
 
         if(token.id == cm_cache::input_end) {        
-            return processor->do_remove(lvalue);
+            return processor->do_remove(lvalue, result);
         }
-        return parse_error("expected end after key");
+        return parse_error("expected end after key", result);
     }
-    return parse_error("expected string or identifier for key");
+    return parse_error("expected string or identifier for key", result);
 }
 
-bool cm_cache::cache::parse_watch() {
+bool cm_cache::cache::parse_watch(std::string &result) {
 
     next_token();
 
@@ -227,18 +228,18 @@ bool cm_cache::cache::parse_watch() {
                 next_token();
 
                 if(token.id == cm_cache::input_end) {   
-                    return processor->do_watch(lvalue, rvalue);
+                    return processor->do_watch(lvalue, rvalue, result);
                 }
-                return processor->do_error(get_input(), "expected end after #tag");
+                return parse_error("expected end after #tag", result);
             }
-            return parse_error("expected identifier for #tag");
+            return parse_error("expected identifier for #tag", result);
         }
-        return parse_error("expected #tag");
+        return parse_error("expected #tag", result);
     } 
-    return parse_error("expected string or identifier for key");
+    return parse_error("expected string or identifier for key", result);
 }
 
-bool cm_cache::cache::eval(const std::string &expr) {
+bool cm_cache::cache::eval(const std::string &expr, std::string &result) {
 
     set_input(expr.c_str(), expr.size());
 
@@ -249,28 +250,28 @@ bool cm_cache::cache::eval(const std::string &expr) {
         }
 
         if(token.id == cm_cache::tk_add) {
-            if(!parse_add()) {
+            if(!parse_add(result)) {
                 return false;
             }
             continue;
         }
 
         if(token.id == cm_cache::tk_read) {
-            if(!parse_read()) {
+            if(!parse_read(result)) {
                 return false;
             }
             continue;
         }
 
         if(token.id == cm_cache::tk_remove) {
-            if(!parse_remove()) {
+            if(!parse_remove(result)) {
                 return false;
             }
             continue;
         }
 
         if(token.id == cm_cache::tk_watch) {
-            if(!parse_watch()) {
+            if(!parse_watch(result)) {
                 return false;
             }
             continue;
@@ -291,7 +292,7 @@ bool cm_cache::cache::eval(const std::string &expr) {
 int cm_cache::cache::load(const std::string &path) {
 
     std::fstream fs;
-    char buf[1024] = {'\0'};
+    char buf[2048] = {'\0'};
 
     fs.open(path.c_str(), std::fstream::in);
     if(!fs.is_open()) {
@@ -299,11 +300,13 @@ int cm_cache::cache::load(const std::string &path) {
     }
 
     std::string expr;
+    std::string result;
     int error_count = 0;
+
 
     while( fs.getline(buf, sizeof(buf)) ) {
         expr = std::move(std::string(buf, sizeof(buf)));
-        if(!eval(expr)) {
+        if(!eval(expr, result)) {
             error_count++;
         }
     }

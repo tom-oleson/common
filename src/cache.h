@@ -61,11 +61,12 @@ struct token_t {
 class scanner_processor {
 
 public:
-    virtual bool do_add(const std::string &name, const std::string &value) = 0;
-    virtual bool do_read(const std::string &name) = 0;
-    virtual bool do_remove(const std::string &name) = 0;
-    virtual bool do_watch(const std::string &name, const std::string &tag) = 0;
-    virtual bool do_error(const std::string &expr, const std::string &err) = 0;
+    virtual bool do_add(const std::string &name, const std::string &value, std::string &result) = 0;
+    virtual bool do_read(const std::string &name, std::string &result) = 0;
+    virtual bool do_remove(const std::string &name, std::string &result) = 0;
+    virtual bool do_watch(const std::string &name, const std::string &tag, std::string &result) = 0;
+    virtual bool do_result(const std::string &result) = 0;
+    virtual bool do_error(const std::string &expr, const std::string &err, std::string &result) = 0;
 };
 
 class scanner {
@@ -126,16 +127,16 @@ public:
     ~cache() { }
 
     int load(const std::string &path);
-    bool eval(const std::string &expr);
+    bool eval(const std::string &expr, std::string &result);
     bool parse_identifier();
 
-    bool parse_add();
-    bool parse_read();
-    bool parse_remove();
-    bool parse_watch();
+    bool parse_add(std::string &result);
+    bool parse_read(std::string &result);
+    bool parse_remove(std::string &result);
+    bool parse_watch(std::string &result);
 
-    inline bool parse_error(const std::string &err) {
-        processor->do_error(get_input(), err);
+    inline bool parse_error(const std::string &err, std::string &result) {
+        processor->do_error(get_input(), err, result);
     }
 };
 

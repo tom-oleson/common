@@ -200,6 +200,7 @@ protected:
 	std::string date_time_fmt;	// see strftime()
 	std::string msg_fmt;
     std::vector<std::string> parsed_msg_fmt;
+    std::string RS = "\n";     // record seperator
 
     void *save_default_logger;
 
@@ -230,6 +231,9 @@ public:
     }
 	void set_gmt(bool b) { gmt = b; }
 	bool get_gmt(void) { return gmt; }
+
+    void set_RS(const std::string s) { RS = s; }
+    const std::string get_RS() { return RS; }
 
 	bool ok_to_log(cm_log::level::en lvl) {
 		return (lvl != cm_log::level::off && lvl <= log_level) || lvl == cm_log::level::always;
