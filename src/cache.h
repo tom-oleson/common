@@ -66,6 +66,7 @@ public:
     virtual bool do_remove(const std::string &name, std::string &result) = 0;
     virtual bool do_watch(const std::string &name, const std::string &tag, std::string &result) = 0;
     virtual bool do_result(const std::string &result) = 0;
+    virtual bool do_input(const std::string &in_str, std::string &expr) = 0;
     virtual bool do_error(const std::string &expr, const std::string &err, std::string &result) = 0;
 };
 

@@ -299,15 +299,21 @@ int cm_cache::cache::load(const std::string &path) {
         return -1;
     }
 
+    std::string input;
     std::string expr;
     std::string result;
-    int error_count = 0;
+    int rec_count = 0;
 
 
     while( fs.getline(buf, sizeof(buf)) ) {
-        expr = std::move(std::string(buf, sizeof(buf)));
-        if(!eval(expr, result)) {
-            error_count++;
+
+        input = std::move(std::string(buf, sizeof(buf)));
+
+        // extract expr from input
+        if(processor->do_input(input, expr)) {
+            if(eval(expr, result)) {
+                rec_count++;
+            }
         }
     }
 
@@ -318,5 +324,5 @@ int cm_cache::cache::load(const std::string &path) {
 
     fs.close();
 
-    return error_count;
+    return rec_count;
 }

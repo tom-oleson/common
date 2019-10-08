@@ -221,7 +221,7 @@ void utilTest::test_dir_scan() {
     std::vector<std::string> matches;
 
     // scan ./log directory and match any that end with ".log"
-    // note: use of raw string literal to avoid need escape \ in regex
+    // note: use of raw string literal to avoid need to escape \ in regex
     cm_util::dir_scan("./log", R"(.+\.log$)", matches);
 
     std::vector<std::string>::iterator p = matches.begin();

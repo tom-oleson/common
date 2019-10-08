@@ -391,7 +391,7 @@ void cm_log::rolling_file_logger::rotate() {
 
     if(keep > 0) {
         rotation_list.push_back(rotate_path);
-        if(rotation_list.size() > keep) {
+        while(rotation_list.size() > keep) {
             // remove the the oldest log file in rotation
             cm_util::remove(rotation_list[0]);
             rotation_list.erase(rotation_list.begin());

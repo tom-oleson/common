@@ -371,6 +371,11 @@ public:
 
     void rotate();
 
+    // add a path to the rotation list
+    void rotation_list_add(const std::string &path) {
+        rotation_list.push_back(path);
+    }
+
     void log(cm_log::level::en lvl, const std::string &msg);
     void log(cm_log::extra ext, cm_log::level::en lvl, const std::string &msg);
 };

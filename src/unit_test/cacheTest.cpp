@@ -63,6 +63,10 @@ public:
         return false;
     }
 
+    bool do_input(const std::string &in_str, std::string &expr) { 
+        return true;
+    }
+
     bool do_error(const std::string &expr, const std::string &err, std::string &result) {
         cm_log::error(cm_util::format("%s: %s", err.c_str(), expr.c_str()));
         return false;
