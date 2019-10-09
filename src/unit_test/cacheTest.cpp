@@ -119,4 +119,3 @@ void cacheTest::test_cache() {
     cache.eval("*bad3 #", result);
     cache.eval("$+bad4", result);
 }
-

@@ -376,6 +376,8 @@ public:
         rotation_list.push_back(path);
     }
 
+    void set_keep(int _keep) { keep = _keep; }
+
     void log(cm_log::level::en lvl, const std::string &msg);
     void log(cm_log::extra ext, cm_log::level::en lvl, const std::string &msg);
 };

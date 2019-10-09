@@ -95,6 +95,17 @@ public:
         return size;
     }
 
+    void swap(info_store<keyT,valueT> &store) {
+        lock();
+        _map.swap(store._map);
+        unlock();
+    }
+
+    void clear() {
+        lock();
+        _map.clear();
+        unlock();
+    }
 };
 
 
