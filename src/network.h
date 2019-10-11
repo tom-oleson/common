@@ -195,15 +195,18 @@ public:
 struct input_event {
     int fd = -1;        // response socket
     std::string msg;    // input data
+    bool eof = false;   // signals EOF (disonnected)
 
     input_event() {}
     ~input_event() {}
 
+    input_event(int fd_): fd(fd_), eof(true) {}
     input_event(int fd_, std::string msg_): fd(fd_), msg(msg_) {}
-    input_event(const input_event &r): fd(r.fd), msg(r.msg) {}
+    input_event(const input_event &r): fd(r.fd), msg(r.msg), eof(r.eof) {}
     input_event &operator = (const input_event &r) {
         fd = r.fd;
         msg = r.msg;
+        eof = r.eof;
         return *this;
     }
 };

@@ -669,8 +669,17 @@ int cm_net::pool_server::service_input_event(int fd) {
             cm_net::close_socket(fd);
             cm_log::info(cm_util::format("%d: closed connection.", fd));
 
+            // give the response fd and singal EOF to the thread pool
+            input_event *event = new input_event(fd);
+            if(nullptr != event) {
+                pool->add_task(receive_fn, event, dealloc);
+            }
+            else {
+                cm_log::critical("pool_server: error: event allocation failed!");
+                return CM_NET_ERR;
+            }
 
-            return CM_NET_OK;
+            return CM_NET_EOF;
         }
 
         if(num_bytes == -1) {

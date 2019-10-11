@@ -58,17 +58,60 @@ struct token_t {
     std::string value;
 };
 
+
+struct cache_event {
+    int fd = -1;         // response socket
+    std::string request;
+    std::string name;
+    std::string tag;
+    std::string value;
+    std::string result;
+    bool notify = false;    // notify watchers
+
+    cache_event() {}
+    ~cache_event() {}
+
+    cache_event(int fd_, std::string request_): fd(fd_), request(request_) {}
+    cache_event(const cache_event &r): fd(r.fd), request(r.request),
+        name(r.name), tag(r.tag), value(r.value), result(r.result),
+        notify(r.notify)  {}
+    
+    cache_event &operator = (const cache_event &r) {
+        fd = r.fd;
+        request = r.request;
+        name = r.name;
+        tag = r.tag;
+        value = r.value;
+        result = r.result;
+        notify = r.notify;
+        return *this;
+    }
+};
+
 class scanner_processor {
 
 public:
-    virtual bool do_add(const std::string &name, const std::string &value, std::string &result) = 0;
-    virtual bool do_read(const std::string &name, std::string &result) = 0;
-    virtual bool do_remove(const std::string &name, std::string &result) = 0;
-    virtual bool do_watch(const std::string &name, const std::string &tag, std::string &result) = 0;
-    virtual bool do_result(const std::string &result) = 0;
-    virtual bool do_input(const std::string &in_str, std::string &expr) = 0;
-    virtual bool do_error(const std::string &expr, const std::string &err, std::string &result) = 0;
+    virtual bool do_add(const std::string &name, const std::string &value, cache_event &event) = 0;
+    virtual bool do_read(const std::string &name, cache_event &event) = 0;
+    virtual bool do_remove(const std::string &name, cache_event &event) = 0;
+    virtual bool do_watch(const std::string &name, const std::string &tag, cache_event &event) = 0;
+    virtual bool do_result(cache_event &event) = 0;
+    virtual bool do_input(const std::string &in_str, cache_event &event) = 0;
+    virtual bool do_error(const std::string &expr, const std::string &err, cache_event &event) = 0;
 };
+
+
+// class scanner_processor {
+
+// public:
+//     virtual bool do_add(const std::string &name, const std::string &value, std::string &result) = 0;
+//     virtual bool do_read(const std::string &name, std::string &result) = 0;
+//     virtual bool do_remove(const std::string &name, std::string &result) = 0;
+//     virtual bool do_watch(const std::string &name, const std::string &tag, std::string &result) = 0;
+//     virtual bool do_result(const std::string &result) = 0;
+//     virtual bool do_input(const std::string &in_str, std::string &expr) = 0;
+//     virtual bool do_error(const std::string &expr, const std::string &err, std::string &result) = 0;
+// };
 
 class scanner {
 
@@ -128,16 +171,16 @@ public:
     ~cache() { }
 
     int load(const std::string &path);
-    bool eval(const std::string &expr, std::string &result);
+    bool eval(const std::string &expr, cache_event &event);
     bool parse_identifier();
 
-    bool parse_add(std::string &result);
-    bool parse_read(std::string &result);
-    bool parse_remove(std::string &result);
-    bool parse_watch(std::string &result);
+    bool parse_add(cache_event &event);
+    bool parse_read(cache_event &event);
+    bool parse_remove(cache_event &event);
+    bool parse_watch(cache_event &event);
 
-    inline bool parse_error(const std::string &err, std::string &result) {
-        processor->do_error(get_input(), err, result);
+    inline bool parse_error(const std::string &err, cache_event &event) {
+        processor->do_error(get_input(), err, event);
     }
 };
 
