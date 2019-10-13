@@ -195,18 +195,21 @@ public:
 struct input_event {
     int fd = -1;        // response socket
     std::string msg;    // input data
-    bool eof = false;   // signals EOF (disonnected)
+    bool eof = false;       // signals EOF (disonnected)
+    bool connect = false;   // signals connect event
 
     input_event() {}
     ~input_event() {}
 
     input_event(int fd_): fd(fd_), eof(true) {}
     input_event(int fd_, std::string msg_): fd(fd_), msg(msg_) {}
-    input_event(const input_event &r): fd(r.fd), msg(r.msg), eof(r.eof) {}
+    input_event(const input_event &r): fd(r.fd), msg(r.msg), eof(r.eof),
+        connect(r.connect) {}
     input_event &operator = (const input_event &r) {
         fd = r.fd;
         msg = r.msg;
         eof = r.eof;
+        connect = r.connect;
         return *this;
     }
 };
@@ -233,6 +236,7 @@ protected:
 
     int accept();
     int service_input_event(int fd);
+    int service_connect_event(int fd, const std::string info);
     
 public:
     pool_server(int port, cm_thread::pool *pool,

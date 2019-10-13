@@ -625,6 +625,8 @@ bool cm_net::pool_server::process() {
             if(CM_NET_ERR != conn_sock) {
                 cm_net::add_socket(epollfd, conn_sock, EPOLLIN | EPOLLET);
                 cm_log::info(cm_util::format("%d: connected: %s", conn_sock, info.c_str()));
+
+                service_connect_event(conn_sock, info);
             }
         }
         else {
@@ -634,6 +636,20 @@ bool cm_net::pool_server::process() {
     }
 
     return true;
+}
+
+int cm_net::pool_server::service_connect_event(int fd, const std::string info) {
+    
+    // give the response fd and singal connect to the thread pool
+    input_event *event = new input_event(fd, info);
+    event->connect = true;
+    if(nullptr != event) {
+        pool->add_task(receive_fn, event, dealloc);
+    }
+    else {
+        cm_log::critical("pool_server: error: event allocation failed!");
+        return CM_NET_ERR;
+    }
 }
 
 int cm_net::pool_server::service_input_event(int fd) {

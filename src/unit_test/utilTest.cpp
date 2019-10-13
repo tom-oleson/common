@@ -248,3 +248,16 @@ void utilTest::test_strlcpy() {
 
 }
 
+void utilTest::test_split() {
+
+    std::string s = "one+two+three+four+five";
+
+    std::vector<std::string> v = cm_util::split (s, '+');
+
+    CPPUNIT_ASSERT( v[0] == "one");
+    CPPUNIT_ASSERT( v[1] == "two");
+    CPPUNIT_ASSERT( v[2] == "three");
+    CPPUNIT_ASSERT( v[3] == "four");
+    CPPUNIT_ASSERT( v[4] == "five");
+
+}

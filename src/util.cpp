@@ -360,3 +360,16 @@ size_t cm_util::strlcpy(char * dst, const char * src, size_t max) {
 	dst[sz] = '\0';
 	return sz;
 }
+
+
+std::vector<std::string> cm_util::split (const std::string &s, char delim) {
+    std::vector<std::string> result;
+    std::stringstream ss(s);
+    std::string item;
+
+    while (std::getline (ss, item, delim)) {
+        result.push_back (item);
+    }
+
+    return result;
+}

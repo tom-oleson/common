@@ -32,6 +32,8 @@
 
 #include <string>
 #include <fstream>
+#include <iostream>
+#include <sstream>
 #include <vector>
 #include <regex>
 
@@ -93,7 +95,10 @@ inline void byte2hex(const unsigned char byte, char hex[], const char *digits) {
 }
 
 void bin2hex_line(char *out_buf, int out_len, const void *src_addr, const int src_len, const int width, const char *digits);
+
+std::vector<std::string> split (const std::string &s, char delim);
  
 } // namespace cm_util
+
 
 #endif
