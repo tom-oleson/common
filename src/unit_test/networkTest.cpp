@@ -181,3 +181,50 @@ void networkTest::test_network_thread_pool() {
 
     thread_pool.log_counts();
 }
+
+
+
+void networkTest::test_client_connect() {
+
+    cm_log::file_logger server_log("./log/client_connect_test.log");
+    set_default_logger(&server_log);
+    server_log.set_message_format("${date_time}${millis} [${lvl}] <${thread}>: ${msg}");
+
+    timespec start, now;
+    clock_gettime(CLOCK_REALTIME, &start);
+    
+    // startup tcp server thread
+    //cm_net::single_thread_server server(56000 /* port */, server_receive);
+    //CPPUNIT_ASSERT( server.is_started() == true );
+
+    // try to start up a client that has no server to connect to
+    unit_client client;
+    CPPUNIT_ASSERT( !client.is_started() && client.is_done());
+
+    // startup tcp server
+    // create thread pool that will do work for the server
+    cm_thread::pool thread_pool(6);
+    cm_net::pool_server server(56000, &thread_pool, request_handler,
+        request_dealloc);
+
+    CPPUNIT_ASSERT( server.is_started() == true );
+
+
+    // try again by restarting the client thread...
+    client.start();
+    CPPUNIT_ASSERT( client.is_started() && !client.is_done());
+
+    // wait for all the thread to finish working
+    while( !client.is_done() ) {
+        timespec delay = {0, 10000000};   // 10 ms
+        nanosleep(&delay, NULL);
+    }
+
+     // wait for pool_server threads to complete all work tasks
+    thread_pool.wait_all();
+    
+   clock_gettime(CLOCK_REALTIME, &now);
+   double total = cm_time::duration(start, now);
+
+   cm_log::info(cm_util::format("total time: %7.4lf secs", total));
+}

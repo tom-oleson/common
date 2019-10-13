@@ -853,7 +853,9 @@ bool cm_net::client_thread::setup() {
 }
 
 void cm_net::client_thread::cleanup() {
-    cm_net::close_socket(socket);
+    if(socket != CM_NET_ERR) {
+        cm_net::close_socket(socket);
+    }
     if(nullptr != rx) delete rx;
 }
 

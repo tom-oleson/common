@@ -71,13 +71,15 @@ cm_thread::basic_thread::~basic_thread() {
 void cm_thread::basic_thread::start() {
    
     if(tid == 0) {
+        started = done = false;
+
         rc = pthread_attr_init(&attr);
 
         rc = pthread_attr_setstacksize(&attr, THREAD_STACK_SIZE);
 
         rc = pthread_create(&tid, &attr, &run_handler, (void*) this);
 
-        while(!is_started()) {
+        while(!is_started() && !is_done()) {
             nanosleep(&delay, NULL);
         }
     }

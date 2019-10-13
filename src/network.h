@@ -97,10 +97,8 @@ int delete_socket(int epollfd, int fd);
 
 
 inline void err(const std::string &msg, int errnum) {
-    char buf[128] = {'\0'};
-    strerror_r(errnum, buf, sizeof(buf));
     CM_LOG_ERROR {
-        cm_log::error(cm_util::format("%s: %s", msg.c_str(), buf));
+        cm_log::error(cm_util::format("%s: (errno %d) %s", msg.c_str(), errnum, strerror(errnum)));
     }
 }
 
