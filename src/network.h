@@ -136,6 +136,7 @@ public:
 struct rx_thread: public cm_thread::basic_thread  {
 
     int socket;
+    bool connected = false;
     int epollfd;
 
     struct epoll_event ev, events[MAX_EVENTS];
@@ -183,6 +184,9 @@ protected:
 public:
     client_thread(const std::string host, int port, cm_net_receive(fn));
     ~client_thread();
+
+    int get_socket() { return socket; }
+    bool is_connected() { return (nullptr != rx && rx->connected); }
 
     bool is_done() { return done || (nullptr != rx && rx->is_done()); }
 };
