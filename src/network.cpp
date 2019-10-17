@@ -548,24 +548,11 @@ int cm_net::single_thread_server::service_input_event(int fd) {
         }
 
         if(num_bytes == 0) {
-            // EOF - client disconnected
-
-            // remove socket from interest list...
-            //delete_socket(epollfd, fd);
-            //cm_net::close_socket(fd);
-
-            CM_LOG_TRACE {
-                cm_log::trace(cm_util::format("<%d>: connection closed.", fd));
-            }
-
-            return CM_NET_OK;
+            return CM_NET_EOF;
         }
 
         if(num_bytes == -1) {
             cm_net::err("read", errno);
-            // remove bad connection from interest list...
-            //delete_socket(epollfd, fd);
-            //cm_net::close_socket(fd);
             return CM_NET_ERR;
         }
     }
@@ -716,12 +703,6 @@ int cm_net::pool_server::service_input_event(int fd) {
 
         if(num_bytes == 0) {
             // EOF - client disconnected
-
-            // remove socket from interest list...
-            //delete_socket(epollfd, fd);
-            //cm_net::close_socket(fd);
-            //cm_log::info(cm_util::format("%d: closed connection.", fd));
-
             // give the response fd and singal EOF to the thread pool
             input_event *event = new input_event(fd);
             if(nullptr != event) {
@@ -737,10 +718,6 @@ int cm_net::pool_server::service_input_event(int fd) {
 
         if(num_bytes == -1) {
             cm_net::err("read", errno);
-            // remove bad connection from interest list...
-            //delete_socket(epollfd, fd);
-            //cm_net::close_socket(fd);
-            //cm_log::info(cm_util::format("%d: closed connection.", fd));
             return CM_NET_ERR;
         }
     }
@@ -806,7 +783,6 @@ bool cm_net::rx_thread::process() {
             cm_net::err("service_input_event", errno);
         }
 
-
         if(CM_NET_ERR == result || CM_NET_EOF == result) {
             connected = false;
             delete_socket(epollfd, fd);
@@ -855,22 +831,11 @@ int cm_net::rx_thread::service_input_event(int fd) {
 
         if(num_bytes == 0) {
             // EOF - client disconnected
-
-            // remove socket from interest list...
-            //delete_socket(epollfd, fd);
-            //cm_net::close_socket(fd);
-            //connected = false;
-            //cm_log::info(cm_util::format("%d: closed connection.", fd));
             return CM_NET_EOF;
         }
 
         if(num_bytes == -1) {
             cm_net::err("read", errno);
-            // remove bad connection from interest list...
-            //delete_socket(epollfd, fd);
-            //cm_net::close_socket(fd);
-            //connected = false;
-            //cm_log::info(cm_util::format("%d: closed connection.", fd));
             return CM_NET_ERR;
         }
     }
