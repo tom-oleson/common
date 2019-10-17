@@ -95,7 +95,10 @@ int cm_net::server_socket(int host_port) {
 
 void cm_net::close_socket(int fd) {
 
-    if(fd != -1) close(fd);
+    if(fd != -1) {
+        shutdown(fd, SHUT_RDWR);
+        close(fd);
+    }
 }
 
 int cm_net::accept(int host_socket, std::string &info) { 
@@ -481,7 +484,24 @@ bool cm_net::single_thread_server::process() {
         }
         else {
             // handle IO event...
-            service_input_event(fd);
+            int result = service_input_event(fd);
+
+            if(CM_NET_ERR == result || CM_NET_EOF == result) {
+                delete_socket(epollfd, fd);
+                cm_net::close_socket(fd);
+                cm_log::info(cm_util::format("%d: closed connection.", fd));
+            }
+
+            // handle peer shutdown
+            if(events[n].events & EPOLLRDHUP) {
+                // remove socket from interest list...
+                if(CM_NET_OK == result) {
+                    delete_socket(epollfd, fd);
+                    cm_net::close_socket(fd);
+                    cm_log::info(cm_util::format("%d: closed connection (EPOLLRDHUP).", fd));
+                }
+                cm_log::info(cm_util::format("%d: peer shutdown.", fd));
+            }           
         }
     }
 
@@ -531,8 +551,8 @@ int cm_net::single_thread_server::service_input_event(int fd) {
             // EOF - client disconnected
 
             // remove socket from interest list...
-            delete_socket(epollfd, fd);
-            cm_net::close_socket(fd);
+            //delete_socket(epollfd, fd);
+            //cm_net::close_socket(fd);
 
             CM_LOG_TRACE {
                 cm_log::trace(cm_util::format("<%d>: connection closed.", fd));
@@ -544,8 +564,8 @@ int cm_net::single_thread_server::service_input_event(int fd) {
         if(num_bytes == -1) {
             cm_net::err("read", errno);
             // remove bad connection from interest list...
-            delete_socket(epollfd, fd);
-            cm_net::close_socket(fd);
+            //delete_socket(epollfd, fd);
+            //cm_net::close_socket(fd);
             return CM_NET_ERR;
         }
     }
@@ -623,7 +643,7 @@ bool cm_net::pool_server::process() {
         if(fd == listen_socket) {
            conn_sock = accept();
             if(CM_NET_ERR != conn_sock) {
-                cm_net::add_socket(epollfd, conn_sock, EPOLLIN | EPOLLET);
+                cm_net::add_socket(epollfd, conn_sock, EPOLLIN | EPOLLET | EPOLLRDHUP);
                 cm_log::info(cm_util::format("%d: connected: %s", conn_sock, info.c_str()));
 
                 service_connect_event(conn_sock, info);
@@ -631,7 +651,24 @@ bool cm_net::pool_server::process() {
         }
         else {
             // handle IO event...
-            service_input_event(fd);
+            int result = service_input_event(fd);
+
+            if(CM_NET_ERR == result || CM_NET_EOF == result) {
+                delete_socket(epollfd, fd);
+                cm_net::close_socket(fd);
+                cm_log::info(cm_util::format("%d: closed connection.", fd));
+            }
+
+            // handle peer shutdown
+            if(events[n].events & EPOLLRDHUP) {
+                // remove socket from interest list...
+                if(CM_NET_OK == result) {
+                    delete_socket(epollfd, fd);
+                    cm_net::close_socket(fd);
+                    cm_log::info(cm_util::format("%d: closed connection (EPOLLRDHUP).", fd));
+                }
+                cm_log::info(cm_util::format("%d: peer shutdown.", fd));
+            }   
         }
     }
 
@@ -681,9 +718,9 @@ int cm_net::pool_server::service_input_event(int fd) {
             // EOF - client disconnected
 
             // remove socket from interest list...
-            delete_socket(epollfd, fd);
-            cm_net::close_socket(fd);
-            cm_log::info(cm_util::format("%d: closed connection.", fd));
+            //delete_socket(epollfd, fd);
+            //cm_net::close_socket(fd);
+            //cm_log::info(cm_util::format("%d: closed connection.", fd));
 
             // give the response fd and singal EOF to the thread pool
             input_event *event = new input_event(fd);
@@ -701,8 +738,9 @@ int cm_net::pool_server::service_input_event(int fd) {
         if(num_bytes == -1) {
             cm_net::err("read", errno);
             // remove bad connection from interest list...
-            delete_socket(epollfd, fd);
-            cm_net::close_socket(fd);
+            //delete_socket(epollfd, fd);
+            //cm_net::close_socket(fd);
+            //cm_log::info(cm_util::format("%d: closed connection.", fd));
             return CM_NET_ERR;
         }
     }
@@ -726,12 +764,14 @@ bool cm_net::rx_thread::setup() {
 
     connected = false;
 
-    epollfd = epoll_create();
-    if(CM_NET_ERR == epollfd) {
-        return false;
+    if(-1 == epollfd) {
+        epollfd = epoll_create();
+        if(CM_NET_ERR == epollfd) {
+            return false;
+        }
     }
     
-    if(CM_NET_ERR == cm_net::add_socket(epollfd, socket, EPOLLIN)) {
+    if(CM_NET_ERR == cm_net::add_socket(epollfd, socket, EPOLLIN | EPOLLRDHUP)) {
         cm_net::close_socket(socket);
         return false;
     }
@@ -759,11 +799,32 @@ bool cm_net::rx_thread::process() {
     // process the ready fds
     for(int n = 0; n < nfds; ++n) {
         int fd = events[n].data.fd;
+
         // handle IO event...
         int result = service_input_event(fd);
         if(CM_NET_ERR == result) {
             cm_net::err("service_input_event", errno);
         }
+
+
+        if(CM_NET_ERR == result || CM_NET_EOF == result) {
+            connected = false;
+            delete_socket(epollfd, fd);
+            cm_net::close_socket(fd);
+            cm_log::info(cm_util::format("%d: closed connection.", fd));
+        }
+
+        // handle peer shutdown
+        if(events[n].events & EPOLLRDHUP) {
+            connected = false;
+            // remove socket from interest list...
+            if(CM_NET_OK == result) {
+                delete_socket(epollfd, fd);
+                cm_net::close_socket(fd);
+                cm_log::info(cm_util::format("%d: closed connection (EPOLLRDHUP).", fd));
+            }
+            cm_log::info(cm_util::format("%d: peer shutdown.", fd));
+        }           
 
         if(CM_NET_EOF == result) {
             return false;
@@ -796,18 +857,20 @@ int cm_net::rx_thread::service_input_event(int fd) {
             // EOF - client disconnected
 
             // remove socket from interest list...
-            delete_socket(epollfd, fd);
-            cm_net::close_socket(fd);
-            connected = false;
-            cm_log::info(cm_util::format("%d: closed connection.", fd));
+            //delete_socket(epollfd, fd);
+            //cm_net::close_socket(fd);
+            //connected = false;
+            //cm_log::info(cm_util::format("%d: closed connection.", fd));
             return CM_NET_EOF;
         }
 
         if(num_bytes == -1) {
             cm_net::err("read", errno);
             // remove bad connection from interest list...
-            delete_socket(epollfd, fd);
-            cm_net::close_socket(fd);
+            //delete_socket(epollfd, fd);
+            //cm_net::close_socket(fd);
+            //connected = false;
+            //cm_log::info(cm_util::format("%d: closed connection.", fd));
             return CM_NET_ERR;
         }
     }
@@ -824,6 +887,11 @@ cm_net::client_thread::client_thread(const std::string _host, int port, cm_net_r
 cm_net::client_thread::~client_thread() {
     // stop processing thread
     stop();
+
+    if(nullptr != rx) {
+        delete rx;
+        rx = nullptr;
+    }
 }
 
 int cm_net::client_thread::connect() {
@@ -847,9 +915,17 @@ bool cm_net::client_thread::setup() {
         return false;
     }
 
-    rx = new rx_thread(socket, receive_fn);
     if(nullptr == rx) {
-        return false;
+        // new thread object needed
+        rx = new rx_thread(socket, receive_fn);
+        if(nullptr == rx) {
+            return false;
+        }
+    }
+    else {
+        // reuse the old object but update the socket
+        rx->socket = socket;
+        rx->start();
     }
 
     cm_log::info(cm_util::format("client: connected to: %s", info.size() > 0 ? info.c_str():
@@ -862,10 +938,6 @@ void cm_net::client_thread::cleanup() {
     if(socket != CM_NET_ERR) {
         cm_net::close_socket(socket);
         socket = -1;
-    }
-    if(nullptr != rx) {
-        delete rx;
-        rx = nullptr;
     }
 }
 

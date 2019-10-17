@@ -137,7 +137,7 @@ struct rx_thread: public cm_thread::basic_thread  {
 
     int socket;
     bool connected = false;
-    int epollfd;
+    int epollfd = -1;
 
     struct epoll_event ev, events[MAX_EVENTS];
     int nfds, timeout = -1;    
