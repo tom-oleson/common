@@ -137,14 +137,12 @@ int cm_net::accept(int host_socket, std::string &info) {
 int cm_net::connect(const std::string &host, int host_port, std::string &info) {
 
     // create socket
-
     int fd = cm_net::create_socket();
     if(CM_NET_ERR == fd) {
         return CM_NET_ERR;
     }
 
     // get host info
-
     hostent *host_ent;
     if(NULL == (host_ent = gethostbyname(host.c_str())) ) {
         cm_net:err(cm_util::format("gethostbyname failed: %s", host.c_str()), errno);
@@ -931,7 +929,7 @@ int cm_net::add_socket(int epollfd, int fd, uint32_t flags) {
     ev.events = flags;
     ev.data.fd = fd;
     if (epoll_ctl(epollfd, EPOLL_CTL_ADD, fd, &ev) == -1) {
-        cm_net::err("epoll_ctl:ADD", errno);
+        cm_net::err(cm_util::format("%d: epoll_ctl:ADD", fd), errno);
         return CM_NET_ERR;
     }
     return CM_NET_OK;
@@ -942,7 +940,7 @@ int cm_net::modify_socket(int epollfd, int fd, uint32_t flags) {
     ev.events = flags;
     ev.data.fd = fd;
     if (epoll_ctl(epollfd, EPOLL_CTL_MOD, fd, &ev) == -1) {
-        cm_net::err("epoll_ctl:MOD", errno);
+        cm_net::err(cm_util::format("%d: epoll_ctl:MOD", fd), errno);
         return CM_NET_ERR;
     }
     return CM_NET_OK;
@@ -953,7 +951,7 @@ int cm_net::delete_socket(int epollfd, int fd) {
     ev.events = 0;
     ev.data.fd = fd;
     if (epoll_ctl(epollfd, EPOLL_CTL_DEL, fd, &ev) == -1) {
-        cm_net::err("epoll_ctl:DEL", errno);
+        cm_net::err(cm_util::format("%d: epoll_ctl:DEL", fd), errno);
         return CM_NET_ERR;
     }
     return CM_NET_OK;

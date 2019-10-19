@@ -108,17 +108,24 @@ void networkTest::test_network() {
 void request_handler(void *arg) {
 
     cm_net::input_event *event = (cm_net::input_event *) arg;
-    std::string request = std::move(event->msg);
+    std::string request = event->msg;
     int socket = event->fd;
+
+    // if this is a connect event
+    if(event->connect) {
+        return;        
+    }
+
+    // if this is an EOF event (client disconnected)
+    if(event->eof) {
+        return;
+    }    
 
     cm_log::info(cm_util::format("%d: received request:", socket));
     cm_log::hex_dump(cm_log::level::info, request.c_str(), request.size(), 16);
 
     std::string response("OK");
-    
-    if(request == "status") {
-        response = std::move(std::string("status: active"));
-    }
+   
 
     cm_net::send(socket, response);
 }

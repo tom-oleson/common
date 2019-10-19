@@ -45,13 +45,13 @@ LDFLAGS = -pthread -ldl $(DEBUG)
 CC=g++
 
 CM_OBJS = OBJDIR_$(WORD_SIZE)/config.o \
-        OBJDIR_$(WORD_SIZE)/cache.o \
-        OBJDIR_$(WORD_SIZE)/network.o \
-        OBJDIR_$(WORD_SIZE)/thread.o \
-        OBJDIR_$(WORD_SIZE)/queue.o \
+    OBJDIR_$(WORD_SIZE)/cache.o \
+    OBJDIR_$(WORD_SIZE)/network.o \
+    OBJDIR_$(WORD_SIZE)/thread.o \
+    OBJDIR_$(WORD_SIZE)/queue.o \
 	OBJDIR_$(WORD_SIZE)/store.o \
 	OBJDIR_$(WORD_SIZE)/util.o \
-        OBJDIR_$(WORD_SIZE)/base64.o \
+    OBJDIR_$(WORD_SIZE)/base64.o \
 	OBJDIR_$(WORD_SIZE)/log.o \
 	OBJDIR_$(WORD_SIZE)/process_scanner.o \
 	OBJDIR_$(WORD_SIZE)/timewatcher.o
@@ -62,9 +62,9 @@ default: all
 
 all: clean build install
 
-build: libcm_$(WORD_SIZE).so
+build: libcm_$(WORD_SIZE).so libcm_$(WORD_SIZE).a
 
-all_arch:	$(CM_LIB).so 
+all_arch:	$(CM_LIB).so $(CM_LIB).a
 
 clean:
 	@find . -name '*.o' -print -exec rm -f {} \; >/dev/null
@@ -90,3 +90,7 @@ OBJDIR_$(WORD_SIZE)/%.o: %.cpp
 
 $(CM_LIB).so: $(CM_OBJS)
 	$(CC) -m$(WORD_SIZE) -fPIC $(LDFLAGS) -shared -o $@ $(CM_OBJS)
+
+$(CM_LIB).a: $(CM_OBJS)
+	ar rcs $@ $(CM_OBJS)
+	
