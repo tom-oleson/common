@@ -64,6 +64,7 @@ int create_socket();
 int server_socket(int host_port);
 void close_socket(int fd);
 int accept(int host_socket, std::string &info);
+int gethostbyname(const std::string &host, hostent **host_ent);
 int connect(const std::string &host, int host_port, std::string &info);
 
 void send(int socket, const std::string &msg);

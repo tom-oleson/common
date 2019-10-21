@@ -134,6 +134,17 @@ int cm_net::accept(int host_socket, std::string &info) {
     return fd;
 }
 
+int cm_net::gethostbyname(const std::string &host, hostent **host_ent) {
+    hostent *p;
+    if(NULL == (p = ::gethostbyname(host.c_str())) ) {
+        cm_log::error(cm_util::format("gethostbyname failed: %s", host.c_str()));
+        return CM_NET_ERR;
+    }
+    if(nullptr != host_ent) *host_ent = p;
+    return CM_NET_OK;
+}
+
+
 int cm_net::connect(const std::string &host, int host_port, std::string &info) {
 
     // create socket
@@ -144,8 +155,8 @@ int cm_net::connect(const std::string &host, int host_port, std::string &info) {
 
     // get host info
     hostent *host_ent;
-    if(NULL == (host_ent = gethostbyname(host.c_str())) ) {
-        cm_net:err(cm_util::format("gethostbyname failed: %s", host.c_str()), errno);
+    if(NULL == (host_ent = ::gethostbyname(host.c_str())) ) {
+        cm_log::error(cm_util::format("gethostbyname failed: %s", host.c_str()));
         return CM_NET_ERR;
     }
 
@@ -229,7 +240,7 @@ int cm_net::write(int fd, char *buf, size_t sz) {
     // Write until sz bytes have been written (or error/EOF).
     ssize_t num_bytes, total_bytes = 0;
     while(total_bytes != sz) {
-        num_bytes = write(fd, buf, sz - total_bytes);
+        num_bytes = ::write(fd, buf, sz - total_bytes);
         if (num_bytes == 0) return total_bytes;     // EOF
         if (num_bytes == -1) return -1;             // error
         total_bytes += num_bytes;
@@ -775,33 +786,37 @@ bool cm_net::rx_thread::process() {
     for(int n = 0; n < nfds; ++n) {
         int fd = events[n].data.fd;
 
-        // handle IO event...
-        int result = service_input_event(fd);
-        if(CM_NET_ERR == result) {
-            cm_net::err("service_input_event", errno);
-        }
+        if(fd == socket) {
 
-        if(CM_NET_ERR == result || CM_NET_EOF == result) {
-            connected = false;
-            delete_socket(epollfd, fd);
-            cm_net::close_socket(fd);
-            cm_log::info(cm_util::format("%d: closed connection.", fd));
-        }
+            // handle IO event...
+            int result = service_input_event(fd);
+            if(CM_NET_ERR == result) {
+                cm_net::err("service_input_event", errno);
+            }
 
-        // handle peer shutdown
-        if(events[n].events & EPOLLRDHUP) {
-            connected = false;
-            // remove socket from interest list...
-            if(CM_NET_OK == result) {
+            if(CM_NET_ERR == result || CM_NET_EOF == result) {
+                connected = false;
                 delete_socket(epollfd, fd);
                 cm_net::close_socket(fd);
-                cm_log::info(cm_util::format("%d: closed connection (EPOLLRDHUP).", fd));
+                cm_log::info(cm_util::format("%d: closed connection.", fd));
             }
-            cm_log::info(cm_util::format("%d: peer shutdown.", fd));
-        }           
 
-        if(CM_NET_EOF == result) {
-            return false;
+            // handle peer shutdown
+            if(events[n].events & EPOLLRDHUP) {
+                connected = false;
+                // remove socket from interest list...
+                if(CM_NET_OK == result) {
+                    delete_socket(epollfd, fd);
+                    cm_net::close_socket(fd);
+                    cm_log::info(cm_util::format("%d: closed connection (EPOLLRDHUP).", fd));
+                }
+                cm_log::info(cm_util::format("%d: peer shutdown.", fd));
+            }           
+
+            if(CM_NET_EOF == result) {
+                return false;
+            }
+
         }
     }
 
@@ -891,7 +906,7 @@ bool cm_net::client_thread::setup() {
         rx->start();
     }
 
-    cm_log::info(cm_util::format("client: connected to: %s", info.size() > 0 ? info.c_str():
+    cm_log::info(cm_util::format("client: connection: %s", info.size() > 0 ? info.c_str():
         "host?:serv?"));
 
     return true;
@@ -905,6 +920,9 @@ void cm_net::client_thread::cleanup() {
 }
 
 bool cm_net::client_thread::process() {
+
+    timespec delay = {0, 999000000};    // 999ms
+    nanosleep(&delay, NULL);            // interruptable
 
     return is_connected();
 }
