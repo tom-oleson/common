@@ -34,8 +34,11 @@
 // // comment
 // + add/update
 // $ read
+// ! read then remove
 // - remove
-// * watch #tag   
+// * watch #tag
+// @ watch #tag (remove on notify)
+
 // identifier/key
 // string/value
 // \0 eol
@@ -65,11 +68,20 @@ bool cm_cache::scanner::next_token() {
                         accept(tk_read);
                     }
                     break; 
+        case '!':   if(index == 0) {
+                        accept(tk_read_remove);
+                    }
+                    break;
 
         case '*':   if(index == 0) {
                         accept(tk_watch);
                     }
                     break; 
+
+        case '@':   if(index == 0) {
+                        accept(tk_watch_remove);
+                    }
+                    break;                     
 
         case '-':   if(index == 0) {
                         accept(tk_remove);
@@ -189,6 +201,25 @@ bool cm_cache::cache::parse_read(cm_cache::cache_event &event) {
     
 }
 
+bool cm_cache::cache::parse_read_remove(cm_cache::cache_event &event) {
+
+    next_token();
+
+    std::string lvalue = std::move(token.value);
+
+    if(token.id == cm_cache::string || token.id == cm_cache::identifier) {
+
+        next_token();
+
+        if(token.id == cm_cache::input_end) {
+            return processor->do_read_remove(lvalue, event);
+        }
+        return parse_error("read_remove: expected end after key", event);
+    }
+    return parse_error("read_remove: expected string or identifier for key", event);
+    
+}
+
 bool cm_cache::cache::parse_remove(cm_cache::cache_event &event) {
 
     next_token();
@@ -239,6 +270,38 @@ bool cm_cache::cache::parse_watch(cm_cache::cache_event &event) {
     return parse_error("watch: expected string or identifier for key", event);
 }
 
+bool cm_cache::cache::parse_watch_remove(cm_cache::cache_event &event) {
+
+    next_token();
+
+    std::string lvalue = std::move(token.value);
+
+    if(token.id == cm_cache::string || token.id == cm_cache::identifier) {
+
+        next_token();
+
+        if(token.id == cm_cache::tk_tag) {
+
+            next_token();
+
+            std::string rvalue = std::move(token.value);
+
+            if(token.id == cm_cache::identifier) {
+
+                next_token();
+
+                if(token.id == cm_cache::input_end) {   
+                    return processor->do_watch_remove(lvalue, rvalue, event);
+                }
+                return parse_error("watch_remove: expected end after #tag", event);
+            }
+            return parse_error("watch_remove: expected identifier for #tag", event);
+        }
+        return parse_error("watch_remove: expected #tag", event);
+    } 
+    return parse_error("watch_remove: expected string or identifier for key", event);
+}
+
 bool cm_cache::cache::eval(const std::string &expr, cm_cache::cache_event &event) {
 
     set_input(expr.c_str(), expr.size());
@@ -263,6 +326,13 @@ bool cm_cache::cache::eval(const std::string &expr, cm_cache::cache_event &event
             continue;
         }
 
+        if(token.id == cm_cache::tk_read_remove) {
+            if(!parse_read_remove(event)) {
+                return false;
+            }
+            continue;
+        }
+
         if(token.id == cm_cache::tk_remove) {
             if(!parse_remove(event)) {
                 return false;
@@ -272,6 +342,13 @@ bool cm_cache::cache::eval(const std::string &expr, cm_cache::cache_event &event
 
         if(token.id == cm_cache::tk_watch) {
             if(!parse_watch(event)) {
+                return false;
+            }
+            continue;
+        }
+
+        if(token.id == cm_cache::tk_watch_remove) {
+            if(!parse_watch_remove(event)) {
                 return false;
             }
             continue;

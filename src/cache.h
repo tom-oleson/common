@@ -50,7 +50,7 @@ namespace cm_cache {
 
 enum token_type {
      input_end, error, comment, string, identifier, raw,
-        tk_add, tk_read, tk_remove, tk_watch, tk_tag
+        tk_add, tk_read, tk_read_remove, tk_remove, tk_watch, tk_watch_remove, tk_tag
 };
 
 struct token_t {
@@ -93,25 +93,14 @@ class scanner_processor {
 public:
     virtual bool do_add(const std::string &name, const std::string &value, cache_event &event) = 0;
     virtual bool do_read(const std::string &name, cache_event &event) = 0;
+    virtual bool do_read_remove(const std::string &name, cache_event &event) = 0;
     virtual bool do_remove(const std::string &name, cache_event &event) = 0;
     virtual bool do_watch(const std::string &name, const std::string &tag, cache_event &event) = 0;
+    virtual bool do_watch_remove(const std::string &name, const std::string &tag, cache_event &event) = 0;
     virtual bool do_result(cache_event &event) = 0;
     virtual bool do_input(const std::string &in_str, cache_event &event) = 0;
     virtual bool do_error(const std::string &expr, const std::string &err, cache_event &event) = 0;
 };
-
-
-// class scanner_processor {
-
-// public:
-//     virtual bool do_add(const std::string &name, const std::string &value, std::string &result) = 0;
-//     virtual bool do_read(const std::string &name, std::string &result) = 0;
-//     virtual bool do_remove(const std::string &name, std::string &result) = 0;
-//     virtual bool do_watch(const std::string &name, const std::string &tag, std::string &result) = 0;
-//     virtual bool do_result(const std::string &result) = 0;
-//     virtual bool do_input(const std::string &in_str, std::string &expr) = 0;
-//     virtual bool do_error(const std::string &expr, const std::string &err, std::string &result) = 0;
-// };
 
 class scanner {
 
@@ -176,8 +165,10 @@ public:
 
     bool parse_add(cache_event &event);
     bool parse_read(cache_event &event);
+    bool parse_read_remove(cache_event &event);
     bool parse_remove(cache_event &event);
     bool parse_watch(cache_event &event);
+    bool parse_watch_remove(cache_event &event);
 
     inline bool parse_error(const std::string &err, cache_event &event) {
         processor->do_error(get_input(), err, event);
