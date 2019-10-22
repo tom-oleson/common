@@ -151,6 +151,7 @@ void cm_cache::scanner::scan_identifier() {
 void cm_cache::scanner::scan_raw() {
     char ch;
     while(ch = buffer[index]) {
+        if(ch == '\n') break;
         token.value.append(1,ch);
         index++;
     } 
