@@ -29,6 +29,116 @@
 
 #include "network.h"
 
+// Resolve host name to its IP address
+int cm_net::resolve_host(const std::string &host, std::string &info, int flags) {
+
+    struct addrinfo hints, *res;
+    int rv;
+
+    bzero(&hints, sizeof(hints));
+    char ip_buf[NI_MAXHOST] = { '\0' };
+
+    if (flags != 0) hints.ai_flags = flags;
+    hints.ai_family = AF_UNSPEC;
+    hints.ai_socktype = SOCK_STREAM;  
+
+    if ((rv = getaddrinfo(host.c_str(), NULL, &hints, &res)) != 0) {
+        cm_net::err(cm_util::format("getaddrinfo failed: %s", gai_strerror(rv)));
+        return CM_NET_ERR;
+    }
+    if (res->ai_family == AF_INET) {
+        struct sockaddr_in *sa = (struct sockaddr_in *)res->ai_addr;
+        inet_ntop(AF_INET, &(sa->sin_addr), ip_buf, sizeof(ip_buf));
+    } else {
+        struct sockaddr_in6 *sa = (struct sockaddr_in6 *)res->ai_addr;
+        inet_ntop(AF_INET6, &(sa->sin6_addr), ip_buf, sizeof(ip_buf));
+    }
+
+    freeaddrinfo(res);
+    info.assign(info);
+    
+    return CM_NET_OK;
+}
+
+int cm_net::connect_inet6(const std::string &host, int host_port, std::string &info) {
+
+    struct addrinfo hints, *res;
+    int fd = -1, rv;
+    char port_str[6] = { '\0' };
+
+    snprintf(port_str, sizeof(port_str), "%d", host_port); 
+
+    bzero(&hints, sizeof(hints));
+    char ip_buf[NI_MAXHOST] = { '\0' };
+
+    hints.ai_family = AF_UNSPEC;
+    hints.ai_socktype = SOCK_STREAM;  
+
+    if ((rv = getaddrinfo(host.c_str(), port_str, &hints, &res)) != 0) {
+        cm_net::err(cm_util::format("getaddrinfo failed: %s", gai_strerror(rv)));
+        return CM_NET_ERR;
+    }
+
+    if (res->ai_family == AF_INET) {
+        struct sockaddr_in *sa = (struct sockaddr_in *)res->ai_addr;
+        inet_ntop(AF_INET, &(sa->sin_addr), ip_buf, sizeof(ip_buf));
+    } else {
+        struct sockaddr_in6 *sa = (struct sockaddr_in6 *)res->ai_addr;
+        inet_ntop(AF_INET6, &(sa->sin6_addr), ip_buf, sizeof(ip_buf));
+    }
+
+    if ((fd = socket(res->ai_family, res->ai_socktype, res->ai_protocol)) == -1) {
+        cm_net::err("create socket failed", errno);
+        return CM_NET_ERR;
+    }
+
+    // we must do this on *all* sockets we create or we will get
+    // a bind error when we try to use the same local address again
+    // (e.g., after a restart)
+    if(CM_NET_ERR == cm_net::enable_reuseaddr(fd)) {
+        close_socket(fd);
+        return CM_NET_ERR;
+    }
+
+    if(-1 == ::connect(fd,res->ai_addr,res->ai_addrlen)) {
+        cm_net::err("connect_inet6 failed", errno);
+        cm_net::close_socket(fd);
+        return CM_NET_ERR;      
+    }
+
+    // get info for this client connection.
+    // we are after the port the server selected for our connect()
+    sockaddr_in6 client_hint;
+    char _host[NI_MAXHOST] = { '\0' };
+    char _serv[NI_MAXSERV] = { '\0' };
+    char info_buf[NI_MAXHOST + NI_MAXSERV + 1] = { '\0' };
+    socklen_t client_len = sizeof(client_hint);
+
+    if( 0 == getsockname(fd, (sockaddr *) &client_hint, &client_len)) { 
+        if( 0 == getnameinfo( (sockaddr *) &client_hint, sizeof(client_hint),
+            _host, sizeof(_host), _serv, sizeof(_serv), 0 /*flags*/) ) {
+            snprintf(info_buf, sizeof(info_buf), "%s:%s", _host, _serv);
+        }
+        else if( NULL != inet_ntop(AF_INET6, &client_hint, _host, sizeof(_host) ))  {
+            // no name info available, use info from client connection...
+            snprintf(info_buf, sizeof(info_buf), "%s:%d", _host, ntohs(client_hint.sin6_port));
+        }
+    }
+    info.assign(info_buf);
+
+    freeaddrinfo(res);
+
+    return fd;
+}
+
+int cm_net::resolve_host(const std::string &host, std::string &info) {
+    return cm_net::resolve_host(host, info,  0 /*flags*/);
+}
+
+int cm_net::resolve_host_ip(const std::string &host, std::string &info) {
+    return cm_net::resolve_host(host, info, AI_NUMERICHOST /*flags*/);
+}
+
 int cm_net::enable_reuseaddr(int fd) {
     int enable = 1;
     if (-1 == setsockopt(fd, SOL_SOCKET, SO_REUSEADDR, &enable, sizeof(enable))) {
@@ -38,9 +148,9 @@ int cm_net::enable_reuseaddr(int fd) {
     return CM_NET_OK;
 }
 
-int cm_net::create_socket() {
+int cm_net::create_socket(int domain) {
 
-    int fd = socket(AF_INET, SOCK_STREAM, 0 /*protocol*/);
+    int fd = socket(domain, SOCK_STREAM, 0 /*protocol*/);
      if(-1 == fd) {
         cm_net::err("create socket failed", errno);
         return CM_NET_ERR;
@@ -57,21 +167,61 @@ int cm_net::create_socket() {
     return fd;
 }
 
-int cm_net::server_socket(int host_port) {
+int cm_net::create_socket() {
+    return cm_net::create_socket(AF_INET);  // IPv4
+}
+
+int cm_net::server_socket_inet6(int host_port) {
 
     // create host socket
-    
-    int host_socket = cm_net::create_socket();
+    int host_socket = cm_net::create_socket(AF_INET6);
     if(CM_NET_ERR == host_socket) {
         return CM_NET_ERR;
     }
 
     // bind socket to IP/port
+    sockaddr_in6 server_hint;
+    bzero(&server_hint, sizeof(server_hint));
 
+    
+    server_hint.sin6_family = AF_INET6;
+    server_hint.sin6_port = htons(host_port);
+    // allows (by default) both IPv4 and IPv6 clients to connect
+    server_hint.sin6_addr = in6addr_any;
+
+    if(-1 == bind(host_socket, (sockaddr *) &server_hint, sizeof(server_hint))) {
+        cm_net::err("bind failed", errno);
+        return CM_NET_ERR;
+    }
+    
+    // mark socket for listening
+
+    if(-1 == listen(host_socket, SOMAXCONN)) {
+        cm_net::close_socket(host_socket);
+        cm_net::err("listen failed", errno);
+        return CM_NET_ERR;
+    } 
+   
+    cm_log::info(cm_util::format("listening on port %d", host_port)); 
+
+    return host_socket;
+}
+
+int cm_net::server_socket(int host_port, int domain) {
+
+    // create host socket
+    
+    int host_socket = cm_net::create_socket(domain);
+    if(CM_NET_ERR == host_socket) {
+        return CM_NET_ERR;
+    }
+
+    // bind socket to IP/port
     sockaddr_in server_hint;
     bzero(&server_hint, sizeof(server_hint));
 
-    server_hint.sin_family = AF_INET;
+    //server_hint.sin_family = AF_INET;
+    server_hint.sin_family = domain;
     server_hint.sin_port = htons(host_port);
     server_hint.sin_addr.s_addr = htonl(INADDR_ANY);
 
@@ -93,12 +243,50 @@ int cm_net::server_socket(int host_port) {
     return host_socket;
 }
 
+int cm_net::server_socket(int host_port) {
+    return cm_net::server_socket(host_port, AF_INET);   // IPv4
+}
+
 void cm_net::close_socket(int fd) {
 
     if(fd != -1) {
         shutdown(fd, SHUT_RDWR);
         close(fd);
     }
+}
+
+
+int cm_net::accept_inet6(int host_socket, std::string &info) { 
+
+    int fd = -1;
+
+    sockaddr_in6 client_hint;
+    socklen_t client_sz = sizeof(client_hint);
+    bzero(&client_hint, sizeof(client_hint));
+
+    while(-1 == (fd = ::accept(host_socket, (sockaddr *) &client_hint, &client_sz))) {
+        if(errno != EINTR) {
+            cm_net::err("accept failed", errno);
+            return CM_NET_ERR;
+        }
+        /* accept interrupted, loop for retry */
+    }
+
+    char host[NI_MAXHOST] = { '\0' };
+    char serv[NI_MAXSERV] = { '\0' };
+    char info_buf[NI_MAXHOST + NI_MAXSERV + 1] = { '\0' };
+
+    if( 0 == getnameinfo( (sockaddr *) &client_hint, sizeof(client_hint),
+        host, sizeof(host), serv, sizeof(serv), 0 /*flags*/) ) {
+        snprintf(info_buf, sizeof(info_buf), "%s:%s", host, serv);
+    }
+    else if( NULL != inet_ntop(AF_INET6, &client_hint, host, sizeof(host) ))  {
+        // no name info available, use info from client connection...
+        snprintf(info_buf, sizeof(info_buf), "%s:%d", host, ntohs(client_hint.sin6_port));
+    }
+    info.assign(info_buf);
+
+    return fd;
 }
 
 int cm_net::accept(int host_socket, std::string &info) { 
@@ -143,7 +331,6 @@ int cm_net::gethostbyname(const std::string &host, hostent **host_ent) {
     if(nullptr != host_ent) *host_ent = p;
     return CM_NET_OK;
 }
-
 
 int cm_net::connect(const std::string &host, int host_port, std::string &info) {
 
@@ -249,6 +436,17 @@ int cm_net::write(int fd, char *buf, size_t sz) {
 
     return total_bytes;
 }
+
+int cm_net::set_IPv6_only(int fd) {
+    int opt_ipv6_only = 1;
+    if (setsockopt(fd, IPPROTO_IPV6, IPV6_V6ONLY, &opt_ipv6_only, sizeof(int)) == -1) {
+        cm_net::err("setsockopt: IPV6_V6ONLY", errno);
+        close(fd);
+        return CM_NET_ERR;
+    }
+    return CM_NET_OK;
+}
+
 
 int cm_net::set_non_block(int fd, bool non_block) {
 
@@ -438,7 +636,9 @@ bool cm_net::single_thread_server::setup() {
         return false;
     }
 
-    listen_socket = cm_net::server_socket(host_port);
+    //listen_socket = cm_net::server_socket(host_port);
+    // allow both IPv4 and IPv6 clients to connect
+    listen_socket = cm_net::server_socket_inet6(host_port);
     if(-1 == listen_socket) {
         return false;
     }
@@ -459,7 +659,8 @@ void cm_net::single_thread_server::cleanup() {
 
 int cm_net::single_thread_server::accept() {
     
-    int fd = cm_net::accept(listen_socket, info);
+    //int fd = cm_net::accept(listen_socket, info);
+    int fd = cm_net::accept_inet6(listen_socket, info);
     if(CM_NET_ERR != fd) {
     
         if(CM_NET_ERR == cm_net::set_non_block(fd, true)) {
@@ -589,7 +790,9 @@ bool cm_net::pool_server::setup() {
         return false;
     }
 
-    listen_socket = cm_net::server_socket(host_port);
+    //listen_socket = cm_net::server_socket(host_port);
+    // allow both IPv4 and IPv6 clients to connect
+    listen_socket = cm_net::server_socket_inet6(host_port);
     if(-1 == listen_socket) {
         return false;
     }
@@ -610,7 +813,8 @@ void cm_net::pool_server::cleanup() {
 
 int cm_net::pool_server::accept() {
     
-    int fd = cm_net::accept(listen_socket, info);
+    //int fd = cm_net::accept(listen_socket, info);
+    int fd = cm_net::accept_inet6(listen_socket, info);
     if(CM_NET_ERR != fd) {
     
         if(CM_NET_ERR == cm_net::set_non_block(fd, true)) {
@@ -874,7 +1078,8 @@ cm_net::client_thread::~client_thread() {
 
 int cm_net::client_thread::connect() {
 
-    int fd = cm_net::connect(host, host_port, info);
+    //int fd = cm_net::connect(host, host_port, info);
+    int fd = cm_net::connect_inet6(host, host_port, info);
     if(CM_NET_ERR != fd) {
 
         if(CM_NET_ERR == set_non_block(fd, true)) {

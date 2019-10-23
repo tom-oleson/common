@@ -60,11 +60,18 @@
 namespace cm_net {
 
 
+int create_socket(int domain);
 int create_socket();
+int server_socket_inet6(int host_port);
+int server_socket(int host_port, int domain);
 int server_socket(int host_port);
 void close_socket(int fd);
+
+int accept_inet6(int host_socket, std::string &info);
 int accept(int host_socket, std::string &info);
 int gethostbyname(const std::string &host, hostent **host_ent);
+
+int connect_inet6(const std::string &host, int host_port, std::string &info);
 int connect(const std::string &host, int host_port, std::string &info);
 
 void send(int socket, const std::string &msg);
@@ -75,8 +82,11 @@ int recv_non_block(int socket, char *buf, size_t buf_size);
 int read(int fd, char *buf, size_t sz);
 int write(int fd, char *buf, size_t sz);
 
-
+int resolve_host(const std::string &host, std::string &info, int flags);
+int resolve_host(const std::string &host, std::string &info);
+int resolve_host_ip(const std::string &host, std::string &info);
 int enable_reuseaddr(int fd);
+int set_IPv6_only(int fd);
 int set_non_block(int fd, bool non_block);
 int set_keep_alive(int fd);
 int set_keep_alive_interval(int fd, int interval);
@@ -103,6 +113,11 @@ inline void err(const std::string &msg, int errnum) {
     }
 }
 
+inline void err(const std::string &msg) {
+    CM_LOG_ERROR {
+        cm_log::error(cm_util::format("%s", msg.c_str()));
+    }
+}
 
 #define cm_net_receive(fn) void (*fn)(int socket, const char *buf, size_t sz)
 
