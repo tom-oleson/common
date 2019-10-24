@@ -1,13 +1,5 @@
 
 
-To build this library you will also need to install the OpenSSL dev package:
-
-on Debian base ( debian, ubuntu, ... ) you would need libssl-dev: apt-get install libssl-dev.
-
-on Redhat base ( RedHat, Fedora, ... ) you would need openssl-devel: yum install openssl-devel 
-
-cm_ssl uses OpenSSL for the implementation of secure sockets.
-
 <pre>
                   __ _
   ___ ___  _ __  / _(_) __ _

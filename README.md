@@ -16,4 +16,16 @@ Debian/Ubuntu:
 $ sudo apt-get install libcppunit-doc libcppunit-dev
 </pre>
 
+### Install OpenSSL dev for implementation of secure sockets
+
+To build this library you will also need to install the OpenSSL dev package.
+cm_ssl uses OpenSSL for the implementation of secure sockets.
+
+Debian/Ubuntu:
+<pre>
+$ sudo apt-get install libssl-dev
+</pre>
+
+
+
 
