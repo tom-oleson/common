@@ -52,11 +52,6 @@ void server_receive(int socket, const char *buf, size_t sz) {
     cm_log::hex_dump(cm_log::level::info, buf, sz, 16);
 
     std::string response("OK");
-    
-    if(strncmp(buf, "status", 6) == 0) {
-        response = std::move(std::string("status: active"));
-    }
-
     cm_net::send(socket, response);
 }
 
@@ -179,7 +174,7 @@ void networkTest::test_network_thread_pool() {
         delete p;
     }
 
-     // wait for pool_server threads to complete all work tasks
+    // wait for pool_server threads to complete all work tasks
     thread_pool.wait_all();
 
     clock_gettime(CLOCK_REALTIME, &now);
@@ -189,8 +184,6 @@ void networkTest::test_network_thread_pool() {
     thread_pool.log_counts();
 }
 
-
-
 void networkTest::test_client_connect() {
 
     cm_log::file_logger server_log("./log/client_connect_test.log");
@@ -199,10 +192,6 @@ void networkTest::test_client_connect() {
 
     timespec start, now;
     clock_gettime(CLOCK_REALTIME, &start);
-    
-    // startup tcp server thread
-    //cm_net::single_thread_server server(56000 /* port */, server_receive);
-    //CPPUNIT_ASSERT( server.is_started() == true );
 
     // try to start up a client that has no server to connect to
     unit_client client;
@@ -215,7 +204,6 @@ void networkTest::test_client_connect() {
         request_dealloc);
 
     CPPUNIT_ASSERT( server.is_started() == true );
-
 
     // try again by restarting the client thread...
     client.start();

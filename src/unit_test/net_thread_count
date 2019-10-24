@@ -1,0 +1,5 @@
+echo "connected    = "$(grep connected log/network_thread_pool_test.log | wc -l)
+echo "final totals = "$(grep 1000000 log/network_thread_pool_test.log | wc -l)
+echo "requests     = "$(grep request log/network_thread_pool_test.log | wc -l)
+echo "responses    = "$(grep response log/network_thread_pool_test.log | wc -l)
+

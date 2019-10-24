@@ -182,7 +182,6 @@ int cm_net::server_socket_inet6(int host_port) {
     // bind socket to IP/port
     sockaddr_in6 server_hint;
     bzero(&server_hint, sizeof(server_hint));
-
     
     server_hint.sin6_family = AF_INET6;
     server_hint.sin6_port = htons(host_port);
@@ -195,7 +194,6 @@ int cm_net::server_socket_inet6(int host_port) {
     }
     
     // mark socket for listening
-
     if(-1 == listen(host_socket, SOMAXCONN)) {
         cm_net::close_socket(host_socket);
         cm_net::err("listen failed", errno);
@@ -210,7 +208,6 @@ int cm_net::server_socket_inet6(int host_port) {
 int cm_net::server_socket(int host_port, int domain) {
 
     // create host socket
-    
     int host_socket = cm_net::create_socket(domain);
     if(CM_NET_ERR == host_socket) {
         return CM_NET_ERR;
@@ -231,7 +228,6 @@ int cm_net::server_socket(int host_port, int domain) {
     }
     
     // mark socket for listening
-
     if(-1 == listen(host_socket, SOMAXCONN)) {
         cm_net::close_socket(host_socket);
         cm_net::err("listen failed", errno);
@@ -254,7 +250,6 @@ void cm_net::close_socket(int fd) {
         close(fd);
     }
 }
-
 
 int cm_net::accept_inet6(int host_socket, std::string &info) { 
 
@@ -447,7 +442,6 @@ int cm_net::set_IPv6_only(int fd) {
     return CM_NET_OK;
 }
 
-
 int cm_net::set_non_block(int fd, bool non_block) {
 
     // get current flags for fd
@@ -614,7 +608,6 @@ int cm_net::set_receive_timeout(int fd, long long millis) {
     return CM_NET_OK;
 }
 
-
 //////////////////// single_thread_server  //////////////////////////////
 
 cm_net::single_thread_server::single_thread_server(int port,
@@ -655,7 +648,6 @@ void cm_net::single_thread_server::cleanup() {
 
     cm_net::close_socket(listen_socket);
 }
-
 
 int cm_net::single_thread_server::accept() {
     
@@ -810,7 +802,6 @@ void cm_net::pool_server::cleanup() {
     cm_net::close_socket(listen_socket);
 }
 
-
 int cm_net::pool_server::accept() {
     
     //int fd = cm_net::accept(listen_socket, info);
@@ -935,7 +926,6 @@ int cm_net::pool_server::service_input_event(int fd) {
         }
     }
 }
-
 
 /////////////////////// rx_thread ///////////////////////////////
 
@@ -1111,7 +1101,7 @@ bool cm_net::client_thread::setup() {
         rx->start();
     }
 
-    cm_log::info(cm_util::format("client: connection: %s", info.size() > 0 ? info.c_str():
+    cm_log::info(cm_util::format("client: connected: %s", info.size() > 0 ? info.c_str():
         "host?:serv?"));
 
     return true;
