@@ -36,27 +36,31 @@
 //-------------------------------------------------------------------------
 
 std::string cm_util::format(const char *fmt, ...) {
-    char c_format_buf[_SPRINTF_BUF_SZ];
-    memset(c_format_buf, 0, sizeof(c_format_buf));
+    char c_format_buf[_SPRINTF_BUF_SZ] = { '\0' };
+    //memset(c_format_buf, 0, sizeof(c_format_buf));
 
     va_list args;
     va_start(args, fmt);
     int sz = vsnprintf(c_format_buf,sizeof(c_format_buf),fmt,args);
     va_end(args);
 
+    size_t n = (sz > 0 && sz < sizeof(c_format_buf)) ? sz : sizeof(c_format_buf)-1;
+    c_format_buf[n] = '\0';
     // return value
     return std::string(c_format_buf,sz);
 }
 
 std::string &cm_util::format_string(std::string& s, const char *fmt, ...) {
-    char c_format_buf[_SPRINTF_BUF_SZ];
-    memset(c_format_buf, 0, sizeof(c_format_buf));
+    char c_format_buf[_SPRINTF_BUF_SZ] = { '\0' };
+    //memset(c_format_buf, 0, sizeof(c_format_buf));
 
     va_list args;
     va_start(args, fmt);
     int sz = vsnprintf(c_format_buf,sizeof(c_format_buf),fmt,args);
     va_end(args);
 
+    size_t n = (sz > 0 && sz < sizeof(c_format_buf)) ? sz : sizeof(c_format_buf)-1;
+    c_format_buf[n] = '\0';
     // return reference
     return s.assign(c_format_buf,sz);
 }

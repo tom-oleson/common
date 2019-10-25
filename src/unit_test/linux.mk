@@ -52,7 +52,7 @@ default: all
 CC=g++
 CM_LIB_DIR=../
 INCLUDE = -I. -I$(CM_LIB_DIR)
-LDFLAGS = -m64 -g -lcm_64 -ldl -lcppunit -pthread -L$(CM_LIB_DIR)
+LDFLAGS = -m64 -g -lcm_64 -ldl -lcppunit -pthread -lssl -L$(CM_LIB_DIR)
 CCFLAGS = -m64 -g $(INCLUDE) -c -fPIC -D__LINUX_BOX__ -D_REENTRANT -D_LARGEFILE64_SOURCE
 
 POSIXFLAGS = -D_POSIX_PTHREAD_SEMANTICS -D_REENTRANT

@@ -29,6 +29,12 @@
 
 #include "ssl.h"
 
+
+int cm_ssl::print_errors(const char *str, size_t len, void *u) {
+    (void) u;
+    cm_log::error(std::string(str, len));
+}
+
 void cm_ssl::init_openssl() {
 
     SSL_load_error_strings();
@@ -42,42 +48,82 @@ void cm_ssl::cleanup_openssl() {
     EVP_cleanup();
 }
 
-void cm_ssl::shutdown(SSL *ssl) {
+void cm_ssl::ssl_shutdown(SSL *ssl) {
     SSL_shutdown(ssl);
     SSL_free(ssl);
 }
 
-SSL_CTX *cm_ssl::create_context() {
+SSL_CTX *cm_ssl::ctx_create() {
 
     const SSL_METHOD *method = TLS_server_method();
-    if(nullptr == method) {
-        perror("Unable to create server method");
-        ERR_print_errors_fp(stderr);
-        exit(CM_SSL_FAILURE);
-    }
-
     SSL_CTX *ctx = SSL_CTX_new(method);
     if (nullptr == ctx) {
-        perror("Unable to create SSL context");
-        ERR_print_errors_fp(stderr);
+        cm_log::error("Unable to create SSL context");
+        ERR_print_errors_cb(cm_ssl::print_errors, NULL);
         exit(CM_SSL_FAILURE);
     }
-
     return ctx;
 }
 
-void cm_ssl::configure_context(SSL_CTX *ctx) {
+void cm_ssl::ctx_configure(SSL_CTX *ctx) {
 
     SSL_CTX_set_ecdh_auto(ctx, 1);
 
     /* Set the key and cert */
     if (SSL_CTX_use_certificate_file(ctx, "cert.pem", SSL_FILETYPE_PEM) <= 0) {
-        ERR_print_errors_fp(stderr);
+        ERR_print_errors_cb(cm_ssl::print_errors, NULL);
         exit(CM_SSL_FAILURE);
     }
 
     if (SSL_CTX_use_PrivateKey_file(ctx, "key.pem", SSL_FILETYPE_PEM) <= 0 ) {
-        ERR_print_errors_fp(stderr);
+        ERR_print_errors_cb(cm_ssl::print_errors, NULL);
+        exit(CM_SSL_FAILURE);
+    }
+
+    if (!SSL_CTX_check_private_key (ctx)) {
+        cm_log::error("Private key does not match the public certificate");
         exit(CM_SSL_FAILURE);
     }
 }
+
+SSL *cm_ssl::ssl_create(SSL_CTX *ctx) {
+    
+    SSL *ssl = SSL_new(ctx);
+    if (nullptr == ssl) {
+        cm_log::error("Unable to create SSL structure");
+        ERR_print_errors_cb(cm_ssl::print_errors, NULL);
+    }
+    return ssl;
+}
+
+void cm_ssl::ssl_free(SSL *ssl) {
+    SSL_free(ssl);
+}
+
+int cm_ssl::ssl_set_fd(SSL *ssl, int fd) {
+    
+    int res = SSL_set_fd(ssl, fd);
+    if (res <= 0) {
+        cm_log::error("Unable to set SSL fd");
+        ERR_print_errors_cb(cm_ssl::print_errors, NULL);
+    }
+    return res;
+}
+
+int cm_ssl::ssl_accept(SSL *ssl) {
+    int res = ssl_accept(ssl);
+    if(res <= 0) {
+        cm_log::error("SSL accept failed");
+        ERR_print_errors_cb(cm_ssl::print_errors, NULL);        
+    }
+    return res;
+}
+
+int cm_ssl::ssl_read(SSL *ssl, void *buf, int num) {
+    return SSL_read(ssl, buf, num);
+}
+
+int cm_ssl::ssl_write(SSL *ssl, const void *buf, int num) {
+    return SSL_write(ssl, buf, num);
+}
+

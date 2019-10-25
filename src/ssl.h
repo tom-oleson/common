@@ -43,16 +43,26 @@
 #include <openssl/ssl.h>
 #include <openssl/err.h>
 
+#include "log.h"
 
 #define CM_SSL_FAILURE -1
 
 namespace cm_ssl {
 
+int print_errors(const char *str, size_t len, void *u);
+
 void init_openssl();
 void cleanup_openssl();
-void shutdown(SSL *ssl);
-SSL_CTX *create_context();
-void configure_context(SSL_CTX *ctx);
+void ssl_shutdown(SSL *ssl);
+SSL_CTX *ctx_create();
+void ctx_configure(SSL_CTX *ctx);
+SSL *ssl_create(SSL_CTX *ctx);
+void ssl_free(SSL *ssl);
+int ssl_set_fd(SSL *ssl, int fd);
+int ssl_accept(SSL *ssl);
+int ssl_read(SSL *ssl, void *buf, int num);
+int ssl_write(SSL *ssl, const void *buf, int num);
+
 
 
 } // namespace cm_ssl
