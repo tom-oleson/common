@@ -37,8 +37,8 @@ int cm_ssl::print_errors(const char *str, size_t len, void *u) {
 
 void cm_ssl::init_openssl() {
 
-    SSL_load_error_strings();
     SSL_library_init();
+    SSL_load_error_strings();
     OpenSSL_add_all_algorithms();
 }
 
@@ -46,11 +46,6 @@ void cm_ssl::cleanup_openssl() {
 
     ERR_free_strings();
     EVP_cleanup();
-}
-
-void cm_ssl::ssl_shutdown(SSL *ssl) {
-    SSL_shutdown(ssl);
-    SSL_free(ssl);
 }
 
 SSL_CTX *cm_ssl::ctx_create() {
@@ -65,11 +60,14 @@ SSL_CTX *cm_ssl::ctx_create() {
     return ctx;
 }
 
+void cm_ssl::ctx_free(SSL_CTX *ctx) {
+    SSL_CTX_free(ctx);
+}
+
 void cm_ssl::ctx_configure(SSL_CTX *ctx) {
 
     SSL_CTX_set_ecdh_auto(ctx, 1);
-
-    /* Set the key and cert */
+    
     if (SSL_CTX_use_certificate_file(ctx, "cert.pem", SSL_FILETYPE_PEM) <= 0) {
         ERR_print_errors_cb(cm_ssl::print_errors, NULL);
         exit(CM_SSL_FAILURE);
@@ -81,9 +79,16 @@ void cm_ssl::ctx_configure(SSL_CTX *ctx) {
     }
 
     if (!SSL_CTX_check_private_key (ctx)) {
-        cm_log::error("Private key does not match the public certificate");
+        cm_log::error("Private key does not match the certificate");
         exit(CM_SSL_FAILURE);
     }
+
+    //for non-blocking sockets to work?
+    SSL_CTX_set_mode(ctx,
+          SSL_MODE_ACCEPT_MOVING_WRITE_BUFFER 
+        | SSL_MODE_ENABLE_PARTIAL_WRITE | SSL_MODE_AUTO_RETRY 
+        | SSL_OP_NO_SSLv2 | SSL_OP_NO_SSLv3
+        );
 }
 
 SSL *cm_ssl::ssl_create(SSL_CTX *ctx) {
@@ -94,6 +99,10 @@ SSL *cm_ssl::ssl_create(SSL_CTX *ctx) {
         ERR_print_errors_cb(cm_ssl::print_errors, NULL);
     }
     return ssl;
+}
+
+void cm_ssl::ssl_shutdown(SSL *ssl) {
+    SSL_shutdown(ssl);
 }
 
 void cm_ssl::ssl_free(SSL *ssl) {
@@ -126,4 +135,22 @@ int cm_ssl::ssl_read(SSL *ssl, void *buf, int num) {
 int cm_ssl::ssl_write(SSL *ssl, const void *buf, int num) {
     return SSL_write(ssl, buf, num);
 }
+
+
+void cm_ssl::ssl_set_accept_state(SSL *ssl) {
+    SSL_set_accept_state(ssl);
+}
+
+void cm_ssl::ssl_set_connect_state(SSL *ssl) {
+    SSL_set_connect_state(ssl);
+}
+
+int cm_ssl::ssl_is_server(SSL *ssl) {
+    return SSL_is_server(ssl);
+}
+
+int cm_ssl::ssl_get_error(SSL *ssl, int ret) {
+    return ssl_get_error(ssl, ret);
+}
+
 

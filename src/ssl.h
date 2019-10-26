@@ -53,16 +53,22 @@ int print_errors(const char *str, size_t len, void *u);
 
 void init_openssl();
 void cleanup_openssl();
-void ssl_shutdown(SSL *ssl);
 SSL_CTX *ctx_create();
+void ctx_free(SSL_CTX *ctx);
 void ctx_configure(SSL_CTX *ctx);
 SSL *ssl_create(SSL_CTX *ctx);
+void ssl_shutdown(SSL *ssl);
 void ssl_free(SSL *ssl);
 int ssl_set_fd(SSL *ssl, int fd);
 int ssl_accept(SSL *ssl);
 int ssl_read(SSL *ssl, void *buf, int num);
 int ssl_write(SSL *ssl, const void *buf, int num);
 
+void ssl_set_accept_state(SSL *ssl);
+void ssl_set_connect_state(SSL *ssl);
+int ssl_is_server(SSL *ssl);
+
+int ssl_get_error(SSL *ssl, int ret);
 
 
 } // namespace cm_ssl

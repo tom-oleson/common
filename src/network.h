@@ -53,9 +53,13 @@
 #include "queue.h"
 #include "log.h"
 
+#include "ssl.h"
+#include "store.h"
+
 #define CM_NET_OK 1
 #define CM_NET_EOF 0
 #define CM_NET_ERR -1
+#define CM_NET_AGAIN -2
 
 namespace cm_net {
 
@@ -98,6 +102,9 @@ int set_receive_timeout(int fd, long long millis);
 int read(int fd, char *buf, size_t sz);
 int write(int fd, char *buf, size_t sz);
 
+// SSL helpers
+int ssl_status(SSL *ssl, int ret);
+int ssl_read(SSL *ssl, char *buf, size_t sz);
 
 // event-driven I/O
 #define MAX_EVENTS  64
@@ -207,6 +214,42 @@ public:
     bool is_done() { return done || (nullptr != rx && rx->is_done()); }
 };
 
+////////////////////// SSL single_thread_server ////////////////////////
+
+class single_thread_server_ssl: public cm_thread::basic_thread  {
+
+protected:
+
+    cm_store::info_store<int, SSL *> ssl_store;
+
+    int host_port;
+    std::string info;
+
+    SSL_CTX *ctx;
+    SSL *ssl;
+
+    cm_net_receive(receive_fn) = nullptr;
+
+    char rbuf[4096] = { '\0' };
+
+    int epollfd;
+    int listen_socket;
+    struct epoll_event ev, events[MAX_EVENTS];
+    int conn_sock, nfds, timeout = -1;    
+
+    bool setup();
+    void cleanup();
+    bool process();
+
+    int accept();
+    int service_input_event(int fd);
+    
+public:
+    single_thread_server_ssl(int port, cm_net_receive(fn));
+    ~single_thread_server_ssl();
+
+    void remove_fd(int fd);
+};
 
 /////////////////////////// pool server ///////////////////////////////
 
