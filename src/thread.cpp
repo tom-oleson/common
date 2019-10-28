@@ -185,7 +185,7 @@ bool cm_thread::pool::next_task(task &work_task) {
 
 void cm_thread::pool::wait_all() {
 
-    while(!work_queue.empty()) {
+    while(!work_queue.empty() || running_tasks() > 0) {
         timespec delay = {0, 100000000};   // 100 ms
         nanosleep(&delay, NULL);           
     }

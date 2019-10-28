@@ -105,6 +105,7 @@ int write(int fd, char *buf, size_t sz);
 // SSL helpers
 int ssl_status(SSL *ssl, int ret);
 int ssl_read(SSL *ssl, char *buf, size_t sz);
+int ssl_write(SSL *ssl, char *buf, size_t sz);
 
 // event-driven I/O
 #define MAX_EVENTS  64
@@ -190,11 +191,14 @@ protected:
     int socket;
     int host_port;
 
+    bool connected = false;
+    int epollfd = -1;
+
     struct epoll_event ev, events[MAX_EVENTS];
-    int nfds, timeout = -1;    
+    int nfds, timeout = 100; // ms timeout    
 
     cm_net_receive(receive_fn) = nullptr;
-    rx_thread *rx = nullptr;
+    //rx_thread *rx = nullptr;
 
     bool setup();
     void cleanup();
@@ -209,12 +213,12 @@ public:
     ~client_thread();
 
     int get_socket() { return socket; }
-    bool is_connected() { return (nullptr != rx && rx->connected); }
-
-    bool is_done() { return done || (nullptr != rx && rx->is_done()); }
+    bool is_connected() { return connected; }
 };
 
 ////////////////////// SSL single_thread_server ////////////////////////
+
+#define cm_net_ssl_receive(fn) void (*fn)(SSL *ssl, const char *buf, size_t sz)
 
 class single_thread_server_ssl: public cm_thread::basic_thread  {
 
@@ -228,14 +232,14 @@ protected:
     SSL_CTX *ctx;
     SSL *ssl;
 
-    cm_net_receive(receive_fn) = nullptr;
+    cm_net_ssl_receive(receive_fn) = nullptr;
 
     char rbuf[4096] = { '\0' };
 
     int epollfd;
     int listen_socket;
     struct epoll_event ev, events[MAX_EVENTS];
-    int conn_sock, nfds, timeout = -1;    
+    int conn_sock, nfds, timeout = 100;    // ms timeout
 
     bool setup();
     void cleanup();
@@ -245,10 +249,11 @@ protected:
     int service_input_event(int fd);
     
 public:
-    single_thread_server_ssl(int port, cm_net_receive(fn));
+    single_thread_server_ssl(int port, cm_net_ssl_receive(fn));
     ~single_thread_server_ssl();
 
     void remove_fd(int fd);
+
 };
 
 /////////////////////////// pool server ///////////////////////////////
@@ -289,7 +294,7 @@ protected:
     int epollfd;
     int listen_socket;
     struct epoll_event ev, events[MAX_EVENTS];
-    int conn_sock, nfds, timeout = -1;    
+    int conn_sock, nfds, timeout = 100;    // ms timeout
 
     bool setup();
     void cleanup();
@@ -305,6 +310,43 @@ public:
     ~pool_server();
 };
 
+
+class client_thread_ssl: public cm_thread::basic_thread  {
+
+protected:
+
+    std::string host;
+    std::string info;
+
+    SSL_CTX *ctx;
+    SSL *ssl;
+
+    int socket;
+    int host_port;
+
+    bool connected = false;
+    int epollfd = -1;
+
+    struct epoll_event ev, events[MAX_EVENTS];
+    int nfds, timeout = 100;  // ms timeout
+
+    cm_net_ssl_receive(receive_fn) = nullptr;
+
+    bool setup();
+    void cleanup();
+    bool process();
+
+    int connect();
+    int service_input_event(int fd);
+
+public:
+    client_thread_ssl(const std::string host, int port, cm_net_ssl_receive(fn));
+    ~client_thread_ssl();
+
+    int get_socket() { return socket; }
+    bool is_connected() { return connected; }
+
+};
 
 } // namespace cm_net
 

@@ -30,19 +30,16 @@ struct unit_client: public cm_net::client_thread {
     
     bool process() {
 
-        for(int x = 0; x < 10000; x++) {
-            if(++count % 10000 == 0) {
-                    send(cm_util::format("count=[%d]\n", count));
-                  
-                    // delay to allow server time to respond
-                    timespec delay = {0, 100000000};   // 100 ms
-                    nanosleep(&delay, NULL);
-
+        if(count < 1000000) {
+            for(int x = 0; x < 10000; x++) {
+                if(++count % 10000 == 0) {
+                        send(cm_util::format("count=[%d]\n", count));
                 }
+            }
         }
-
-        bool finished = count < 1000000;
-        return finished;
+        else { return false; }
+        
+        return client_thread::process();
     }
 };
 
@@ -159,16 +156,15 @@ void networkTest::test_network_thread_pool() {
         CPPUNIT_ASSERT( p->is_valid() );
         clients.push_back(p);
 
-        // allow new client thread to get stable in scheduler
-        // new threads need time to setup, don't create them too quickly
-        timespec delay = {0, 50000000};   // 50 ms
+        // allow new client threads to run and complete setup
+        timespec delay = {0, 2000000};   // 2 ms
         nanosleep(&delay, NULL);
     }
 
     // wait for all the threads to finish
     for(auto p: clients) {
         while( p->is_valid() && !p->is_done() ) {
-            timespec delay = {0, 10000000};   // 10 ms
+            timespec delay = {0, 2000000};   // 2 ms
             nanosleep(&delay, NULL);
         }
         delete p;
@@ -181,6 +177,8 @@ void networkTest::test_network_thread_pool() {
     double total = cm_time::duration(start, now);    
     cm_log::info(cm_util::format("total time: %7.4lf secs", total));
 
+    //timespec delay = {3, 0};   // 3 second
+    //nanosleep(&delay, NULL);    
     thread_pool.log_counts();
 }
 
@@ -209,7 +207,7 @@ void networkTest::test_client_connect() {
     client.start();
     CPPUNIT_ASSERT( client.is_started() && !client.is_done());
 
-    // wait for all the thread to finish working
+    // wait for all the threads to finish working
     while( !client.is_done() ) {
         timespec delay = {0, 10000000};   // 10 ms
         nanosleep(&delay, NULL);

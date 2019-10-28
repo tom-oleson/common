@@ -67,7 +67,7 @@ void cm_ssl::ctx_free(SSL_CTX *ctx) {
 void cm_ssl::ctx_configure(SSL_CTX *ctx) {
 
     SSL_CTX_set_ecdh_auto(ctx, 1);
-    
+        
     if (SSL_CTX_use_certificate_file(ctx, "cert.pem", SSL_FILETYPE_PEM) <= 0) {
         ERR_print_errors_cb(cm_ssl::print_errors, NULL);
         exit(CM_SSL_FAILURE);
@@ -120,12 +120,11 @@ int cm_ssl::ssl_set_fd(SSL *ssl, int fd) {
 }
 
 int cm_ssl::ssl_accept(SSL *ssl) {
-    int res = ssl_accept(ssl);
-    if(res <= 0) {
-        cm_log::error("SSL accept failed");
-        ERR_print_errors_cb(cm_ssl::print_errors, NULL);        
-    }
-    return res;
+    return SSL_accept(ssl);
+}
+
+int cm_ssl::ssl_connect(SSL *ssl) {
+    return SSL_connect(ssl);
 }
 
 int cm_ssl::ssl_read(SSL *ssl, void *buf, int num) {
@@ -135,7 +134,6 @@ int cm_ssl::ssl_read(SSL *ssl, void *buf, int num) {
 int cm_ssl::ssl_write(SSL *ssl, const void *buf, int num) {
     return SSL_write(ssl, buf, num);
 }
-
 
 void cm_ssl::ssl_set_accept_state(SSL *ssl) {
     SSL_set_accept_state(ssl);
@@ -150,7 +148,9 @@ int cm_ssl::ssl_is_server(SSL *ssl) {
 }
 
 int cm_ssl::ssl_get_error(SSL *ssl, int ret) {
-    return ssl_get_error(ssl, ret);
+    return SSL_get_error(ssl, ret);
 }
 
-
+const char *cm_ssl::ssl_get_version(SSL *ssl) {
+    return SSL_get_version(ssl);
+}

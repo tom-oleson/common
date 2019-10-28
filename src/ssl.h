@@ -61,12 +61,15 @@ void ssl_shutdown(SSL *ssl);
 void ssl_free(SSL *ssl);
 int ssl_set_fd(SSL *ssl, int fd);
 int ssl_accept(SSL *ssl);
+int ssl_connect(SSL *ssl);
 int ssl_read(SSL *ssl, void *buf, int num);
 int ssl_write(SSL *ssl, const void *buf, int num);
 
 void ssl_set_accept_state(SSL *ssl);
 void ssl_set_connect_state(SSL *ssl);
 int ssl_is_server(SSL *ssl);
+
+const char *ssl_get_version(SSL *ssl);
 
 int ssl_get_error(SSL *ssl, int ret);
 

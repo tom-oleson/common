@@ -150,16 +150,34 @@ class pool {
 
     cm::mutex   que_mutex;
     cm::cond    que_access;
+    cm::mutex   count_mutex;
 
-    bool shutdown = false;
-    size_t running_count = 0;
+    volatile bool shutdown = false;
+    volatile size_t running_count = 0;
 
 public:
     pool(int size);
     ~pool();
 
-    void task_begin() { running_count++; }
-    void task_end() { running_count--; }
+    void task_begin() {
+        count_mutex.lock();
+        running_count++;
+        count_mutex.unlock();
+    }
+    
+    void task_end() {
+        count_mutex.lock();
+        if(running_count > 0)
+            running_count--;
+        count_mutex.unlock();
+    }
+
+    size_t running_tasks() {
+        count_mutex.lock();
+        size_t count = running_count;
+        count_mutex.unlock();
+        return count;
+    }
 
     size_t work_queue_count() { return work_queue.size(); }
     size_t thread_count() { return threads.size(); }
