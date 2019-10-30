@@ -60,6 +60,7 @@
 #define CM_NET_EOF 0
 #define CM_NET_ERR -1
 #define CM_NET_AGAIN -2
+#define CM_NET_WANT_WRITE -3
 
 namespace cm_net {
 
@@ -247,12 +248,11 @@ protected:
 
     int accept();
     int service_input_event(int fd);
+    void remove_fd(int fd);
     
 public:
     single_thread_server_ssl(int port, cm_net_ssl_receive(fn));
     ~single_thread_server_ssl();
-
-    void remove_fd(int fd);
 
 };
 
@@ -310,6 +310,7 @@ public:
     ~pool_server();
 };
 
+////////////////////// SSL client_thread //////////////////////////
 
 class client_thread_ssl: public cm_thread::basic_thread  {
 
@@ -318,11 +319,15 @@ protected:
     std::string host;
     std::string info;
 
-    SSL_CTX *ctx;
-    SSL *ssl;
+    SSL_CTX *ctx = nullptr;
+    SSL *ssl = nullptr;
+    X509 *cert = nullptr;
 
     int socket;
     int host_port;
+
+    cm_net_ssl_receive(receive_fn) = nullptr;
+    char rbuf[4096] = { '\0' };
 
     bool connected = false;
     int epollfd = -1;
@@ -330,20 +335,19 @@ protected:
     struct epoll_event ev, events[MAX_EVENTS];
     int nfds, timeout = 100;  // ms timeout
 
-    cm_net_ssl_receive(receive_fn) = nullptr;
-
     bool setup();
     void cleanup();
     bool process();
 
     int connect();
     int service_input_event(int fd);
+    void remove_fd(int fd);
 
 public:
     client_thread_ssl(const std::string host, int port, cm_net_ssl_receive(fn));
     ~client_thread_ssl();
-
-    int get_socket() { return socket; }
+    
+    SSL *get_ssl() { return ssl; }
     bool is_connected() { return connected; }
 
 };

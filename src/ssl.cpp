@@ -67,13 +67,16 @@ void cm_ssl::ctx_free(SSL_CTX *ctx) {
 void cm_ssl::ctx_configure(SSL_CTX *ctx) {
 
     SSL_CTX_set_ecdh_auto(ctx, 1);
+
+    std::string cert_pem = cm_config::mem_config.get("cert.pem", "cert.pem");
+    std::string private_key_pem = cm_config::mem_config.get("private.key.pem", "key.pem");
         
-    if (SSL_CTX_use_certificate_file(ctx, "cert.pem", SSL_FILETYPE_PEM) <= 0) {
+    if (SSL_CTX_use_certificate_file(ctx, cert_pem.c_str(), SSL_FILETYPE_PEM) <= 0) {
         ERR_print_errors_cb(cm_ssl::print_errors, NULL);
         exit(CM_SSL_FAILURE);
     }
 
-    if (SSL_CTX_use_PrivateKey_file(ctx, "key.pem", SSL_FILETYPE_PEM) <= 0 ) {
+    if (SSL_CTX_use_PrivateKey_file(ctx, private_key_pem.c_str(), SSL_FILETYPE_PEM) <= 0 ) {
         ERR_print_errors_cb(cm_ssl::print_errors, NULL);
         exit(CM_SSL_FAILURE);
     }
@@ -89,6 +92,24 @@ void cm_ssl::ctx_configure(SSL_CTX *ctx) {
         | SSL_MODE_ENABLE_PARTIAL_WRITE | SSL_MODE_AUTO_RETRY 
         | SSL_OP_NO_SSLv2 | SSL_OP_NO_SSLv3
         );
+}
+
+void cm_ssl::client_ctx_configure(SSL_CTX *ctx) {
+
+    //for non-blocking sockets to work
+    SSL_CTX_set_mode(ctx,
+          SSL_MODE_ACCEPT_MOVING_WRITE_BUFFER 
+        | SSL_MODE_ENABLE_PARTIAL_WRITE | SSL_MODE_AUTO_RETRY 
+        | SSL_OP_NO_SSLv2 | SSL_OP_NO_SSLv3
+        );
+}
+
+X509 *cm_ssl::ssl_get_peer_certificate(const SSL *ssl) {
+    return SSL_get_peer_certificate(ssl);
+}
+
+void cm_ssl::ssl_X509_free(X509 *cert) {
+    X509_free(cert);
 }
 
 SSL *cm_ssl::ssl_create(SSL_CTX *ctx) {
@@ -153,4 +174,14 @@ int cm_ssl::ssl_get_error(SSL *ssl, int ret) {
 
 const char *cm_ssl::ssl_get_version(SSL *ssl) {
     return SSL_get_version(ssl);
+}
+
+int cm_ssl::ssl_is_init_finished(const SSL *ssl) {
+    return SSL_is_init_finished(ssl);
+}
+
+std::string cm_ssl::ssl_error_string(unsigned long e) {
+    char buf[128] = {'\0'};
+    ERR_error_string_n(e, buf, sizeof(buf));
+    return std::string(buf, strlen(buf));
 }
