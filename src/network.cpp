@@ -1241,182 +1241,7 @@ int cm_net::delete_socket(int epollfd, int fd) {
     return CM_NET_OK;
 }
 
-
-//////////////////// single_thread_server_ssl  //////////////////////////////
-
-cm_net::single_thread_server_ssl::single_thread_server_ssl(int port,
-    cm_net_ssl_receive(fn)): host_port(port), receive_fn(fn) {
-    // start processing thread
-    start();
-}
-
-cm_net::single_thread_server_ssl::~single_thread_server_ssl() {
-    // stop processing thread
-    stop();
-}
-
-bool cm_net::single_thread_server_ssl::setup() {
-
-    cm_ssl::init_openssl();
-    ctx = cm_ssl::ctx_create();
-    cm_ssl::ctx_configure(ctx);
-
-    epollfd = epoll_create();
-    if(CM_NET_ERR == epollfd) {
-        return false;
-    }
-
-    // allow both IPv4 and IPv6 clients to connect
-    listen_socket = cm_net::server_socket_inet6(host_port);
-    if(-1 == listen_socket) {
-        return false;
-    }
-
-    if(CM_NET_ERR == cm_net::add_socket(epollfd, listen_socket, EPOLLIN)) {
-        cm_net::close_socket(listen_socket);
-        return false;
-    }
-
-    return true;
-}
-
-void cm_net::single_thread_server_ssl::cleanup() {
-
-    cm_net::close_socket(listen_socket);
-    cm_ssl::ctx_free(ctx);
-    cm_ssl::cleanup_openssl();
-}
-
-int cm_net::single_thread_server_ssl::accept() {
-    
-    //int fd = cm_net::accept(listen_socket, info);
-    int fd = cm_net::accept_inet6(listen_socket, info);
-    if(CM_NET_ERR != fd) {
-    
-        if(CM_NET_ERR == cm_net::set_non_block(fd, true)) {
-            cm_net::close_socket(fd);
-            return CM_NET_ERR;
-        }
-    }
-
-    return fd;
-}
-
-void cm_net::single_thread_server_ssl::remove_fd(int fd) {
-
-    SSL *p = ssl_store.get(fd, nullptr);
-    if(nullptr != p) {
-        cm_ssl::ssl_free(p);
-        ssl_store.remove(fd);
-    }
-
-    cm_net::delete_socket(epollfd, fd);
-    cm_net::close_socket(fd);
-}
-
-bool cm_net::single_thread_server_ssl::process() {
-
-    // fetch fds that are ready for I/O...
-    nfds = epoll_wait(epollfd, events, MAX_EVENTS, timeout);
-    if(-1 == nfds) {
-        cm_net::err("epoll_wait", errno);
-        return false;
-    }
-
-    // process the ready fds
-    for(int n = 0; n < nfds; ++n) {
-
-        int fd = events[n].data.fd;
-
-        if(fd == listen_socket) {
-           conn_sock = single_thread_server_ssl::accept();
-            if(CM_NET_ERR != conn_sock) {
-
-                ssl = cm_ssl::ssl_create(ctx);
-                cm_ssl::ssl_set_fd(ssl, conn_sock);
-                ssl_store.set(conn_sock, ssl);
-                cm_ssl::ssl_set_accept_state(ssl);
-
-                cm_net::add_socket(epollfd, conn_sock, EPOLLIN | EPOLLET);
-
-                
-                    // initiate client negotiation
-                    int n = cm_ssl::ssl_accept(ssl);
-                    /*if(n <= 0) {
-                        
-                        int status = cm_net::ssl_status(ssl, n);
-                        cm_log::info(cm_util::format("status = %d", status));
-                        
-                        if(status == CM_NET_ERR || status == CM_NET_EOF) {
-                            cm_ssl::ssl_free(ssl);
-                            cm_net::close_socket(conn_sock);
-                            cm_log::info(cm_util::format("%d: closed connection", fd));
-                            continue;
-                        }
-                        // successful negotiation, now we can wait for I/O...
-                    }*/ 
-                
-
-                cm_log::info(cm_util::format("%d: connected: %s (%s)",
-                     conn_sock, info.c_str(), cm_ssl::ssl_get_version(ssl)));
-            }
-        }
-        else {
-            int result = CM_NET_ERR;
-
-            ssl = ssl_store.get(fd, nullptr);
-            if(nullptr == ssl) {
-                continue;
-            }
-
-            if(events[n].events & EPOLLIN) {
-                result = service_input_event(fd);
-                //if(CM_NET_ERR == result || CM_NET_EOF == result) {
-                if(CM_NET_EOF == result) {
-                    remove_fd(fd);
-                    //cm_net::delete_socket(epollfd, fd);
-                    //cm_net::close_socket(fd);
-                    cm_log::info(cm_util::format("%d: closed connection", fd));
-                }
-            }
-
-            // handle peer shutdown
-            if(events[n].events & EPOLLRDHUP) {
-                // remove socket from interest list...
-                if(CM_NET_OK == result) {
-                    remove_fd(fd);
-                    //cm_net::delete_socket(epollfd, fd);
-                    //cm_net::close_socket(fd);
-                    cm_log::info(cm_util::format("%d: closed connection (EPOLLRDHUP).", fd));
-                }
-                cm_log::info(cm_util::format("%d: peer shutdown", fd));
-            }           
-        }
-    }
-
-    return true;
-}
-
-int cm_net::ssl_status(SSL *ssl, int ret) {
-
-    switch (cm_ssl::ssl_get_error(ssl, ret)) {
-        case SSL_ERROR_NONE:
-          return CM_NET_OK;
-
-        case SSL_ERROR_WANT_WRITE:
-            return CM_NET_WANT_WRITE;
-
-        case SSL_ERROR_WANT_READ:
-          return CM_NET_AGAIN;
-
-        case SSL_ERROR_ZERO_RETURN:
-           return CM_NET_EOF;
-
-        case SSL_ERROR_SYSCALL:
-        default:
-          return CM_NET_ERR;
-    }
-}
+//////////////////////////////////////////////////////////////////////////////
 
 int cm_net::ssl_read(SSL *ssl, char *buf, size_t sz) {
 
@@ -1459,24 +1284,196 @@ int cm_net::ssl_write(SSL *ssl, char *buf, size_t sz) {
     return total_bytes;    
 } 
 
-int cm_net::single_thread_server_ssl::service_input_event(int fd) {
+int cm_net::ssl_status(SSL *ssl, int ret) {
 
-    while(1) {
-        
-        int num_bytes = cm_net::ssl_read(ssl, rbuf, sizeof(rbuf));
+    switch (cm_ssl::ssl_get_error(ssl, ret)) {
+        case SSL_ERROR_NONE:
+          return CM_NET_OK;
 
-        if(num_bytes > 0) {
-            // give data to callback function...
-            receive_fn(ssl, rbuf, num_bytes);
-            return CM_NET_OK;
-        }
-        
-        if(num_bytes <= 0) {
-            return cm_net::ssl_status(ssl, num_bytes);
-        }
+        case SSL_ERROR_WANT_WRITE:
+            return CM_NET_WANT_WRITE;
+
+        case SSL_ERROR_WANT_READ:
+          return CM_NET_AGAIN;
+
+        case SSL_ERROR_ZERO_RETURN:
+           return CM_NET_EOF;
+
+        case SSL_ERROR_SYSCALL:
+        default:
+          return CM_NET_ERR;
     }
 }
 
+//////////////////// single_thread_server_ssl  //////////////////////////////
+
+cm_net::single_thread_server_ssl::single_thread_server_ssl(int port,
+    cm_net_ssl_receive(fn)): host_port(port), receive_fn(fn) {
+    // start processing thread
+    start();
+}
+
+cm_net::single_thread_server_ssl::~single_thread_server_ssl() {
+    // stop processing thread
+    stop();
+}
+
+bool cm_net::single_thread_server_ssl::setup() {
+
+    cm_ssl::init_openssl();
+    ctx = cm_ssl::ctx_create();
+    cm_ssl::ctx_configure(ctx);
+
+    epollfd = epoll_create();
+    if(CM_NET_ERR == epollfd) {
+        return false;
+    }
+
+    // allow both IPv4 and IPv6 clients to connect
+    listen_socket = cm_net::server_socket_inet6(host_port);
+    if(-1 == listen_socket) {
+        return false;
+    }
+
+    if(CM_NET_ERR == cm_net::add_socket(epollfd, listen_socket, EPOLLIN | EPOLLET)) {
+        cm_net::close_socket(listen_socket);
+        return false;
+    }
+
+    return true;
+}
+
+void cm_net::single_thread_server_ssl::cleanup() {
+
+    cm_net::close_socket(listen_socket);
+    cm_ssl::ctx_free(ctx);
+    cm_ssl::cleanup_openssl();
+}
+
+int cm_net::single_thread_server_ssl::accept() {
+    
+    //int fd = cm_net::accept(listen_socket, info);
+    int fd = cm_net::accept_inet6(listen_socket, info);
+    if(CM_NET_ERR != fd) {
+    
+        if(CM_NET_ERR == cm_net::set_non_block(fd, true)) {
+            cm_net::close_socket(fd);
+            return CM_NET_ERR;
+        }
+    }
+
+    return fd;
+}
+
+void cm_net::single_thread_server_ssl::remove_fd(int fd) {
+
+    cm_ssl::ssl_bio *p = ssl_store.get(fd, nullptr);
+    if(nullptr != p) {
+        ssl_store.remove(fd);
+        delete p;
+    }
+
+    cm_net::delete_socket(epollfd, fd);
+    cm_net::close_socket(fd);
+}
+
+bool cm_net::single_thread_server_ssl::process() {
+
+    // fetch fds that are ready for I/O...
+    nfds = epoll_wait(epollfd, events, MAX_EVENTS, timeout);
+    if(-1 == nfds) {
+        cm_net::err("epoll_wait", errno);
+        return false;
+    }
+
+    // process the ready fds
+    for(int n = 0; n < nfds; ++n) {
+
+        int fd = events[n].data.fd;
+
+        if(fd == listen_socket) {
+           conn_sock = single_thread_server_ssl::accept();
+            if(CM_NET_ERR != conn_sock) {
+
+                SSL *ssl = cm_ssl::ssl_create(ctx);
+                bio = new cm_ssl::ssl_bio(ssl, conn_sock, true /*is_server*/, receive_fn);
+                if(nullptr == bio) {
+                    // failed to create bio object
+                    cm_ssl::ssl_free(ssl);
+                    cm_net::close_socket(conn_sock);
+                    cm_log::error("Failed to create new ssl_bio");
+                    cm_log::info(cm_util::format("%d: closed connection", conn_sock));
+                    continue;
+                }
+                
+                ssl_store.set(conn_sock, bio);
+                cm_net::add_socket(epollfd, conn_sock, EPOLLIN | EPOLLOUT | EPOLLET);
+                cm_ssl::ssl_accept(bio->ssl);
+
+                cm_log::info(cm_util::format("%d: connected: %s (%s)",
+                     conn_sock, info.c_str(), cm_ssl::ssl_get_version(ssl)));
+            }
+        }
+        else {
+            int result = CM_NET_ERR;
+
+            bio = ssl_store.get(fd, nullptr);
+            if(nullptr == bio) {
+                cm_log::error("Failed to find bio for fd");
+                continue;
+            }
+
+            if(events[n].events & EPOLLIN || events[n].events & EPOLLOUT) {
+                result = service_input_event(fd);
+                //if(CM_NET_ERR == result || CM_NET_EOF == result) {
+                if(CM_NET_EOF == result) {
+                    remove_fd(fd);
+                    //cm_net::delete_socket(epollfd, fd);
+                    //cm_net::close_socket(fd);
+                    cm_log::info(cm_util::format("%d: closed connection", fd));
+                }
+            }
+
+            // handle peer shutdown
+            if(events[n].events & EPOLLRDHUP) {
+                // remove socket from interest list...
+                if(CM_NET_OK == result) {
+                    remove_fd(fd);
+                    //cm_net::delete_socket(epollfd, fd);
+                    //cm_net::close_socket(fd);
+                    cm_log::info(cm_util::format("%d: closed connection (EPOLLRDHUP).", fd));
+                }
+                cm_log::info(cm_util::format("%d: peer shutdown", fd));
+            }           
+        }
+    }
+
+    return true;
+}
+
+int cm_net::single_thread_server_ssl::service_input_event(int fd) {
+    
+    cm_log::trace("service_input_event");
+
+    while(1) {
+        
+        int status = bio->service_io();
+        if(status == CM_NET_AGAIN) {
+            // back to caller for the next epoll_wait()
+            return CM_NET_OK;
+        }
+
+        if(status == CM_NET_EOF) {
+            // EOF - client disconnected
+            return CM_NET_EOF;
+        }
+
+        if(status == CM_NET_ERR) {
+            cm_net::err("service_io", errno);
+            return CM_NET_ERR;
+        }
+    }
+}
 
 //////////////////// client_thread_ssl //////////////////////////////
 
@@ -1527,32 +1524,31 @@ bool cm_net::client_thread_ssl::setup() {
         return false;
     }
 
-    ssl = cm_ssl::ssl_create(ctx);
-    cm_ssl::ssl_set_fd(ssl, socket);
-    cm_ssl::ssl_set_connect_state(ssl);
-
-    cm_net::add_socket(epollfd, socket, EPOLLIN | EPOLLRDHUP);
-
-    // initiate negotiation
-    int n = cm_ssl::ssl_connect(ssl);
-    /*
-    if(n <= 0) {
-        if(cm_net::ssl_status(ssl, n) != CM_NET_AGAIN) {
-            cm_ssl::ssl_free(ssl);
-            cm_net::close_socket(socket);
-            return false;
-        }
-        // successful negotiation, now we can wait for I/O...
-    } 
-    */
+    
+    SSL *ssl = cm_ssl::ssl_create(ctx);
+    bio = new cm_ssl::ssl_bio(ssl, socket, false /*is_server*/, receive_fn);
+    if(nullptr == bio) {
+        // failed to create bio object
+        cm_ssl::ssl_free(ssl);
+        cm_net::close_socket(socket);
+        cm_log::error("Failed to create new ssl_bio");
+        cm_log::info(cm_util::format("%d: closed connection", socket));
+        return false;
+    }
+    
+    ssl_store.set(socket, bio);
+    cm_net::add_socket(epollfd, socket, EPOLLIN | EPOLLOUT | EPOLLET);
+    
+    bio->do_handshake();
+    cm_ssl::ssl_connect(bio->ssl);   
 
     // request server certificate
-    cert = cm_ssl::ssl_get_peer_certificate(ssl);
+    cert = cm_ssl::ssl_get_peer_certificate(bio->ssl);
 
     connected = true;    
 
     cm_log::info(cm_util::format("connected to: %s (%s)",
-     info.c_str(), cm_ssl::ssl_get_version(ssl)));
+     info.c_str(), cm_ssl::ssl_get_version(bio->ssl)));
 
     return true;
 }
@@ -1570,7 +1566,7 @@ void cm_net::client_thread_ssl::cleanup() {
 
 void cm_net::client_thread_ssl::remove_fd(int fd) {
 
-    cm_ssl::ssl_free(ssl);
+    //cm_ssl::ssl_free(ssl);
     cm_net::delete_socket(epollfd, fd);
     cm_net::close_socket(fd);
 }
@@ -1592,7 +1588,13 @@ bool cm_net::client_thread_ssl::process() {
 
             int result = CM_NET_ERR;
 
-            if(events[n].events & EPOLLIN) {
+            bio = ssl_store.get(fd, nullptr);
+            if(nullptr == bio) {
+                cm_log::error("Failed to find bio for fd");
+                continue;
+            }
+
+            if(events[n].events & EPOLLIN || events[n].events & EPOLLOUT) {
                 result = service_input_event(fd);
                 if(CM_NET_EOF == result) {
                     connected = false;
@@ -1625,20 +1627,25 @@ bool cm_net::client_thread_ssl::process() {
 
 int cm_net::client_thread_ssl::service_input_event(int fd) {
             
+    cm_log::trace("service_input_event");
+
     while(1) {
         
-        int num_bytes = cm_net::ssl_read(ssl, rbuf, sizeof(rbuf));
-
-        if(num_bytes > 0) {
-            // give data to callback function...
-            receive_fn(ssl, rbuf, num_bytes);
+        int status = bio->service_io();
+        if(status == CM_NET_AGAIN) {
+            // back to caller for the next epoll_wait()
             return CM_NET_OK;
         }
-        
-        if(num_bytes <= 0) {
-            return cm_net::ssl_status(ssl, num_bytes);
+
+        if(status == CM_NET_EOF) {
+            // EOF - client disconnected
+            return CM_NET_EOF;
         }
-    
+
+        if(status == CM_NET_ERR) {
+            cm_net::err("service_io", errno);
+            return CM_NET_ERR;
+        }
     }
 }
 

@@ -225,13 +225,13 @@ class single_thread_server_ssl: public cm_thread::basic_thread  {
 
 protected:
 
-    cm_store::info_store<int, SSL *> ssl_store;
+    cm_store::info_store<int, cm_ssl::ssl_bio *> ssl_store;
 
     int host_port;
     std::string info;
 
     SSL_CTX *ctx;
-    SSL *ssl;
+    cm_ssl::ssl_bio *bio;
 
     cm_net_ssl_receive(receive_fn) = nullptr;
 
@@ -316,12 +316,15 @@ class client_thread_ssl: public cm_thread::basic_thread  {
 
 protected:
 
+    cm_store::info_store<int, cm_ssl::ssl_bio *> ssl_store;
+
     std::string host;
     std::string info;
 
     SSL_CTX *ctx = nullptr;
-    SSL *ssl = nullptr;
+    //SSL *ssl = nullptr;
     X509 *cert = nullptr;
+    cm_ssl::ssl_bio *bio;
 
     int socket;
     int host_port;
@@ -347,7 +350,7 @@ public:
     client_thread_ssl(const std::string host, int port, cm_net_ssl_receive(fn));
     ~client_thread_ssl();
     
-    SSL *get_ssl() { return ssl; }
+    SSL *get_ssl() { return bio->ssl; }
     bool is_connected() { return connected; }
 
 };
