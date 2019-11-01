@@ -78,6 +78,10 @@ std::string ssl_error_string(unsigned long e);
 void ssl_set_bio(SSL *ssl, BIO *rbio, BIO *wbio);
 
 
+inline const char *err_reason_error_string(unsigned long e) {
+    return ERR_reason_error_string(e);
+}
+
 /*
 //////////////////////////////////////////////////////////////////////////////
 
@@ -99,7 +103,7 @@ void ssl_set_bio(SSL *ssl, BIO *rbio, BIO *wbio);
 #define CM_SSL_AGAIN -2
 #define CM_SSL_WANT_WRITE -3
 
-#define ssl_receive_cb(fn) void (*fn)(SSL *ssl, const char *buf, size_t sz)
+#define ssl_receive_cb(fn) void (*fn)(const char *buf, size_t sz)
 
 struct ssl_bio {
 
@@ -107,6 +111,7 @@ struct ssl_bio {
     SSL *ssl = nullptr;
     BIO *rbio = nullptr;  // we write, SSL reads (in)
     BIO *wbio = nullptr;  // we read, SSL writes  (out)
+    X509 *cert = nullptr;
     bool is_server = false;
 
     ssl_receive_cb(receive_fn) = nullptr;
@@ -116,22 +121,23 @@ struct ssl_bio {
         rbio = BIO_new(BIO_s_mem());
         wbio = BIO_new(BIO_s_mem());
 
-        if(nullptr != rbio && nullptr != wbio) {
-            BIO_set_mem_eof_return(rbio, -1); 
-            BIO_set_mem_eof_return(wbio, -1);
+        //BIO_set_mem_eof_return(rbio, -1); 
+        //BIO_set_mem_eof_return(wbio, -1);
 
-            SSL_set_bio(ssl, rbio, wbio);
-            
-            // NOTE: do not call SSL_set_fd(ssl, fd) for memory BIOs!
-        }
+        BIO_set_nbio(rbio, 1);
+        BIO_set_nbio(wbio, 1);
+  
+        // NOTE: do not call SSL_set_fd(ssl, fd) for memory BIOs!
+
 
         if(is_server) {
             SSL_set_accept_state(ssl);
         }
         else {
-            SSL_set_fd(ssl, fd);
             SSL_set_connect_state(ssl);
         }
+
+        SSL_set_bio(ssl, rbio, wbio);
     }
 
     void cleanup() {
@@ -187,6 +193,7 @@ struct ssl_bio {
 
         char buf[1024] = {'\0'};
         ssize_t read, written, status;
+
         do {
             read = socket_read(buf, sizeof(buf));
             cm_log::trace(cm_util::format("socket_read: %d", read)); 
@@ -194,11 +201,12 @@ struct ssl_bio {
                 written = BIO_write(rbio, buf, read);
                 status = ssl_status(SSL_get_error(ssl, written));
                 cm_log::trace(cm_util::format("bio_write: %d", written));
+
+                if(!SSL_is_init_finished(ssl)) 
+                    do_handshake();
+
                 if(written <= 0) {
                     return status;
-                }
-                if(!SSL_is_init_finished(ssl)) {
-                    return do_handshake();
                 }
             }
             else {
@@ -208,6 +216,10 @@ struct ssl_bio {
             }
         } while(read > 0);
         return read;
+    }
+
+    X509 *do_get_peer_certificate() {
+        return SSL_get_peer_certificate(ssl);
     }
 
     // read encrypted bytes from wbio and write to socket
@@ -230,6 +242,9 @@ struct ssl_bio {
                     return CM_SSL_ERR;
                 }
             }
+            else {
+                return status;
+            }
         } while(read > 0);
         return read;
     }
@@ -240,13 +255,18 @@ struct ssl_bio {
         cm_log::trace("do_handshake");
 
         int n = SSL_do_handshake(ssl);
+        ERR_print_errors_fp(stderr);
         int status = ssl_status(SSL_get_error(ssl, n));
+        cm_log::trace(cm_util::format("do_handshake: status: %d", status)); 
 
-        if(status == CM_SSL_AGAIN || status == CM_SSL_WANT_WRITE) 
+        //if(status == CM_SSL_AGAIN || status == CM_SSL_WANT_WRITE) 
             do_bio_read();
 
         return status;
     }
+
+
+
 
     int do_ssl_read() {
 
@@ -260,7 +280,7 @@ struct ssl_bio {
             status = ssl_status(SSL_get_error(ssl, read));
             if(read > 0) {
                 cm_log::trace("call receive_fn");
-                receive_fn(ssl, buf, (size_t) read);
+                receive_fn(buf, (size_t) read);
             }
             else {
                 cm_log::trace(cm_util::format("do_ssl_read: status: %d", status)); 
@@ -269,6 +289,31 @@ struct ssl_bio {
 
         } while(read > 0);
         return read;
+    }
+
+    ssize_t do_ssl_write(const char *buf, size_t sz) {
+
+        cm_log::trace("do_ssl_write");
+        
+        ssize_t written, status, total_written = 0;  
+
+        do {
+            written = SSL_write(ssl, buf, sz);
+            status = ssl_status(SSL_get_error(ssl, written));
+            if(written > 0) {
+                total_written += written;
+                status = do_bio_read();
+                //status = ssl_status(SSL_get_error(ssl, n));
+                if(status == CM_SSL_EOF) return CM_SSL_EOF;
+                if(status < 0) return total_written;
+            }
+            else {
+                cm_log::trace(cm_util::format("do_ssl_write: status: %d", status)); 
+                return status;
+            }
+
+        } while(written > 0);
+        return total_written;
     }
 
     // service I/O events - called in event loop to move the data

@@ -1241,74 +1241,10 @@ int cm_net::delete_socket(int epollfd, int fd) {
     return CM_NET_OK;
 }
 
-//////////////////////////////////////////////////////////////////////////////
-
-int cm_net::ssl_read(SSL *ssl, char *buf, size_t sz) {
-
-    // Read until sz bytes have been read (or error/EOF).
-    ssize_t num_bytes, total_bytes = 0;
-    while(total_bytes != sz) {
-        num_bytes = cm_ssl::ssl_read(ssl, buf, sz - total_bytes);
-
-        if(num_bytes <= 0) {
-            int status = cm_net::ssl_status(ssl, num_bytes);
-            if(status == CM_NET_AGAIN && total_bytes > 0) return total_bytes;
-            if(status == CM_NET_EOF) return total_bytes;
-            return CM_NET_ERR;
-        }
-
-        total_bytes += num_bytes;
-        buf += num_bytes;
-    }
-
-    return total_bytes;
-}
-
-
-int cm_net::ssl_write(SSL *ssl, char *buf, size_t sz) {
-    ssize_t num_bytes, total_bytes = 0;
-    while(total_bytes != sz) {
-        num_bytes = cm_ssl::ssl_write(ssl, buf, sz - total_bytes);
-
-        if(num_bytes <= 0) {
-            int status = cm_net::ssl_status(ssl, num_bytes);
-            if(status == CM_NET_WANT_WRITE && total_bytes > 0) return total_bytes;
-            if(status == CM_NET_EOF) return total_bytes;
-            return CM_NET_ERR;
-        }
-
-        total_bytes += num_bytes;
-        buf += num_bytes;
-    }
-
-    return total_bytes;    
-} 
-
-int cm_net::ssl_status(SSL *ssl, int ret) {
-
-    switch (cm_ssl::ssl_get_error(ssl, ret)) {
-        case SSL_ERROR_NONE:
-          return CM_NET_OK;
-
-        case SSL_ERROR_WANT_WRITE:
-            return CM_NET_WANT_WRITE;
-
-        case SSL_ERROR_WANT_READ:
-          return CM_NET_AGAIN;
-
-        case SSL_ERROR_ZERO_RETURN:
-           return CM_NET_EOF;
-
-        case SSL_ERROR_SYSCALL:
-        default:
-          return CM_NET_ERR;
-    }
-}
-
 //////////////////// single_thread_server_ssl  //////////////////////////////
 
 cm_net::single_thread_server_ssl::single_thread_server_ssl(int port,
-    cm_net_ssl_receive(fn)): host_port(port), receive_fn(fn) {
+    ssl_receive_cb(fn)): host_port(port), receive_fn(fn) {
     // start processing thread
     start();
 }
@@ -1407,7 +1343,7 @@ bool cm_net::single_thread_server_ssl::process() {
                 }
                 
                 ssl_store.set(conn_sock, bio);
-                cm_net::add_socket(epollfd, conn_sock, EPOLLIN | EPOLLOUT | EPOLLET);
+                cm_net::add_socket(epollfd, conn_sock, EPOLLIN | EPOLLET);
                 cm_ssl::ssl_accept(bio->ssl);
 
                 cm_log::info(cm_util::format("%d: connected: %s (%s)",
@@ -1478,7 +1414,7 @@ int cm_net::single_thread_server_ssl::service_input_event(int fd) {
 //////////////////// client_thread_ssl //////////////////////////////
 
 cm_net::client_thread_ssl::client_thread_ssl(const std::string _host,
-     int port, cm_net_ssl_receive(fn)): host(_host), host_port(port),
+     int port, ssl_receive_cb(fn)): host(_host), host_port(port),
      receive_fn(fn) {
     // start processing thread
     start();
@@ -1523,7 +1459,6 @@ bool cm_net::client_thread_ssl::setup() {
     if(CM_NET_ERR == socket) {
         return false;
     }
-
     
     SSL *ssl = cm_ssl::ssl_create(ctx);
     bio = new cm_ssl::ssl_bio(ssl, socket, false /*is_server*/, receive_fn);
@@ -1537,18 +1472,17 @@ bool cm_net::client_thread_ssl::setup() {
     }
     
     ssl_store.set(socket, bio);
-    cm_net::add_socket(epollfd, socket, EPOLLIN | EPOLLOUT | EPOLLET);
+    cm_net::add_socket(epollfd, socket, EPOLLIN | EPOLLET);
     
-    bio->do_handshake();
-    cm_ssl::ssl_connect(bio->ssl);   
-
-    // request server certificate
-    cert = cm_ssl::ssl_get_peer_certificate(bio->ssl);
-
     connected = true;    
 
     cm_log::info(cm_util::format("connected to: %s (%s)",
      info.c_str(), cm_ssl::ssl_get_version(bio->ssl)));
+
+    bio->do_handshake();     
+
+    // request server certificate
+    cert = bio->do_get_peer_certificate(); 
 
     return true;
 }
@@ -1594,7 +1528,7 @@ bool cm_net::client_thread_ssl::process() {
                 continue;
             }
 
-            if(events[n].events & EPOLLIN || events[n].events & EPOLLOUT) {
+            if(events[n].events & EPOLLIN) {
                 result = service_input_event(fd);
                 if(CM_NET_EOF == result) {
                     connected = false;
@@ -1626,8 +1560,6 @@ bool cm_net::client_thread_ssl::process() {
 }
 
 int cm_net::client_thread_ssl::service_input_event(int fd) {
-            
-    cm_log::trace("service_input_event");
 
     while(1) {
         

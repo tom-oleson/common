@@ -103,11 +103,6 @@ int set_receive_timeout(int fd, long long millis);
 int read(int fd, char *buf, size_t sz);
 int write(int fd, char *buf, size_t sz);
 
-// SSL helpers
-int ssl_status(SSL *ssl, int ret);
-int ssl_read(SSL *ssl, char *buf, size_t sz);
-int ssl_write(SSL *ssl, char *buf, size_t sz);
-
 // event-driven I/O
 #define MAX_EVENTS  64
 int epoll_create();
@@ -158,6 +153,7 @@ public:
     ~single_thread_server();
 };
 
+
 struct rx_thread: public cm_thread::basic_thread  {
 
     int socket;
@@ -181,6 +177,7 @@ struct rx_thread: public cm_thread::basic_thread  {
     rx_thread(int s, cm_net_receive(fn));
     ~rx_thread();
 };
+
 
 class client_thread: public cm_thread::basic_thread  {
 
@@ -219,7 +216,7 @@ public:
 
 ////////////////////// SSL single_thread_server ////////////////////////
 
-#define cm_net_ssl_receive(fn) void (*fn)(SSL *ssl, const char *buf, size_t sz)
+//#define cm_net_ssl_receive(fn) void (*fn)(SSL *ssl, const char *buf, size_t sz)
 
 class single_thread_server_ssl: public cm_thread::basic_thread  {
 
@@ -233,7 +230,7 @@ protected:
     SSL_CTX *ctx;
     cm_ssl::ssl_bio *bio;
 
-    cm_net_ssl_receive(receive_fn) = nullptr;
+    ssl_receive_cb(receive_fn) = nullptr;
 
     char rbuf[4096] = { '\0' };
 
@@ -251,8 +248,12 @@ protected:
     void remove_fd(int fd);
     
 public:
-    single_thread_server_ssl(int port, cm_net_ssl_receive(fn));
+    single_thread_server_ssl(int port, ssl_receive_cb(fn));
     ~single_thread_server_ssl();
+
+    int ssl_write(const char *buf, size_t sz) {
+        return bio->do_ssl_write(buf, sz);
+    }
 
 };
 
@@ -322,15 +323,14 @@ protected:
     std::string info;
 
     SSL_CTX *ctx = nullptr;
-    //SSL *ssl = nullptr;
     X509 *cert = nullptr;
     cm_ssl::ssl_bio *bio;
 
     int socket;
     int host_port;
 
-    cm_net_ssl_receive(receive_fn) = nullptr;
-    char rbuf[4096] = { '\0' };
+    ssl_receive_cb(receive_fn) = nullptr;
+    //char rbuf[4096] = { '\0' };
 
     bool connected = false;
     int epollfd = -1;
@@ -347,10 +347,13 @@ protected:
     void remove_fd(int fd);
 
 public:
-    client_thread_ssl(const std::string host, int port, cm_net_ssl_receive(fn));
+    client_thread_ssl(const std::string host, int port, ssl_receive_cb(fn));
     ~client_thread_ssl();
-    
-    SSL *get_ssl() { return bio->ssl; }
+
+    int ssl_write(const char *buf, size_t sz) {
+        return bio->do_ssl_write(buf, sz);
+    }
+
     bool is_connected() { return connected; }
 
 };

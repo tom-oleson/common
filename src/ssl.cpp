@@ -39,6 +39,8 @@ void cm_ssl::init_openssl() {
 
     SSL_library_init();
     SSL_load_error_strings();
+    ERR_load_BIO_strings();
+    ERR_load_crypto_strings();
     OpenSSL_add_all_algorithms();
 }
 
@@ -50,7 +52,7 @@ void cm_ssl::cleanup_openssl() {
 
 SSL_CTX *cm_ssl::ctx_create() {
 
-    const SSL_METHOD *method = TLS_server_method();
+    const SSL_METHOD *method = TLS_method();
     SSL_CTX *ctx = SSL_CTX_new(method);
     if (nullptr == ctx) {
         cm_log::error("Unable to create SSL context");
@@ -66,6 +68,7 @@ void cm_ssl::ctx_free(SSL_CTX *ctx) {
 
 void cm_ssl::ctx_configure(SSL_CTX *ctx) {
 
+    SSL_CTX_set_verify(ctx, SSL_VERIFY_NONE, NULL);
     SSL_CTX_set_ecdh_auto(ctx, 1);
 
     std::string cert_pem = cm_config::mem_config.get("cert.pem", "cert.pem");
@@ -95,6 +98,16 @@ void cm_ssl::ctx_configure(SSL_CTX *ctx) {
 }
 
 void cm_ssl::client_ctx_configure(SSL_CTX *ctx) {
+
+    SSL_CTX_set_verify(ctx, SSL_VERIFY_NONE, NULL);
+    SSL_CTX_set_ecdh_auto(ctx, 1);
+
+    std::string cert_pem = cm_config::mem_config.get("cert.pem", "cert.pem");
+        
+    if (SSL_CTX_use_certificate_file(ctx, cert_pem.c_str(), SSL_FILETYPE_PEM) <= 0) {
+        ERR_print_errors_cb(cm_ssl::print_errors, NULL);
+        exit(CM_SSL_FAILURE);
+    }
 
     //for non-blocking sockets to work
     SSL_CTX_set_mode(ctx,
