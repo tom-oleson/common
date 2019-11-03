@@ -41,14 +41,19 @@
 #include <termios.h>  // POSIX terminal control definitions 
 #include <string.h>   // String function definitions 
 #include <sys/ioctl.h>
+#include <sys/epoll.h>
+#include <fcntl.h>
 
 #include "log.h"
+#include "thread.h"
 
 
 #define SIO_OK 0
 #define SIO_ERR -1
 
-namespace cm_serial {
+#define MAX_EVENTS  64
+
+namespace cm_sio {
 
 
 inline void err(const std::string &msg, int errnum) {
@@ -63,35 +68,35 @@ inline void err(const std::string &msg) {
     }
 }
 
-int sio_open(const char *device_name) {
+inline int sio_open(const char *device_name) {
 
     int fd = open(device_name, O_RDWR | O_NOCTTY | O_SYNC);
     if(fd < 0) {
-        err("sio_open", errno);
+        cm_sio::err("sio_open", errno);
         return SIO_ERR;
     }
     return fd;
 }
 
-int sio_init(int fd, int speed) {
+inline int sio_init(int fd, int speed) {
 
     struct termios options;
 
     // get the current options 
     if(tcgetattr(fd, &options) < 0) {
-        err("sio_init: tcgetattr", errno);
+        cm_sio::err("sio_init: tcgetattr", errno);
         return SIO_ERR;
     }
 
     // set output speed
     if(cfsetospeed(&options, (speed_t)speed) < 0) {
-        err("sio_init: cfsetospeed", errno);
+        cm_sio::err("sio_init: cfsetospeed", errno);
         return SIO_ERR;
     }
 
     // set input speed
     if(cfsetispeed(&options, (speed_t)speed) < 0) {
-        err("sio_init: cfsetispeed", errno);
+        cm_sio::err("sio_init: cfsetispeed", errno);
         return SIO_ERR;        
     }
 
@@ -113,14 +118,14 @@ int sio_init(int fd, int speed) {
 
     // set the options 
     if(tcsetattr(fd, TCSANOW, &options) < 0) {
-        err("sio_init: tcsetattr", errno);
+        cm_sio::err("sio_init: tcsetattr", errno);
         return SIO_ERR;
     }
 
     return SIO_OK;
 }
 
-int sio_read(int fd, void *buf, size_t sz) {
+inline int sio_read(int fd, char *buf, size_t sz) {
 
     // Read until sz bytes have been read (or error/timeout).
     ssize_t num_bytes, total_bytes = 0;
@@ -138,7 +143,7 @@ int sio_read(int fd, void *buf, size_t sz) {
     return num_bytes < 0 ? -1 : total_bytes;
 }
 
-int sio_write(int fd, const unsigned char *buf, size_t sz) {
+inline int sio_write(int fd, const char *buf, size_t sz) {
 
     // Write until sz bytes have been written (or error/timeout).
     ssize_t num_bytes, total_bytes = 0;
@@ -157,6 +162,165 @@ int sio_write(int fd, const unsigned char *buf, size_t sz) {
     return num_bytes < 0 ? -1 : total_bytes;
 }
 
-} // namespace cm_serial
+
+/////////////////////// event-driven I/O /////////////////////////////////
+
+inline int epoll_create() {
+    int fd = epoll_create1(0);
+    if(-1 == fd) {
+        cm_sio::err("epoll_create", errno);
+        return SIO_ERR;
+    }
+    return fd;
+}
+
+inline int add_fd(int epollfd, int fd, uint32_t flags) {
+    struct epoll_event ev;
+    ev.events = flags;
+    ev.data.fd = fd;
+    if (epoll_ctl(epollfd, EPOLL_CTL_ADD, fd, &ev) == -1) {
+        cm_sio::err(cm_util::format("%d: epoll_ctl:ADD", fd), errno);
+        return SIO_ERR;
+    }
+    return SIO_OK;
+}
+
+inline int modify_fd(int epollfd, int fd, uint32_t flags) {
+    struct epoll_event ev;
+    ev.events = flags;
+    ev.data.fd = fd;
+    if (epoll_ctl(epollfd, EPOLL_CTL_MOD, fd, &ev) == -1) {
+        cm_sio::err(cm_util::format("%d: epoll_ctl:MOD", fd), errno);
+        return SIO_ERR;
+    }
+    return SIO_OK;
+}
+
+inline int delete_fd(int epollfd, int fd) {
+    struct epoll_event ev;
+    ev.events = 0;
+    ev.data.fd = fd;
+    if (epoll_ctl(epollfd, EPOLL_CTL_DEL, fd, &ev) == -1) {
+        cm_sio::err(cm_util::format("%d: epoll_ctl:DEL", fd), errno);
+        return SIO_ERR;
+    }
+    return SIO_OK;
+}
+
+///////////////////////// sio_server ///////////////////////////////////
+
+#define sio_callback(fn) void (*fn)(int fd, const char *buf, size_t sz)
+
+class sio_server: public cm_thread::basic_thread  {
+
+protected:
+
+    char *host_port;
+    int listen_fd = -1;
+
+    sio_callback(receive_fn) = nullptr;
+
+    char rbuf[128] = { '\0' };
+
+    int epollfd;
+    struct epoll_event ev, events[MAX_EVENTS];
+    int nfds, timeout = 100; // ms timeout    
+
+    bool setup() {
+
+        listen_fd = cm_sio::sio_open(host_port);
+        if(-1 == listen_fd || sio_init(listen_fd, B9600) != SIO_OK) {
+            return false;
+        }
+
+        epollfd = cm_sio::epoll_create();
+        if(-1 == epollfd) {
+            close(listen_fd);
+            return false;
+        }
+
+        if(-1 == cm_sio::add_fd(epollfd, listen_fd, EPOLLIN | EPOLLET)) {
+            close(listen_fd);
+            return false;
+        }
+
+        return true;
+    }
+
+    void cleanup() {
+        delete_fd(epollfd, listen_fd); 
+        close(listen_fd);
+    }
+
+    bool process() {
+
+        // fetch fds that are ready for I/O...
+        nfds = epoll_wait(epollfd, events, MAX_EVENTS, timeout);
+        if(-1 == nfds) {
+            cm_sio::err("epoll_wait", errno);
+            return false;
+        }
+
+        // process the ready fds
+        for(int n = 0; n < nfds; ++n) {
+
+            int fd = events[n].data.fd;
+
+            if(fd == listen_fd) {
+                int result = 0;
+                if(events[n].events & EPOLLIN) {
+                    result = cm_sio::sio_server::service_input_event(fd);
+                    if(SIO_ERR == result) {
+                        cm_sio::err("sio_server: service_input_event", errno);
+                    }
+                }
+
+            }
+        }
+
+        return true;
+    }
+    
+
+    int service_input_event(int fd) {
+    
+        cm_log::trace("service_input_event");
+        int read;
+
+        while(1) {
+            
+            read = sio_read(fd, rbuf, sizeof(rbuf));
+
+            if(read > 0) {
+                receive_fn(fd, rbuf, read);
+            }
+
+            if(read <= 0 && (errno == EAGAIN || errno == EWOULDBLOCK)) {
+                // back to caller for the next epoll_wait()
+                return SIO_OK;
+            }
+
+            if(read < 0) {
+                cm_sio::err("sio_server: service_io", errno);
+                return SIO_ERR;
+            }
+        }
+    }
+    
+public:
+    sio_server(char *port, sio_callback(fn)): host_port(port),
+     receive_fn(fn) {
+        // start processing thread
+        start();
+    }
+
+    ~sio_server() {
+        // stop processing thread
+        stop();
+    }
+
+};
+
+} // namespace cm_sio
 
 #endif
