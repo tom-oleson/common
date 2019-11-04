@@ -365,7 +365,6 @@ size_t cm_util::strlcpy(char * dst, const char * src, size_t max) {
 	return sz;
 }
 
-
 std::vector<std::string> cm_util::split (const std::string &s, char delim) {
     std::vector<std::string> result;
     std::stringstream ss(s);
@@ -376,4 +375,27 @@ std::vector<std::string> cm_util::split (const std::string &s, char delim) {
     }
 
     return result;
+}
+
+
+int cm_util::regex_match(const std::string &s, const std::string &pattern) {
+
+    try {
+        const std::regex reg(pattern.c_str());
+        std::regex_match(s, reg);
+    } catch(...) { return -1; }
+
+    return 0;   // success
+}
+
+int cm_util::regex_replace(std::string &s, const std::string &pattern, const std::string &replace) {
+
+    std::string result;
+    try {
+        const std::regex reg(pattern.c_str());
+        result = std::regex_replace(s, reg, replace.c_str());
+    } catch(...) { return -1; }
+    s.assign(result);
+
+    return 0;   // success
 }
