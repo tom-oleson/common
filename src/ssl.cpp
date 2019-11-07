@@ -189,7 +189,7 @@ const char *cm_ssl::ssl_get_version(SSL *ssl) {
     return SSL_get_version(ssl);
 }
 
-int cm_ssl::ssl_is_init_finished(const SSL *ssl) {
+int cm_ssl::ssl_is_init_finished(SSL *ssl) {
     return SSL_is_init_finished(ssl);
 }
 
