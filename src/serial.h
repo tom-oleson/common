@@ -217,7 +217,6 @@ protected:
 
     std::vector<std::string> ports;
     std::vector<int> port_fds;
-    int listen_fd = -1;
 
     sio_callback(receive_fn) = nullptr;
 
@@ -225,11 +224,11 @@ protected:
 
     int epollfd;
     struct epoll_event ev, events[MAX_EVENTS];
-    int nfds, timeout = 100; // ms timeout    
+    int nfds, timeout = 500; // ms timeout    
 
     bool port_setup(const char *port, int speed) {
 
-        listen_fd = cm_sio::sio_open(port);
+        int listen_fd = cm_sio::sio_open(port);
         if(-1 == listen_fd) {
             return false;
         }
@@ -244,6 +243,8 @@ protected:
             return false;
         }
 
+        port_fds.push_back(listen_fd);
+
         return true;
     }
 
@@ -252,7 +253,6 @@ protected:
 
         epollfd = cm_sio::epoll_create();
         if(-1 == epollfd) {
-            close(listen_fd);
             return false;
         }
 
@@ -269,8 +269,11 @@ protected:
     }
 
     void cleanup() {
-        delete_fd(epollfd, listen_fd); 
-        close(listen_fd);
+
+        for(auto fd: port_fds) {
+            cm_sio::delete_fd(epollfd, fd); 
+            close(fd);
+        }
     }
 
     bool process() {
@@ -287,7 +290,7 @@ protected:
 
             int fd = events[n].data.fd;
 
-            if(fd != epollfd) {
+            //if(fd != epollfd) {
                 int result = 0;
                 if(events[n].events & EPOLLIN) {
                     result = cm_sio::sio_server::service_input_event(fd);
@@ -296,7 +299,7 @@ protected:
                     }
                 }
 
-            }
+            //}
         }
 
         return true;
