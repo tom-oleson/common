@@ -224,7 +224,7 @@ protected:
 
     int epollfd;
     struct epoll_event ev, events[MAX_EVENTS];
-    int nfds, timeout = 500; // ms timeout    
+    int nfds, timeout = 10; // ms timeout    
 
     bool port_setup(const char *port, int speed) {
 
@@ -310,7 +310,7 @@ protected:
         cm_log::trace("service_input_event");
         int read;
 
-        while(1) {
+        //while(1) {
             
             read = sio_read(fd, rbuf, sizeof(rbuf));
 
@@ -327,7 +327,9 @@ protected:
                 cm_sio::err("sio_server: service_io", errno);
                 return SIO_ERR;
             }
-        }
+        //}
+
+        return SIO_OK;
     }
     
 public:
