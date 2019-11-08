@@ -42,6 +42,8 @@ class utilTest : public CPPUNIT_NS::TestFixture {
     CPPUNIT_TEST( test_next_calendar_time );
     CPPUNIT_TEST( test_strlcpy );
     CPPUNIT_TEST( test_split );
+    CPPUNIT_TEST( test_regex_match );
+    CPPUNIT_TEST( test_regex_replace );
   CPPUNIT_TEST_SUITE_END();
 
 public:
@@ -69,6 +71,8 @@ protected:
     void test_dir_scan();
     void test_strlcpy();
     void test_split();
+    void test_regex_match();
+    void test_regex_replace();
 };
 
 

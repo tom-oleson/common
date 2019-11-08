@@ -261,3 +261,34 @@ void utilTest::test_split() {
     CPPUNIT_ASSERT( v[4] == "five");
 
 }
+
+
+void utilTest::test_regex_match() {
+
+    // note: use raw string literal to avoid need to escape \ and quotes 
+    // if they are in your regex: example: R"(.+\.log$)"
+
+    CPPUNIT_ASSERT(cm_util::regex_match("tom oleson", "^tom.+son$") == 0);
+    CPPUNIT_ASSERT(cm_util::regex_match("arduino001", "^arduino[0-9][0-9][0-9]") == 0);
+}
+
+
+void utilTest::test_regex_replace() {
+
+    cm_log::file_logger log("./log/regex_replace.log");
+    log.set_log_level(cm_log::level::info);
+    set_default_logger(&log);
+
+    // note: use raw string literal to avoid need to escape \ and quotes 
+    // if they are in your regex: example: R"(.+\.log$)"
+
+    std::string s = "arduino001 {count:5133}";
+    
+    CPPUNIT_ASSERT(cm_util::regex_replace(s, R"(\{count)", "{time:1572897267.566,count") == 0);
+    CPPUNIT_ASSERT( s == "arduino001 {time:1572897267.566,count:5133}");
+
+    cm_log::info(cm_util::format("result = %s", s.c_str()));
+
+
+}
+

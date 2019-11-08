@@ -35,7 +35,7 @@
 #include <iostream>
 #include <sstream>
 #include <vector>
-#include <regex>
+#include <regex>            /* std:regex */
 
 #include <stdlib.h>
 #include <stdio.h>
@@ -44,7 +44,7 @@
 #include <limits.h>
 #include <math.h>
 #include <unistd.h>
-#include <sys/syscall.h>   /* For SYS_xxx definitions */
+#include <sys/syscall.h>    /* For SYS_xxx definitions */
 #include <sys/types.h>      /* for gettid() */
 #include <sys/stat.h>		/* for stat() */
 #include <dirent.h>         /* for readdir() */
@@ -97,6 +97,10 @@ inline void byte2hex(const unsigned char byte, char hex[], const char *digits) {
 void bin2hex_line(char *out_buf, int out_len, const void *src_addr, const int src_len, const int width, const char *digits);
 
 std::vector<std::string> split (const std::string &s, char delim);
+
+int regex_match(const std::string &s, const std::string &pattern);
+int regex_replace(std::string &s, const std::string &pattern, const std::string &replace);
+
  
 } // namespace cm_util
 

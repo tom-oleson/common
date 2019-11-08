@@ -73,7 +73,7 @@ void ssl_set_connect_state(SSL *ssl);
 int ssl_is_server(SSL *ssl);
 const char *ssl_get_version(SSL *ssl);
 int ssl_get_error(SSL *ssl, int ret);
-int ssl_is_init_finished(const SSL *ssl);
+int ssl_is_init_finished(SSL *ssl);
 std::string ssl_error_string(unsigned long e);
 void ssl_set_bio(SSL *ssl, BIO *rbio, BIO *wbio);
 
