@@ -210,7 +210,7 @@ struct ssl_bio {
                 }
             }
             else {
-                if(errno == EAGAIN && errno == EWOULDBLOCK) return CM_SSL_AGAIN;
+                if(errno == EAGAIN || errno == EWOULDBLOCK) return CM_SSL_AGAIN;
                 if(read == 0) return CM_SSL_EOF;
                 return CM_SSL_ERR;
             }
@@ -237,7 +237,7 @@ struct ssl_bio {
                 written = socket_write(buf, read);
                 cm_log::trace(cm_util::format("socket_write: %d", written)); 
                 if(written <= 0) {
-                    if(errno == EAGAIN && errno == EWOULDBLOCK) return CM_SSL_AGAIN;
+                    if(errno == EAGAIN || errno == EWOULDBLOCK) return CM_SSL_AGAIN;
                     if(written == 0) return CM_SSL_EOF;
                     return CM_SSL_ERR;
                 }
@@ -264,9 +264,6 @@ struct ssl_bio {
 
         return status;
     }
-
-
-
 
     int do_ssl_read() {
 
