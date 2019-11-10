@@ -40,6 +40,7 @@
 #include "util.h"
 #include "mutex.h"
 #include "timewatcher.h"
+#include "color.h"
 
 
 extern void *default_logger;
@@ -201,6 +202,7 @@ protected:
 	std::string msg_fmt;
     std::vector<std::string> parsed_msg_fmt;
     std::string RS = "\n";     // record seperator
+    bool color_enabled = false;
 
     void *save_default_logger;
 
@@ -235,6 +237,9 @@ public:
     void set_RS(const std::string s) { RS = s; }
     const std::string get_RS() { return RS; }
 
+    bool get_color_enable() { return color_enabled; }
+    bool set_color_enable(bool b) { color_enabled = b; }
+
 	bool ok_to_log(cm_log::level::en lvl) {
 		return (lvl != cm_log::level::off && lvl <= log_level) || lvl == cm_log::level::always;
 	}
@@ -248,8 +253,14 @@ public:
 };
 
 
+void color_log_level(cm_log::level::en lvl);
+void color_log_reset();
+
+
 class console_logger : public logger /*, protected cm::mutex */{
 	
+    bool enable_color = false;
+
 public:
 	console_logger(): logger() { name = "console-logger"; }
 	~console_logger() { }

@@ -282,13 +282,64 @@ void cm_log::_log_error(cm_log::extra ext, const std::string &msg) {
 // console logger (output to the terminal)
 //-------------------------------------------------------------------------
 
+void cm_log::color_log_level(cm_log::level::en lvl) {
+
+    switch(lvl) {
+
+        case cm_log::level::info:
+                    cm_color::put(CM_COLOR_BOLD);
+                    cm_color::put(CM_FG_GREEN);
+                    break;
+
+        case cm_log::level::always:
+                    cm_color::put(CM_COLOR_BOLD);
+                    cm_color::put(CM_FG_WHITE);        
+                    break;
+
+        case cm_log::level::debug:
+                    cm_color::put(CM_COLOR_BOLD);
+        case cm_log::level::trace:
+                    cm_color::put(CM_FG_CYAN);  
+                    break;
+
+        case cm_log::level::error:
+                    cm_color::put(CM_COLOR_BOLD);
+                    cm_color::put(CM_FG_RED);
+                    break;
+
+        case cm_log::level::warning:
+                    cm_color::put(CM_COLOR_BOLD);
+                    cm_color::put(CM_FG_YELLOW);
+                    break;
+
+        case cm_log::level::fatal:
+        case cm_log::level::critical:
+                    cm_color::put(CM_COLOR_BLINK);
+                    cm_color::put(CM_COLOR_BOLD);
+                    cm_color::put(CM_FG_RED);
+                    break;        
+
+        default:    break;
+    }   
+}
+
+void cm_log::color_log_reset() { cm_color::put(CM_COLOR_RESET); }
+
+
+
 void cm_log::console_logger::log(cm_log::level::en lvl, const std::string &msg) {
 
 	if(!ok_to_log(lvl)) return;
 
 	lock();
+
+    if(color_enabled) cm_log::color_log_level(lvl);
+
     std::cout << cm_log::format_log_message(cm_log::extra(), date_time_fmt, parsed_msg_fmt, lvl, msg, gmt) << get_RS();
     std::cout.flush();
+
+    if(color_enabled) cm_log::color_log_reset();
+
 	//fprintf(stdout, "%s: %s", ::log_level[lvl], msg.c_str());
 	unlock();
 }
@@ -299,8 +350,12 @@ void cm_log::console_logger::log(cm_log::extra ext, cm_log::level::en lvl, const
 
 	lock();
 
+    if(color_enabled) cm_log::color_log_level(lvl);
+
     std::cout << cm_log::format_log_message(ext, date_time_fmt, parsed_msg_fmt, lvl, msg, gmt) << get_RS();
     std::cout.flush();
+
+    if(color_enabled) cm_log::color_log_reset();
 
 	//fprintf(stdout, "%s [%s:%d:%s]: %s", ::log_level[lvl], ext.file, ext.line, ext.func, msg.c_str());
 	unlock();
