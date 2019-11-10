@@ -36,7 +36,9 @@
 void format_example() {
 
     // show millis in logger output
-    get_default_logger().set_message_format("${date_time}${millis} [${lvl}]: ${msg}");
+    cm_log::console.set_message_format("${date_time}${millis} [${lvl}]: ${msg}");
+    bool color_save_enabled = cm_log::console.get_color_enable();
+    cm_log::console.set_color_enable(true);
 
     timespec delay = {1, 500000000};   // 1.5 seconds
 
@@ -54,10 +56,12 @@ void format_example() {
         double delta = total - ((double) n * 1.5);
         last = now;
 
-        cm_color::put(CM_COLOR_BOLD);
-        cm_color::put(CM_FG_GREEN);
+        //cm_color::put(CM_COLOR_BOLD);
+        //cm_color::put(CM_FG_GREEN);
         cm_log::info(cm_util::format("pass: " CM_FG_CYAN "%7.4lf" CM_FG_GREEN " secs   total: " CM_FG_YELLOW "%7.4lf" CM_FG_GREEN " secs   delta: " CM_FG_RED "%7.4lf" CM_FG_GREEN " secs", diff, total, delta));
-        cm_color::put(CM_COLOR_RESET);
+        //cm_color::put(CM_COLOR_RESET);
     }
+
+    cm_log::console.set_color_enable(color_save_enabled);
 }
 

@@ -45,55 +45,23 @@ inline void put(const char *s) { printf("%s", s);}
 #define CM_COLOR_REVERSE    "\x1B[7m"
 #define CM_COLOR_CONCEAL    "\x1B[8m"   
 
-const char *reset      = CM_COLOR_RESET;
-const char *bold       = CM_COLOR_BOLD;
-const char *underscore = CM_COLOR_UNDERSCORE;
-const char *blink      = CM_COLOR_BLINK;
-const char *reverse    = CM_COLOR_REVERSE;
-const char *conceal    = CM_COLOR_CONCEAL;
+#define CM_FG_BLACK   "\x1B[30m"
+#define CM_FG_RED     "\x1B[31m"
+#define CM_FG_GREEN   "\x1B[32m"
+#define CM_FG_YELLOW  "\x1B[33m"
+#define CM_FG_BLUE    "\x1B[34m"
+#define CM_FG_MAGENTA "\x1B[35m"
+#define CM_FG_CYAN    "\x1B[36m"
+#define CM_FG_WHITE   "\x1B[37m"
 
-namespace fg {
-
-    #define CM_FG_BLACK   "\x1B[30m"
-    #define CM_FG_RED     "\x1B[31m"
-    #define CM_FG_GREEN   "\x1B[32m"
-    #define CM_FG_YELLOW  "\x1B[33m"
-    #define CM_FG_BLUE    "\x1B[34m"
-    #define CM_FG_MAGENTA "\x1B[35m"
-    #define CM_FG_CYAN    "\x1B[36m"
-    #define CM_FG_WHITE   "\x1B[37m"
-
-    const char *black   = CM_FG_BLACK;
-    const char *red     = CM_FG_RED;
-    const char *green   = CM_FG_GREEN;
-    const char *yellow  = CM_FG_YELLOW;
-    const char *blue    = CM_FG_BLUE;
-    const char *magenta = CM_FG_MAGENTA;
-    const char *cyan    = CM_FG_CYAN;
-    const char *white   = CM_FG_WHITE;
-}
-
-namespace bg {
-
-    #define CM_BG_BLACK   "\x1B[40m"
-    #define CM_BG_RED     "\x1B[41m"
-    #define CM_BG_GREEN   "\x1B[42m"
-    #define CM_BG_YELLOW  "\x1B[43m"
-    #define CM_BG_BLUE    "\x1B[44m"
-    #define CM_BG_MAGENTA "\x1B[45m"
-    #define CM_BG_CYAN    "\x1B[46m"
-    #define CM_BG_WHITE   "\x1B[47m"
-
-    const char *black   = CM_BG_BLACK;
-    const char *red     = CM_BG_RED;
-    const char *green   = CM_BG_GREEN;
-    const char *yellow  = CM_BG_YELLOW;
-    const char *blue    = CM_BG_BLUE;
-    const char *magenta = CM_BG_MAGENTA;
-    const char *cyan    = CM_BG_CYAN;
-    const char *white   = CM_BG_WHITE;
-}
-
+#define CM_BG_BLACK   "\x1B[40m"
+#define CM_BG_RED     "\x1B[41m"
+#define CM_BG_GREEN   "\x1B[42m"
+#define CM_BG_YELLOW  "\x1B[43m"
+#define CM_BG_BLUE    "\x1B[44m"
+#define CM_BG_MAGENTA "\x1B[45m"
+#define CM_BG_CYAN    "\x1B[46m"
+#define CM_BG_WHITE   "\x1B[47m"
 
 } // namespace cm_sio
 
