@@ -73,7 +73,7 @@ void ssl_set_connect_state(SSL *ssl);
 int ssl_is_server(SSL *ssl);
 const char *ssl_get_version(SSL *ssl);
 int ssl_get_error(SSL *ssl, int ret);
-int ssl_is_init_finished(const SSL *ssl);
+int ssl_is_init_finished(SSL *ssl);
 std::string ssl_error_string(unsigned long e);
 void ssl_set_bio(SSL *ssl, BIO *rbio, BIO *wbio);
 
@@ -210,7 +210,7 @@ struct ssl_bio {
                 }
             }
             else {
-                if(errno == EAGAIN && errno == EWOULDBLOCK) return CM_SSL_AGAIN;
+                if(errno == EAGAIN || errno == EWOULDBLOCK) return CM_SSL_AGAIN;
                 if(read == 0) return CM_SSL_EOF;
                 return CM_SSL_ERR;
             }
@@ -237,7 +237,7 @@ struct ssl_bio {
                 written = socket_write(buf, read);
                 cm_log::trace(cm_util::format("socket_write: %d", written)); 
                 if(written <= 0) {
-                    if(errno == EAGAIN && errno == EWOULDBLOCK) return CM_SSL_AGAIN;
+                    if(errno == EAGAIN || errno == EWOULDBLOCK) return CM_SSL_AGAIN;
                     if(written == 0) return CM_SSL_EOF;
                     return CM_SSL_ERR;
                 }
@@ -264,9 +264,6 @@ struct ssl_bio {
 
         return status;
     }
-
-
-
 
     int do_ssl_read() {
 

@@ -72,7 +72,7 @@ inline int sio_open(const char *device_name) {
 
     int fd = open(device_name, O_RDWR | O_NOCTTY | O_SYNC);
     if(fd < 0) {
-        cm_sio::err("sio_open", errno);
+        cm_sio::err(cm_util::format("sio_open: %s", device_name), errno);
         return SIO_ERR;
     }
     return fd;
@@ -215,8 +215,8 @@ class sio_server: public cm_thread::basic_thread  {
 
 protected:
 
-    char *host_port;
-    int listen_fd = -1;
+    std::vector<std::string> ports;
+    std::vector<int> port_fds;
 
     sio_callback(receive_fn) = nullptr;
 
@@ -224,17 +224,16 @@ protected:
 
     int epollfd;
     struct epoll_event ev, events[MAX_EVENTS];
-    int nfds, timeout = 100; // ms timeout    
+    int nfds, timeout = 10; // ms timeout    
 
-    bool setup() {
+    bool port_setup(const char *port, int speed) {
 
-        listen_fd = cm_sio::sio_open(host_port);
-        if(-1 == listen_fd || sio_init(listen_fd, B9600) != SIO_OK) {
+        int listen_fd = cm_sio::sio_open(port);
+        if(-1 == listen_fd) {
             return false;
         }
 
-        epollfd = cm_sio::epoll_create();
-        if(-1 == epollfd) {
+        if(sio_init(listen_fd, speed) != SIO_OK) {
             close(listen_fd);
             return false;
         }
@@ -244,12 +243,37 @@ protected:
             return false;
         }
 
+        port_fds.push_back(listen_fd);
+
+        return true;
+    }
+
+
+    bool setup() {
+
+        epollfd = cm_sio::epoll_create();
+        if(-1 == epollfd) {
+            return false;
+        }
+
+        for(auto &port: ports) {
+            if(port_setup(port.c_str(), B9600)) {
+                cm_log::info(cm_util::format("listening to %s", port.c_str()));
+            }
+            else {
+                cm_log::warning(cm_util::format("ignoring %s", port.c_str()));
+            }
+        }
+
         return true;
     }
 
     void cleanup() {
-        delete_fd(epollfd, listen_fd); 
-        close(listen_fd);
+
+        for(auto fd: port_fds) {
+            cm_sio::delete_fd(epollfd, fd); 
+            close(fd);
+        }
     }
 
     bool process() {
@@ -266,7 +290,7 @@ protected:
 
             int fd = events[n].data.fd;
 
-            if(fd == listen_fd) {
+            //if(fd != epollfd) {
                 int result = 0;
                 if(events[n].events & EPOLLIN) {
                     result = cm_sio::sio_server::service_input_event(fd);
@@ -275,19 +299,18 @@ protected:
                     }
                 }
 
-            }
+            //}
         }
 
         return true;
     }
-    
 
     int service_input_event(int fd) {
     
         cm_log::trace("service_input_event");
         int read;
 
-        while(1) {
+        //while(1) {
             
             read = sio_read(fd, rbuf, sizeof(rbuf));
 
@@ -304,11 +327,13 @@ protected:
                 cm_sio::err("sio_server: service_io", errno);
                 return SIO_ERR;
             }
-        }
+        //}
+
+        return SIO_OK;
     }
     
 public:
-    sio_server(char *port, sio_callback(fn)): host_port(port),
+    sio_server(const std::vector<std::string> &_ports, sio_callback(fn)): ports(_ports),
      receive_fn(fn) {
         // start processing thread
         start();

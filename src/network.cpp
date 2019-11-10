@@ -618,7 +618,7 @@ int cm_net::read(int fd, char *buf, size_t sz) {
         if (num_bytes == 0) return total_bytes;     // EOF/disconnect
 
         // no more data... return what we have
-        if (num_bytes == -1 && errno == EAGAIN && total_bytes > 0)
+        if (num_bytes < 0 && (errno == EAGAIN || errno == EWOULDBLOCK) && total_bytes > 0)
             return total_bytes; 
 
         if (num_bytes == -1) return -1;             // error
@@ -743,7 +743,7 @@ int cm_net::single_thread_server::service_input_event(int fd) {
             return CM_NET_OK;
         }
         
-        if(num_bytes == -1 && errno == EAGAIN) {
+        if(num_bytes < 0 && (errno == EAGAIN || errno == EWOULDBLOCK)) {
             // back to caller for the next epoll_wait()
             return CM_NET_OK;
         }
@@ -1030,7 +1030,7 @@ int cm_net::rx_thread::service_input_event(int fd) {
             return CM_NET_OK;
         }
         
-        if(num_bytes == -1 && errno == EAGAIN) {
+        if(num_bytes < 0 && (errno == EAGAIN || errno == EWOULDBLOCK))  {
             // back to caller for the next epoll_wait()
             return CM_NET_OK;
         }
@@ -1176,7 +1176,7 @@ int cm_net::client_thread::service_input_event(int fd) {
             return CM_NET_OK;
         }
         
-        if(num_bytes == -1 && errno == EAGAIN) {
+        if(num_bytes < 0 && (errno == EAGAIN || errno == EWOULDBLOCK)) {
             // back to caller for the next epoll_wait()
             return CM_NET_OK;
         }

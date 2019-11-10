@@ -285,3 +285,18 @@ void utilTest::test_regex_replace() {
 
     cm_log::info(cm_util::format("result = %s", s.c_str()));
 }
+
+void utilTest::test_JS_macro() {
+
+    cm_log::file_logger log("./log/JS_macro.log");
+    log.set_log_level(cm_log::level::info);
+    set_default_logger(&log);
+
+    // note: use raw string literal to avoid need to escape \ and quotes 
+    // if they are in your regex: example: R"(.+\.log$)"
+
+    std::string s = "arduino001 {"JS("count")":5133}";
+    cm_log::info(cm_util::format("result = %s", s.c_str()));
+
+
+}
