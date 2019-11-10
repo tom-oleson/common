@@ -26,6 +26,11 @@ Debian/Ubuntu:
 $ sudo apt-get install libssl-dev
 </pre>
 
+Rasbian:
+<pre>
+$ sudo apt-get install libssl-dev
+</pre>
+
 
 
 

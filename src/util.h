@@ -55,6 +55,8 @@
 #include <errno.h>
 #include <time.h>
 
+// useful macro for wrapping a const string in double quotes for JSON output
+#define JS(s) "" #s ""
 
 namespace cm_util {
 
