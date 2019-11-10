@@ -295,7 +295,7 @@ protected:
     int epollfd;
     int listen_socket;
     struct epoll_event ev, events[MAX_EVENTS];
-    int conn_sock, nfds, timeout = 10;    // ms timeout
+    int conn_sock, nfds, timeout = -1;    // ms timeout
 
     bool setup();
     void cleanup();
