@@ -114,7 +114,7 @@ inline int sio_init(int fd, int speed) {
 
     // http://unixwiz.net/techtips/termios-vmin-vtime.html
     options.c_cc[VMIN]  = 0;
-    options.c_cc[VTIME] = 5;   // deciseconds (10ths of a second)
+    options.c_cc[VTIME] = 0;   // deciseconds (10ths of a second)
 
     // set the options 
     if(tcsetattr(fd, TCSANOW, &options) < 0) {
