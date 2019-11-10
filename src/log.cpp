@@ -297,8 +297,11 @@ void cm_log::color_log_level(cm_log::level::en lvl) {
                     break;
 
         case cm_log::level::debug:
-                    cm_color::put(CM_COLOR_BOLD);
+                    cm_color::put(CM_FG_CYAN);  
+                    break;
+
         case cm_log::level::trace:
+                    cm_color::put(CM_COLOR_BOLD);
                     cm_color::put(CM_FG_CYAN);  
                     break;
 
