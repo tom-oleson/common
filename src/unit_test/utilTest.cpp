@@ -209,7 +209,6 @@ void utilTest::test_rename() {
     int removed = cm_util::remove("remove_test.log");
 
     CPPUNIT_ASSERT( appended == true && renamed == 0 && removed == 0);
-
 }
 
 void utilTest::test_dir_scan() {
@@ -244,8 +243,6 @@ void utilTest::test_strlcpy() {
 
     // copy string that will NOT fit
     CPPUNIT_ASSERT( cm_util::strlcpy(buf, "0123456789012345", sizeof(buf)) == 10);
-
-
 }
 
 void utilTest::test_split() {
@@ -259,7 +256,6 @@ void utilTest::test_split() {
     CPPUNIT_ASSERT( v[2] == "three");
     CPPUNIT_ASSERT( v[3] == "four");
     CPPUNIT_ASSERT( v[4] == "five");
-
 }
 
 
@@ -288,7 +284,4 @@ void utilTest::test_regex_replace() {
     CPPUNIT_ASSERT( s == "arduino001 {time:1572897267.566,count:5133}");
 
     cm_log::info(cm_util::format("result = %s", s.c_str()));
-
-
 }
-
