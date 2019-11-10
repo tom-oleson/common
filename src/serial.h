@@ -224,7 +224,7 @@ protected:
 
     int epollfd;
     struct epoll_event ev, events[MAX_EVENTS];
-    int nfds, timeout = 10; // ms timeout    
+    int nfds, timeout = -1; // ms timeout    
 
     bool port_setup(const char *port, int speed) {
 
