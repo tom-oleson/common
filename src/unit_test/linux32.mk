@@ -37,6 +37,7 @@ WORD_SIZE=32
 EXE = run_tests
 
 OBJS =	utilTest.o \
+    bufferTest.o \
     cacheTest.o \
     threadTest.o \
     networkTest.o \

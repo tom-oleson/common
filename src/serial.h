@@ -344,6 +344,8 @@ public:
         stop();
     }
 
+    std::vector<int> get_port_fds() { return port_fds; }
+
 };
 
 } // namespace cm_sio
