@@ -292,10 +292,7 @@ void utilTest::test_JS_macro() {
     log.set_log_level(cm_log::level::info);
     set_default_logger(&log);
 
-    // note: use raw string literal to avoid need to escape \ and quotes 
-    // if they are in your regex: example: R"(.+\.log$)"
-
-    std::string s = "arduino001 {"JS("count")":5133}";
+    std::string s = "arduino001 {" JS("count") ":5133}";
     cm_log::info(cm_util::format("result = %s", s.c_str()));
 
 
