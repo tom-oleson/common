@@ -52,6 +52,7 @@
 #define SIO_ERR -1
 
 #define MAX_EVENTS  64
+#define RX_BUF_SZ 1024
 
 namespace cm_sio {
 
@@ -220,7 +221,7 @@ protected:
 
     sio_callback(receive_fn) = nullptr;
 
-    char rbuf[128] = { '\0' };
+    char rbuf[RX_BUF_SZ] = { '\0' };
 
     int epollfd;
     struct epoll_event ev, events[MAX_EVENTS];
@@ -309,25 +310,22 @@ protected:
     
         cm_log::trace("service_input_event");
         int read;
-
-        //while(1) {
             
-            read = sio_read(fd, rbuf, sizeof(rbuf));
+        read = sio_read(fd, rbuf, sizeof(rbuf));
 
-            if(read > 0) {
-                receive_fn(fd, rbuf, read);
-            }
+        if(read > 0) {
+            receive_fn(fd, rbuf, read);
+        }
 
-            if(read <= 0 && (errno == EAGAIN || errno == EWOULDBLOCK)) {
-                // back to caller for the next epoll_wait()
-                return SIO_OK;
-            }
+        if(read <= 0 && (errno == EAGAIN || errno == EWOULDBLOCK)) {
+            // back to caller for the next epoll_wait()
+            return SIO_OK;
+        }
 
-            if(read < 0) {
-                cm_sio::err("sio_server: service_io", errno);
-                return SIO_ERR;
-            }
-        //}
+        if(read < 0) {
+            cm_sio::err("sio_server: service_io", errno);
+            return SIO_ERR;
+        }
 
         return SIO_OK;
     }
