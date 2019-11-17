@@ -1166,7 +1166,7 @@ int cm_net::client_thread::service_input_event(int fd) {
 
     char rbuf[4096] = { '\0' };
 
-    while(1) {
+    //while(1) {
         
         int num_bytes = cm_net::read(fd, rbuf, sizeof(rbuf));
 
@@ -1190,7 +1190,8 @@ int cm_net::client_thread::service_input_event(int fd) {
             cm_net::err("read", errno);
             return CM_NET_ERR;
         }
-    }
+    //}
+        return CM_NET_OK;
 }
 
 void cm_net::client_thread::send(const std::string msg) {
