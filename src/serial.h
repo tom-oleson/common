@@ -143,8 +143,8 @@ inline int sio_read(int fd, char *buf, size_t sz) {
         return total_bytes;
     } 
 
-    if(num_bytes < 0 && (errno == EAGAIN || errno == EWOULDBLOCK) && total_bytes > 0)
-        return total_bytes; 
+    //if(num_bytes < 0 && (errno == EAGAIN || errno == EWOULDBLOCK) && total_bytes > 0)
+    //    return total_bytes; 
 
     return num_bytes < 0 ? -1 : total_bytes;
 }
@@ -166,8 +166,8 @@ inline int sio_write(int fd, const char *buf, size_t sz) {
         return total_bytes;
     }
 
-    if(num_bytes < 0 && (errno == EAGAIN || errno == EWOULDBLOCK) && total_bytes > 0)
-        return total_bytes;  
+    //if(num_bytes < 0 && (errno == EAGAIN || errno == EWOULDBLOCK) && total_bytes > 0)
+    //    return total_bytes;  
 
     return num_bytes < 0 ? -1 : total_bytes;
 }
