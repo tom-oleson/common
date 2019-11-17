@@ -134,40 +134,42 @@ inline int sio_read(int fd, char *buf, size_t sz) {
     ssize_t num_bytes, total_bytes = 0;
     while(total_bytes != sz) {
         num_bytes = ::read(fd, buf, sz - total_bytes);
-
-        if(num_bytes = 0)  return total_bytes;   // EOF/disconnect
-
-        if(num_bytes < 0 && (errno == EAGAIN || errno == EWOULDBLOCK) && total_bytes > 0)
-            return total_bytes; 
-
-        if(num_bytes == -1) return -1;
-
+        if (num_bytes <= 0) break;     // error/timedout reached
         total_bytes += num_bytes;
         buf += num_bytes;
     }
 
-    return total_bytes;
+    if(total_bytes > 0) {
+        return total_bytes;
+    } 
+
+    if(num_bytes < 0 && (errno == EAGAIN || errno == EWOULDBLOCK) && total_bytes > 0)
+        return total_bytes; 
+
+    return num_bytes < 0 ? -1 : total_bytes;
 }
+
 
 inline int sio_write(int fd, const char *buf, size_t sz) {
 
-    // Read until sz bytes have been read (or error/timeout).
+    // Write until sz bytes have been written (or error/timeout).
     ssize_t num_bytes, total_bytes = 0;
     while(total_bytes != sz) {
         num_bytes = ::write(fd, buf, sz - total_bytes);
-
-        if(num_bytes = 0)  return total_bytes;   // EOF/disconnect
-
-        if(num_bytes < 0 && (errno == EAGAIN || errno == EWOULDBLOCK) && total_bytes > 0)
-            return total_bytes; 
-
-        if(num_bytes == -1) return -1;
-
+        if (num_bytes <= 0) break;    // error/timedout reached
         total_bytes += num_bytes;
         buf += num_bytes;
     }
 
-    return total_bytes;
+    if(total_bytes > 0) {
+        tcdrain(fd);    // delay for output
+        return total_bytes;
+    }
+
+    if(num_bytes < 0 && (errno == EAGAIN || errno == EWOULDBLOCK) && total_bytes > 0)
+        return total_bytes;  
+
+    return num_bytes < 0 ? -1 : total_bytes;
 }
 
 
