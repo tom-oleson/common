@@ -85,7 +85,7 @@ void send(int socket, char *buf, size_t buf_size, const std::string &msg);
 int recv(int socket, char *buf, size_t buf_size);
 int recv_non_block(int socket, char *buf, size_t buf_size);
 int read(int fd, char *buf, size_t sz);
-int write(int fd, char *buf, size_t sz);
+int write(int fd, const char *buf, size_t sz);
 
 int resolve_host(const std::string &host, std::string &info, int flags);
 int resolve_host(const std::string &host, std::string &info);

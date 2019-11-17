@@ -417,7 +417,7 @@ int cm_net::recv_non_block(int socket, char *buf, size_t buf_size) {
     return num_bytes;
 }
 
-int cm_net::write(int fd, char *buf, size_t sz) {
+int cm_net::write(int fd, const char *buf, size_t sz) {
 
     // Write until sz bytes have been written (or error/EOF).
     ssize_t num_bytes, total_bytes = 0;
