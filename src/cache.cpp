@@ -59,50 +59,7 @@ bool cm_cache::scanner::next_token() {
 
     char ch = buffer[index];
     switch(ch) {
-        case '+':   if(index == 0) {
-                        accept(tk_add);
-                    }
-                    break; 
 
-        case '$':   if(index == 0) {
-                        accept(tk_read);
-                    }
-                    break; 
-        case '!':   if(index == 0) {
-                        accept(tk_read_remove);
-                    }
-                    break;
-
-        case '*':   if(index == 0) {
-                        accept(tk_watch);
-                    }
-                    break; 
-
-        case '@':   if(index == 0) {
-                        accept(tk_watch_remove);
-                    }
-                    break;                     
-
-        case '-':   if(index == 0) {
-                        accept(tk_remove);
-                    }
-                    break; 
-
-        case '#':   if(index == 0) {
-                        accept(comment);
-                        skip_to_end();
-                    }
-                    else {
-                        accept(tk_tag);
-                    } 
-                    break;
-
-        case '/':   if(index == 0 && buffer[index+1] == '/') {
-                        accept(comment);
-                        skip_to_end();
-                    } /* else error */
-                    break;
-       
         case '"':   accept(string);
                     scan_string('"');
                     break;
@@ -113,6 +70,53 @@ bool cm_cache::scanner::next_token() {
 
         case '\0':  token.id = input_end;
                     break;
+
+
+        case '+':   if(index == 0) {
+                        accept(tk_add);
+                        break;
+                    }
+
+        case '$':   if(index == 0) {
+                        accept(tk_read);
+                        break;
+                    }
+                    
+        case '!':   if(index == 0) {
+                        accept(tk_read_remove);
+                        break;
+                    }
+
+        case '*':   if(index == 0) {
+                        accept(tk_watch);
+                        break;
+                    }
+
+        case '@':   if(index == 0) {
+                        accept(tk_watch_remove);
+                        break;
+                    }
+
+        case '-':   if(index == 0) {
+                        accept(tk_remove);
+                        break;
+                    }
+
+        case '#':   if(index == 0) {
+                        accept(comment);
+                        skip_to_end();
+                        break;
+                    }
+                    else if(ch == '#') {
+                        accept(tk_tag);
+                        break;
+                    } 
+
+        case '/':   if(index == 0 && buffer[index+1] == '/') {
+                        accept(comment);
+                        skip_to_end();
+                        break;
+                    } 
 
         default:    if(is_ident(ch)) {
                         token.id = identifier;

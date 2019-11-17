@@ -60,6 +60,15 @@ void bufferTest::test_buffer() {
     s.assign(buf, strlen(buf));
     CPPUNIT_ASSERT(s == "10.2");
 
+    
+    char sbuf[32];
+    cm_buf::buffer sout(sbuf, sizeof(sbuf));
+    sout.clear();
+    sout.append("c-string");
+    sout.append(":test");
+    cm_log::hex_dump(cm_log::level::info, sbuf, sizeof(sbuf), 16);
+    s.assign(sbuf, strlen(sbuf));
+    CPPUNIT_ASSERT(s == "c-string:test");
 
 
 

@@ -127,7 +127,7 @@ public:
         // as indentifiers
 
         return (isalnum(ch) || ch == '-' || ch == '_' || ch == '.' ||
-                ch == '=' || ch == '+' || ch == '/' );
+                ch == '=' || ch == '+' || ch == '/' || ch == '$');
     }
 
     void accept(token_type id) { token.id = id; index++; }
