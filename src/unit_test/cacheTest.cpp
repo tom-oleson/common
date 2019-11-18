@@ -125,6 +125,7 @@ void cacheTest::test_cache() {
     cache.eval("*name-notify #$", event);
     cache.eval("@name-notify #$", event);
 
+    cache.eval("+name {\"time\":1574046628,\"info\":\"T1574046628\n$:+A0\"}", event);
 
     cache.eval("+name 'Tom'", event);
     cache.eval("$name", event);

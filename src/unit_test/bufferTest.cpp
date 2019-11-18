@@ -17,6 +17,23 @@ CPPUNIT_TEST_SUITE_REGISTRATION( bufferTest );
 //void bufferTest::setUp() { }
 //void bufferTest::tearDown() { }
 
+void a_split(const char *s) {
+
+    char my_buf[80] = {'\0' };
+    char *bp = my_buf;
+    const char *cp = s;
+
+    for(char *sp = bp; ;cp++ ) {
+
+        if(*cp == '\0' || *cp == '\n') {
+            cm_log::info(sp);
+            sp = bp+1;
+        }
+        if(*cp == '\0') break;
+        *bp++ = *cp;
+    }
+}
+
 void bufferTest::test_buffer() {
 
     cm_log::file_logger log("./log/buffer.log");
@@ -24,6 +41,13 @@ void bufferTest::test_buffer() {
     set_default_logger(&log);
 
     std::string s;
+
+
+
+    a_split("one");
+    a_split("1\n2\n\n3");
+    a_split("one\ntwo\nthree\nfour");
+
 
     char buf[10] = { '\0' };
     memset(buf, 0xFF, sizeof(buf));
@@ -69,6 +93,8 @@ void bufferTest::test_buffer() {
     cm_log::hex_dump(cm_log::level::info, sbuf, sizeof(sbuf), 16);
     s.assign(sbuf, strlen(sbuf));
     CPPUNIT_ASSERT(s == "c-string:test");
+
+
 
 
 
