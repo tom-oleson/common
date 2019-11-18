@@ -319,12 +319,12 @@ protected:
     
         cm_log::trace("service_input_event");
         int read;
-            
+           
+        memset(rbuf, sizeof(rbuf));	
         read = sio_read(fd, rbuf, sizeof(rbuf));
 
         if(read > 0) {
             receive_fn(fd, rbuf, read);
-	    memset(rbuf, 0, sizeof(rbuf));
         }
 
         if(read <= 0 && (errno == EAGAIN || errno == EWOULDBLOCK)) {
