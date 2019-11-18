@@ -324,6 +324,7 @@ protected:
 
         if(read > 0) {
             receive_fn(fd, rbuf, read);
+	    memset(rbuf, 0, sizeof(rbuf));
         }
 
         if(read <= 0 && (errno == EAGAIN || errno == EWOULDBLOCK)) {
