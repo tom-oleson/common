@@ -115,7 +115,8 @@ inline int sio_init(int fd, int speed) {
 
     // http://unixwiz.net/techtips/termios-vmin-vtime.html
     options.c_cc[VMIN]  = 0;
-    options.c_cc[VTIME] = 1;   // deciseconds (10ths of a second)
+    //options.c_cc[VTIME] = 1;   // deciseconds (10ths of a second)
+    options.c_cc[VTIME] = 4;   // deciseconds (10ths of a second)
 
     // set the options 
     if(tcsetattr(fd, TCSANOW, &options) < 0) {
@@ -234,7 +235,8 @@ protected:
 
     int epollfd;
     struct epoll_event ev, events[MAX_EVENTS];
-    int nfds, timeout = -1; // ms timeout    
+    //int nfds, timeout = -1; // ms timeout    
+    int nfds, timeout = 500; // ms timeout 
 
     bool port_setup(const char *port, int speed) {
 
@@ -320,11 +322,11 @@ protected:
         cm_log::trace("service_input_event");
         int read;
            
-        memset(rbuf, sizeof(rbuf));	
         read = sio_read(fd, rbuf, sizeof(rbuf));
 
         if(read > 0) {
             receive_fn(fd, rbuf, read);
+	    memset(rbuf, 0, sizeof(rbuf));
         }
 
         if(read <= 0 && (errno == EAGAIN || errno == EWOULDBLOCK)) {
