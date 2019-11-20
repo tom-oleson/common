@@ -304,6 +304,7 @@ protected:
     int accept();
     int service_input_event(int fd);
     int service_connect_event(int fd, const std::string info);
+    int service_disconnect_event(int fd, const std::string info);
     
 public:
     pool_server(int port, cm_thread::pool *pool,
