@@ -62,7 +62,9 @@ void networkTest::test_network() {
     clock_gettime(CLOCK_REALTIME, &start);
     
     // startup tcp server thread
-    cm_net::single_thread_server server(56000 /* port */, server_receive);
+    cm_net::single_thread_server server(56010 /* port */, server_receive);
+    timespec delay = {2, 0};   // 2 sec
+    nanosleep(&delay, NULL);
     CPPUNIT_ASSERT( server.is_started() == true );
 
     // run multiple client threads to feed data to server thread
@@ -142,8 +144,11 @@ void networkTest::test_network_thread_pool() {
     clock_gettime(CLOCK_REALTIME, &start);
 
     // startup tcp server
-    cm_net::pool_server server(56000, &thread_pool, request_handler,
+    cm_net::pool_server server(56020, &thread_pool, request_handler,
         request_dealloc);
+
+    timespec delay = {2, 0};   // 2 sec
+    nanosleep(&delay, NULL);
 
     CPPUNIT_ASSERT( server.is_started() == true );
 

@@ -53,7 +53,7 @@ default: all
 CC=g++
 CM_LIB_DIR=../
 INCLUDE = -I. -I$(CM_LIB_DIR)
-LDFLAGS = -g -lcm_64 -ldl -lcppunit -pthread -lssl -L$(CM_LIB_DIR)
+LDFLAGS = -g -lcm_ARM -ldl -lcppunit -pthread -lssl -L$(CM_LIB_DIR)
 CCFLAGS = -g $(INCLUDE) -c -fPIC -D__LINUX_BOX__ -D_REENTRANT -D_LARGEFILE64_SOURCE
 
 POSIXFLAGS = -D_POSIX_PTHREAD_SEMANTICS -D_REENTRANT
@@ -66,6 +66,7 @@ $(EXE): $(OBJS)
 
 clean:
 	-@rm -rf *.o $(EXE) *.log cppunit_results.xml core.*
+	@mkdir -p log
 	@echo "$(EXE) $(@)ed"
 
 all: prod

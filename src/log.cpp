@@ -105,7 +105,7 @@ std::string cm_log::format_log_message(cm_log::extra ext, const std::string &dat
                 break;
 
                 case cm_log::part::thread:
-                ss << cm_util::tid();
+                ss << unsigned(cm_util::tid());
                 break;
 
                 case cm_log::part::host:
