@@ -847,6 +847,8 @@ bool cm_net::pool_server::process() {
                 delete_socket(epollfd, fd);
                 cm_net::close_socket(fd);
                 cm_log::info(cm_util::format("%d: closed connection", fd));
+
+                service_disconnect_event(fd, info);
             }
 
             // handle peer shutdown
@@ -856,6 +858,8 @@ bool cm_net::pool_server::process() {
                     delete_socket(epollfd, fd);
                     cm_net::close_socket(fd);
                     cm_log::info(cm_util::format("%d: closed connection (EPOLLRDHUP).", fd));
+
+                    service_disconnect_event(fd, info);
                 }
                 cm_log::info(cm_util::format("%d: peer shutdown", fd));
             }   
@@ -879,11 +883,26 @@ int cm_net::pool_server::service_connect_event(int fd, const std::string info) {
     }
 }
 
+int cm_net::pool_server::service_disconnect_event(int fd, const std::string info) {
+    
+    // EOF - client disconnected
+    // give the response fd and singal EOF to the thread pool
+    input_event *event = new input_event(fd, info);
+    event->eof = true;
+    if(nullptr != event) {
+        pool->add_task(receive_fn, event, dealloc);
+    }
+    else {
+        cm_log::critical("pool_server: error: event allocation failed!");
+        return CM_NET_ERR;
+    }
+}
+
 int cm_net::pool_server::service_input_event(int fd) {
 
     char rbuf[4096] = {'\0'};
 
-    while(1) {
+    //while(1) {
         
         int num_bytes = cm_net::read(fd, rbuf, sizeof(rbuf));
         if(num_bytes > 0) {
@@ -905,17 +924,6 @@ int cm_net::pool_server::service_input_event(int fd) {
         }
 
         if(num_bytes == 0) {
-            // EOF - client disconnected
-            // give the response fd and singal EOF to the thread pool
-            input_event *event = new input_event(fd);
-            if(nullptr != event) {
-                pool->add_task(receive_fn, event, dealloc);
-            }
-            else {
-                cm_log::critical("pool_server: error: event allocation failed!");
-                return CM_NET_ERR;
-            }
-
             return CM_NET_EOF;
         }
 
@@ -923,7 +931,7 @@ int cm_net::pool_server::service_input_event(int fd) {
             cm_net::err("read", errno);
             return CM_NET_ERR;
         }
-    }
+    //}
 }
 
 /////////////////////// rx_thread ///////////////////////////////

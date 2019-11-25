@@ -59,7 +59,7 @@ struct buffer {
 
     inline void append(const char *s, size_t s_sz) {
 
-        size_t n = ( s_sz < available() ? s_sz : available()) - 1;
+        size_t n = ( s_sz < available() ? s_sz : available()-1);
         memcpy(&buf[len], s, n);
         len += n;
         buf[len] = '\0';
