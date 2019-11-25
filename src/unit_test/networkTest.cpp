@@ -26,7 +26,7 @@ struct unit_client: public cm_net::client_thread {
     int count = 0;
 
     unit_client():
-    cm_net::client_thread("127.0.0.1", 56000, client_receive) { }
+    cm_net::client_thread("127.0.0.1", 56010, client_receive) { }
     
     bool process() {
 
@@ -99,6 +99,29 @@ void networkTest::test_network() {
    cm_log::info(cm_util::format("total time: %7.4lf secs", total));
 }
 
+
+struct unit_client2: public cm_net::client_thread {
+
+    int count = 0;
+
+    unit_client2():
+    cm_net::client_thread("127.0.0.1", 56020, client_receive) { }
+
+    bool process() {
+
+        if(count < 1000000) {
+            for(int x = 0; x < 10000; x++) {
+                if(++count % 10000 == 0) {
+                        send(cm_util::format("count=[%d]\n", count));
+                }
+            }
+        }
+        else { return false; }
+
+        return client_thread::process();
+    }
+};
+
 void request_handler(void *arg) {
 
     cm_net::input_event *event = (cm_net::input_event *) arg;
@@ -154,10 +177,10 @@ void networkTest::test_network_thread_pool() {
 
     // run multiple client threads to feed data to server thread
 
-    vector<unit_client *> clients;
+    vector<unit_client2 *> clients;
 
     for(int n = 0; n < 50; ++n) {
-        unit_client *p = new unit_client();
+        unit_client2 *p = new unit_client2();
         CPPUNIT_ASSERT( p->is_valid() );
         clients.push_back(p);
 
@@ -187,6 +210,29 @@ void networkTest::test_network_thread_pool() {
     thread_pool.log_counts();
 }
 
+
+struct unit_client3: public cm_net::client_thread {
+
+    int count = 0;
+
+    unit_client3():
+    cm_net::client_thread("127.0.0.1", 56030, client_receive) { }
+
+    bool process() {
+
+        if(count < 1000000) {
+            for(int x = 0; x < 10000; x++) {
+                if(++count % 10000 == 0) {
+                        send(cm_util::format("count=[%d]\n", count));
+                }
+            }
+        }
+        else { return false; }
+
+        return client_thread::process();
+    }
+};
+
 void networkTest::test_client_connect() {
 
     cm_log::file_logger server_log("./log/client_connect_test.log");
@@ -197,13 +243,13 @@ void networkTest::test_client_connect() {
     clock_gettime(CLOCK_REALTIME, &start);
 
     // try to start up a client that has no server to connect to
-    unit_client client;
+    unit_client3 client;
     CPPUNIT_ASSERT( !client.is_started() && client.is_done());
 
     // startup tcp server
     // create thread pool that will do work for the server
     cm_thread::pool thread_pool(6);
-    cm_net::pool_server server(56000, &thread_pool, request_handler,
+    cm_net::pool_server server(56030, &thread_pool, request_handler,
         request_dealloc);
 
     CPPUNIT_ASSERT( server.is_started() == true );
