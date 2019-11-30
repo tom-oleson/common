@@ -65,6 +65,7 @@ struct cache_event {
     std::string name;
     std::string tag;
     std::string value;
+    std::string pub_name;   // name to re-publish to
     std::string result;
     bool notify = false;    // notify watchers
 
@@ -73,8 +74,8 @@ struct cache_event {
 
     cache_event(int fd_, std::string request_): fd(fd_), request(request_) {}
     cache_event(const cache_event &r): fd(r.fd), request(r.request),
-        name(r.name), tag(r.tag), value(r.value), result(r.result),
-        notify(r.notify)  {}
+        name(r.name), tag(r.tag), value(r.value), pub_name(r.pub_name), result(r.result),
+        notify(r.notify) {}
     
     cache_event &operator = (const cache_event &r) {
         fd = r.fd;
@@ -82,9 +83,21 @@ struct cache_event {
         name = r.name;
         tag = r.tag;
         value = r.value;
+        pub_name = r.pub_name;
         result = r.result;
         notify = r.notify;
         return *this;
+    }
+
+    void clear() {
+        fd = -1;
+        // do not clear request
+        name.clear();
+        tag.clear();
+        value.clear();
+        pub_name.clear();
+        result.clear();
+        notify = false;
     }
 };
 

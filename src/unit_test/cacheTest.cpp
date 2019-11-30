@@ -70,19 +70,26 @@ public:
     }
 
     bool do_watch(const std::string &name, const std::string &tag, cm_cache::cache_event &event) {
-        cm_util::format("watch: %s %s", event.name.c_str(), event.tag.c_str());
+
 
         event.value = cm_store::mem_store.find(name);
         event.name = name;
+        event.tag = tag;
+
+        cm_log::info(cm_util::format("watch: %s %s %s", event.name.c_str(), event.tag.c_str(), event.pub_name.c_str()));
+
         event.result.assign(cm_util::format("%s:%s", tag.c_str(), event.value.c_str()));
         return do_result(event);
     }
 
     bool do_watch_remove(const std::string &name, const std::string &tag, cm_cache::cache_event &event) {
-        cm_util::format("watch: %s %s", event.name.c_str(), event.tag.c_str());
 
         event.value = cm_store::mem_store.find(name);
         event.name = name;
+        event.tag = tag;
+
+        cm_log::info(cm_util::format("watch: %s %s %s", event.name.c_str(), event.tag.c_str(), event.pub_name.c_str()));
+
         event.result.assign(cm_util::format("%s:%s", tag.c_str(), event.value.c_str()));
         int num = cm_store::mem_store.remove(name);
 
@@ -120,12 +127,16 @@ void cacheTest::test_cache() {
     cache.eval("*foo #0", event);      // watch
     cache.eval("-foo", event);         // remove
     cache.eval("$foo", event);         // read
-    
+   
     cache.eval("+name +A0", event);
+
     cache.eval("*name-notify #$", event);
     cache.eval("@name-notify #$", event);
 
-    cache.eval("+name {\"time\":1574046628,\"info\":\"T1574046628\n$:+A0\"}", event);
+    cache.eval("*name1 #tag1 +name2", event);
+    cache.eval("@name2 #tag2 +name3", event);
+
+    cache.eval("+name {\"time\":1574046628,\"info\":\"T1574046628\",\"info\":\"$:+A0\"}", event);
 
     cache.eval("+name 'Tom'", event);
     cache.eval("$name", event);

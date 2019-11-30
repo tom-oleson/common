@@ -28,6 +28,7 @@
  */
 
 #include "cache.h"
+#include "log.h"
 
 // tokens:
 // # comment
@@ -71,12 +72,6 @@ bool cm_cache::scanner::next_token() {
         case '\0':  token.id = input_end;
                     break;
 
-
-        case '+':   if(index == 0) {
-                        accept(tk_add);
-                        break;
-                    }
-
         case '$':   if(index == 0) {
                         accept(tk_read);
                         break;
@@ -94,6 +89,11 @@ bool cm_cache::scanner::next_token() {
 
         case '@':   if(index == 0) {
                         accept(tk_watch_remove);
+                        break;
+                    }
+        
+        case '+':   if(index == 0) {
+                        accept(tk_add);
                         break;
                     }
 
@@ -265,8 +265,18 @@ bool cm_cache::cache::parse_watch(cm_cache::cache_event &event) {
 
                 if(token.id == cm_cache::input_end) {   
                     return processor->do_watch(lvalue, rvalue, event);
+                }                
+
+                if(token.id == cm_cache::identifier) {
+
+                    // this is a re-pub event
+                    event.pub_name = std::move(token.value);
+
+                    if(token.id == cm_cache::identifier) {
+                        return processor->do_watch(lvalue, rvalue, event);
+                    }
                 }
-                return parse_error("watch: expected end after #tag", event);
+                return parse_error("watch: expected end or identifier after #tag", event);
             }
             return parse_error("watch: expected identifier for #tag", event);
         }
@@ -296,9 +306,19 @@ bool cm_cache::cache::parse_watch_remove(cm_cache::cache_event &event) {
                 next_token();
 
                 if(token.id == cm_cache::input_end) {   
-                    return processor->do_watch_remove(lvalue, rvalue, event);
+                    return processor->do_watch(lvalue, rvalue, event);
+                }                
+
+                if(token.id == cm_cache::identifier) {
+
+                    // this is a re-pub event
+                    event.pub_name = std::move(token.value);
+
+                    if(token.id == cm_cache::identifier) {
+                        return processor->do_watch(lvalue, rvalue, event);
+                    }
                 }
-                return parse_error("watch_remove: expected end after #tag", event);
+                return parse_error("watch: expected end or identifier after #tag", event);
             }
             return parse_error("watch_remove: expected identifier for #tag", event);
         }
@@ -309,6 +329,10 @@ bool cm_cache::cache::parse_watch_remove(cm_cache::cache_event &event) {
 
 bool cm_cache::cache::eval(const std::string &expr, cm_cache::cache_event &event) {
 
+    //event.clear();
+    //event.result.assign(expr);
+
+    // setup scanner input
     set_input(expr.c_str(), expr.size());
 
     while(next_token()) {
