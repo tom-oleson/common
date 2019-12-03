@@ -63,12 +63,121 @@ struct node {
         }
         return temp;
     }
+
+    // starting at this node, find next matching node
+    node<T> *find_next(const T& _data) {
+        node<T> *p = this;
+        while(nullptr != p) {
+            if(p->data == _data) {
+                break;
+            }
+            p = p->next;
+        }
+        return p;
+    }
+
+    // return node at index from this node
+    node<T> *index_node(int index) {
+        node<T> *p = this;
+        for(int j = 0; j < index && nullptr != p; j++) {
+            p = p->next;
+        }
+        return p;
+    }
+
 };
 
 template<class T>
-node<T> *new_node(const T& _data, node<T> *_next = nullptr) {
+node<T> *new_node(const T _data, node<T> *_next = nullptr) {
     node<T> *newnode = new node<T>(_data, _next);
     return newnode;
+}
+
+// free all nodes including head node
+template<class T>
+void free_all(node<T> **head) {
+    node<T> *hp = *head;
+    while(hp->next_node() != nullptr) {
+        node<T> *np = hp->remove_next();
+        if(nullptr != np) { 
+            delete np;
+            np = nullptr;
+        }
+    }
+    delete hp;
+    *head = nullptr;
+}
+
+template<class T>
+bool detect_loop(node<T> *head, int *sz, node<T> **start) {
+
+    // use Floyd's Tortois & Hare Cycle Detection algorithm
+    // to detect and locate loop in the list...
+
+    node<T> *tortoise = head;
+    node<T> *hare = head;
+
+    // first we detect the loop
+    // hare moves two steps per iteration
+    // tortoise moves one step per iteration
+    bool loop_found = false;
+    while(1) {
+
+        // if hare reached the end
+        if(hare == nullptr) {
+            // no loop found
+            break;
+        }
+
+        hare = hare->next;
+
+        // if hare reached the end
+        if(hare == nullptr) {
+            // no loop found
+            break;
+        }
+
+        hare = hare->next;
+        tortoise = tortoise->next;
+
+        if(hare == tortoise) {
+            // loop found
+            loop_found = true;
+            break;
+        }
+    }
+
+    // loop found, we determine the length of the loop
+    // and where the loop begins...
+    
+    int len = 0;
+
+    if(nullptr != start) *start = nullptr;
+    if(nullptr != sz) *sz = 0;
+
+    if(loop_found) {
+        // tortoise walks to hare, counting steps
+        // as it moves
+        do {
+            tortoise = tortoise->next;
+            len++;
+        } while( tortoise != hare);
+
+        if(nullptr != sz) *sz = len;
+
+        // move tortoise to start, walk both one
+        // step until they meet again
+        // they will meet where the loop begins
+        tortoise = head;
+        while(tortoise != hare) {
+            tortoise = tortoise->next;
+            hare = hare->next;
+        }
+
+        if(nullptr != start) *start = tortoise;
+    }
+
+    return loop_found;
 }
 
 

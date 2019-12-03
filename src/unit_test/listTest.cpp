@@ -50,10 +50,11 @@ void listTest::test_list() {
     CPPUNIT_ASSERT(head->next->data == 'B');
     CPPUNIT_ASSERT(head->next->next->data == 'C');
 
-    while(head->next_node() != nullptr) {
-        cm_list::node<char> *np = head->remove_next();
-        delete np;
-    }
+    cm_list::node<char> *find = head->find_next('C');
+
+    CPPUNIT_ASSERT(find->data == 'C');
+
+    cm_list::free_all(&head);
 
     delete r;
     delete p;
@@ -133,10 +134,10 @@ void listTest::test_floyds_algorithm() {
         // step until they meet again
         // they will meet where the loop begins
         tortoise = p[0];
-        do {
+        while( tortoise != hare) {
             tortoise = tortoise->next;
             hare = hare->next;
-        } while( tortoise != hare);
+        }
     }
 
     CPPUNIT_ASSERT(loop_found == true);
@@ -144,4 +145,47 @@ void listTest::test_floyds_algorithm() {
     CPPUNIT_ASSERT( tortoise->data == 4);
     CPPUNIT_ASSERT( hare->data == 4);
 
+    
+    cm_list::node<int> *head = p[0];
+
+    //cm_list::free_all(&head);
 }
+
+void listTest::test_find_route_loop() { 
+
+// create a list of linked nodes
+    cm_list::node<std::string> *head, *input;
+    cm_list::node<std::string> *lp, *rp;
+
+    input = cm_list::new_node(std::string("etok"),
+            cm_list::new_node(std::string("red"),
+            cm_list::new_node(std::string("pub"),
+            cm_list::new_node(std::string("blue"),
+            cm_list::new_node(std::string("xray")) ))));
+
+    // setup the loop we will detect and measure...
+    
+    head = input->find_next(std::string("etok"));
+    head->index_node(0)->next = input->find_next(std::string("pub"));
+    head->index_node(1)->next = input->find_next(std::string("xray"));
+    head->index_node(2)->next = input->find_next(std::string("etok"));
+
+    CPPUNIT_ASSERT( head->index_node(0)->data == std::string("etok"));
+    CPPUNIT_ASSERT( head->index_node(1)->data == std::string("pub"));
+    CPPUNIT_ASSERT( head->index_node(2)->data == std::string("xray"));
+    CPPUNIT_ASSERT( head->index_node(3)->data == std::string("etok"));
+
+    // find the loop and verify...
+    int size = 0;
+    cm_list::node<std::string> *start;
+
+    bool found_loop = cm_list::detect_loop(head, &size, &start);
+
+    CPPUNIT_ASSERT(found_loop == true); // loop found
+    CPPUNIT_ASSERT(size == 3);  // loop size
+    CPPUNIT_ASSERT(start->data == "etok");  // loop start node
+    CPPUNIT_ASSERT(start->index_node(size-1)->data == "xray"); // loop end node
+
+    //cm_list::free_all(&input);
+}
+

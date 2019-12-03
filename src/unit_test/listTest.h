@@ -21,6 +21,7 @@ class listTest : public CPPUNIT_NS::TestFixture {
   CPPUNIT_TEST_SUITE( listTest );
     CPPUNIT_TEST( test_list );
     CPPUNIT_TEST( test_floyds_algorithm );
+    CPPUNIT_TEST( test_find_route_loop );
   CPPUNIT_TEST_SUITE_END();
 
 public:
@@ -30,6 +31,7 @@ public:
 protected:
     void test_list();
     void test_floyds_algorithm();
+    void test_find_route_loop();
 };
 
 
