@@ -189,3 +189,108 @@ void listTest::test_find_route_loop() {
     //cm_list::free_all(&input);
 }
 
+
+bool loop_analysis(std::vector<std::pair<std::string, std::string>> &input) {
+
+    // flatten key/value pairs into route strings
+    // examples:
+    // 12/03/2019 18:21:42 [info]: etok xray pub etok
+    // 12/03/2019 18:21:42 [info]: etok red
+    // 12/03/2019 18:21:42 [info]: etok pub etok
+    // 12/03/2019 18:21:42 [info]: xray pub etok
+    // 12/03/2019 18:21:42 [info]: pub etok xray pub etok    
+
+    std:vector<std::string> route[input.size()];
+    int index = 0;
+
+    // for each input 
+    for(auto it = input.begin(); it != input.end(); ++it) {
+
+        std::string in_key = it->first;
+        std::string in_pub = it->second;
+
+        route[index].push_back(in_key);
+        route[index].push_back(in_pub);
+
+        // look for key that matches in_pub
+        for(auto pt = input.begin(); pt != input.end(); ++pt) {
+            std::string key = pt->first;
+            std::string pub = pt->second;
+            if(key == in_pub) {
+                route[index].push_back(pub);
+                // new search term forward
+                in_pub = pub;
+            }
+         }
+         index++;
+    }
+
+    // count the number of times each key occurs in the route
+    // more than once means it is a loop in the route
+
+    bool found_loop = false;
+
+    for(int k = 0; k < input.size(); k++) {
+        std::string s;
+        std::map<std::string,int> counts;
+
+        // build output log string and key count
+        for(auto it = route[k].begin(); it != route[k].end(); ++it) {
+            s += (*it) + " ";
+            counts[*it]++;
+        }
+
+        // sum the number of keys that occur more than once;
+        // that is the total number of loops in the route
+        int loop_sum = 0;
+        for(auto &it : counts) {
+            int count = it.second;
+            if(count > 1) {
+                loop_sum += (count - 1);
+                found_loop = true;
+            }
+        }
+
+        std::string loop_report = loop_sum > 0 ?
+         cm_util::format("%d loop(s)", loop_sum) : "OK";
+
+        std::string msg = cm_util::format("%s: %s", s.c_str(), 
+            loop_report.c_str());
+
+        if(loop_sum > 0) cm_log::error(msg.c_str());
+        else cm_log::info(msg.c_str());
+    }
+
+    return found_loop == false;
+}
+
+void listTest::test_key_value_loop() { 
+
+    // alternative loop detection using key counts
+
+    cm_log::file_logger test_log("./log/test_key_value_loop.log");
+    set_default_logger(&test_log);
+
+    std::vector<std::pair<std::string, std::string>> input;
+
+    input.push_back(std::make_pair("etok", "xray"));
+    input.push_back(std::make_pair("etok", "red"));
+    input.push_back(std::make_pair("etok", "pub"));
+    input.push_back(std::make_pair("xray", "pub"));
+    input.push_back(std::make_pair("pub", "etok"));
+
+    // inputs:
+    // (1) etok --> xray
+    // (2) etok --> red
+    // (3) etok --> pub
+    // (4) xray --> pub
+    // (5) pub --> etok
+
+    // (1) etok --> xray --> pub --> etok
+    // (3) etok --> pub --> etok
+
+    bool passed = loop_analysis(input);
+
+    CPPUNIT_ASSERT(passed == false);
+
+}

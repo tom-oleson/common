@@ -41,7 +41,7 @@ struct node {
     T data;
     node<T> *next = nullptr;
 
-    node() {}
+    node(): data("head") {}
 
     node(const T& _data, node<T> *_next = nullptr):
      data(_data), next(_next) { }
@@ -50,10 +50,12 @@ struct node {
     node<T> *next_node() { return next; }
 
     // insert node p after this node
-    void insert_next(node<T> *p) {
+    node<T> *insert_next(node<T> *p) {
         p->next = next;
         next = p;
+        return p;
     }
+
 
     // remove node after this node and return removed node
     node<T> *remove_next() {
@@ -72,6 +74,7 @@ struct node {
                 break;
             }
             p = p->next;
+            if(p == this) break;    // break endless loop
         }
         return p;
     }
