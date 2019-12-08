@@ -37,6 +37,7 @@ EXE = run_tests
 
 OBJS =	utilTest.o \
 	listTest.o \
+	hashTest.o \
     bufferTest.o \
     cacheTest.o \
     threadTest.o \
