@@ -45,6 +45,8 @@ class utilTest : public CPPUNIT_NS::TestFixture {
     CPPUNIT_TEST( test_regex_match );
     CPPUNIT_TEST( test_regex_replace );
     CPPUNIT_TEST( test_JS_macro );
+    CPPUNIT_TEST( test_extract );
+
   CPPUNIT_TEST_SUITE_END();
 
 public:
@@ -75,6 +77,7 @@ protected:
     void test_regex_match();
     void test_regex_replace();
     void test_JS_macro();
+    void test_extract();
 };
 
 

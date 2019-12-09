@@ -103,6 +103,11 @@ std::vector<std::string> split (const std::string &s, char delim);
 int regex_match(const std::string &s, const std::string &pattern);
 int regex_replace(std::string &s, const std::string &pattern, const std::string &replace);
 
+
+inline int random(int upper_limit) {
+    srand(time(NULL));
+    return rand() % (upper_limit+1);
+}
  
 } // namespace cm_util
 

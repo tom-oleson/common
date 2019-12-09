@@ -294,6 +294,21 @@ void utilTest::test_JS_macro() {
 
     std::string s = "arduino001 {" JS("count") ":5133}";
     cm_log::info(cm_util::format("result = %s", s.c_str()));
+}
 
+void utilTest::test_extract() {
+
+    cm_log::file_logger log("./log/test_extract.log");
+    log.set_log_level(cm_log::level::info);
+    set_default_logger(&log);
+
+    std::string request = "+arduino002 {\"time\":1575868180,\"soil\":86,\"ds_temp\":24.12}\r%%vortex_369\n";
+    std::string fingerprint;
+
+    size_t index = request.find("%%vortex_369");
+    if(index != std::string::npos) {
+        fingerprint = request.substr(index);
+        cm_log::hex_dump(cm_log::level::info, fingerprint.c_str(), fingerprint.size(), 16);
+    }
 
 }
