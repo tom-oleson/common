@@ -73,24 +73,29 @@ public:
     }
 
     valueT pop_front() {
+        valueT value;
         out_mutex.lock();
-        if(out.empty() && !in.empty()) _swap();
-        valueT value = out.front();
-        out.pop_front();
+        if(out.empty()) _swap();
+        if(!out.empty()) {
+            value = out.front();
+            out.pop_front();
+        }
         out_mutex.unlock();
         return value;
     }
 
     void swap_out(std::deque<valueT> &q) {
         out_mutex.lock();
-        if(out.empty() && !in.empty()) _swap();
-        out.swap(q);
+        if(out.empty()) _swap();
+        if(!out.empty()) {
+            out.swap(q);
+        }
         out_mutex.unlock();
     }
 
     void _swap() {
         in_mutex.lock();
-        in.swap(out);
+        if(!in.empty()) in.swap(out);
         in_mutex.unlock();
     }
 };
