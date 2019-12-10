@@ -305,10 +305,34 @@ void utilTest::test_extract() {
     std::string request = "+arduino002 {\"time\":1575868180,\"soil\":86,\"ds_temp\":24.12}\r%%vortex_369\n";
     std::string fingerprint;
 
+    
+    // look for %%vortex_369
     size_t index = request.find("%%vortex_369");
     if(index != std::string::npos) {
         fingerprint = request.substr(index);
         cm_log::hex_dump(cm_log::level::info, fingerprint.c_str(), fingerprint.size(), 16);
     }
 
+    // add %%vortex_963
+    std::string instance_name = "%%vortex_963";
+    index = request.find("\n");
+    if(index == std::string::npos) {
+        request.append(instance_name);
+        request.append("\n");
+    }
+    else {
+        std::string s = instance_name +"\n";
+        request.replace(request.begin()+index, request.begin()+index+1,
+            s.begin(), s.end());
+    }
+    cm_log::hex_dump(cm_log::level::info, request.c_str(), request.size(), 16);
+
+    // remove %%vortex_963
+    index = request.find(instance_name);
+    if(index != std::string::npos) {
+        std::string eol("\n");
+        request.replace(request.begin()+index, request.begin()+index+instance_name.size()+1,
+            eol.begin(), eol.end());
+        cm_log::hex_dump(cm_log::level::info, request.c_str(), request.size(), 16);
+    }
 }
