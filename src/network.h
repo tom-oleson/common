@@ -100,8 +100,8 @@ int set_send_buffer(int fd, int size);
 int set_receive_buffer(int fd, int size);
 int set_send_timeout(int fd, long long millis);
 int set_receive_timeout(int fd, long long millis);
-int read(int fd, char *buf, size_t sz);
-int write(int fd, char *buf, size_t sz);
+//int read(int fd, char *buf, size_t sz);
+//int write(int fd, char *buf, size_t sz);
 
 // event-driven I/O
 #define MAX_EVENTS  64
