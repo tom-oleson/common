@@ -187,7 +187,7 @@ public:
     bool parse_watch_remove(cache_event &event);
 
     inline bool parse_error(const std::string &err, cache_event &event) {
-        processor->do_error(get_input(), err, event);
+        return processor->do_error(get_input(), err, event);
     }
 };
 

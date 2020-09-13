@@ -283,6 +283,7 @@ pid_t cm_util::tid() {
 #else
     pid_t pid = syscall(SYS_lwp_self);  // non-linux threads (solaris)
 #endif
+    return pid;
 }
 
 int cm_util::file_stat(const std::string &path, size_t *size, time_t *mod_time) {

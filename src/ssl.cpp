@@ -33,6 +33,7 @@
 int cm_ssl::print_errors(const char *str, size_t len, void *u) {
     (void) u;
     cm_log::error(std::string(str, len));
+    return 0;
 }
 
 void cm_ssl::init_openssl() {

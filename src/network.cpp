@@ -881,6 +881,8 @@ int cm_net::pool_server::service_connect_event(int fd, const std::string info) {
         cm_log::critical("pool_server: error: event allocation failed!");
         return CM_NET_ERR;
     }
+
+    return CM_NET_OK;
 }
 
 int cm_net::pool_server::service_disconnect_event(int fd, const std::string info) {
@@ -896,6 +898,7 @@ int cm_net::pool_server::service_disconnect_event(int fd, const std::string info
         cm_log::critical("pool_server: error: event allocation failed!");
         return CM_NET_ERR;
     }
+    return CM_NET_OK;
 }
 
 int cm_net::pool_server::service_input_event(int fd) {
@@ -931,6 +934,8 @@ int cm_net::pool_server::service_input_event(int fd) {
             cm_net::err("read", errno);
             return CM_NET_ERR;
         }
+
+	return CM_NET_OK;
     //}
 }
 
