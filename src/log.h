@@ -238,7 +238,7 @@ public:
     const std::string get_RS() { return RS; }
 
     bool get_color_enable() { return color_enabled; }
-    bool set_color_enable(bool b) { color_enabled = b; }
+    void set_color_enable(bool b) { color_enabled = b; }
 
 	bool ok_to_log(cm_log::level::en lvl) {
 		return (lvl != cm_log::level::off && lvl <= log_level) || lvl == cm_log::level::always;
