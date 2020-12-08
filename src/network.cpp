@@ -250,7 +250,7 @@ int cm_net::shutdown(int fd, int how) {
 void cm_net::close_socket(int fd) {
 
     if(fd != -1) {
-        cm_net::shutdown(fd, SHUT_RDWR);
+        //cm_net::shutdown(fd, SHUT_RDWR);
         close(fd);
     }
 }
