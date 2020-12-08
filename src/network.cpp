@@ -243,13 +243,19 @@ int cm_net::server_socket(int host_port) {
     return cm_net::server_socket(host_port, AF_INET);   // IPv4
 }
 
+int cm_net::shutdown(int fd, int how) {
+    return shutdown(fd, how);
+}
+
 void cm_net::close_socket(int fd) {
 
     if(fd != -1) {
-        shutdown(fd, SHUT_RDWR);
+        cm_net::shutdown(fd, SHUT_RDWR);
         close(fd);
     }
 }
+
+
 
 int cm_net::accept_inet6(int host_socket, std::string &info) { 
 

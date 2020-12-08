@@ -70,6 +70,7 @@ int create_socket();
 int server_socket_inet6(int host_port);
 int server_socket(int host_port, int domain);
 int server_socket(int host_port);
+int shutdown(int fd, int how);
 void close_socket(int fd);
 
 int accept_inet6(int host_socket, std::string &info);
