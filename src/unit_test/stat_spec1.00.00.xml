@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 <spec>
 
-    <record id="21" type="21" name="STAT">
+    <record id="1" type="1" name="STATS">
 	<field name="start" type="string" pos="0"/>
 	<field name="end" type="string" pos="1" />
 	<field name="hostname" type="string" pos="2"/>

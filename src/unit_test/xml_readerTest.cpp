@@ -19,7 +19,7 @@ string xml_readerTest::read_xml(const string spec) {
 			while(reader.Read()) {
 
 				// process a properties element...
-				// <properties name="MDR_AAA" >
+				// <properties name="MY_PROPERTIES" >
 				if(reader.IsStartElement("properties")) {
 					// process property elements...
 					// <property name="somename" value="somevalue" />
@@ -89,7 +89,7 @@ void xml_readerTest::test_read_memory() {
 							"<field name='timestamp' type='string' pos='0'/>" \
 							"<field name='hostname' type='string' pos='1'/>" \
 						"</record>" \
-						"<properties name='MDR_AAA'>" \
+						"<properties name='MY_PROPERTIES'>" \
 							"<property name='executable' value='*'/>" \
 							"<property name='symptomatic' value='true'/>" \
 						"</properties>" \
