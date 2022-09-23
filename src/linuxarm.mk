@@ -55,6 +55,7 @@ CM_OBJS = OBJDIR_$(WORD_SIZE)/config.o \
     OBJDIR_$(WORD_SIZE)/base64.o \
 	OBJDIR_$(WORD_SIZE)/log.o \
 	OBJDIR_$(WORD_SIZE)/process_scanner.o \
+	OBJDIR_$(WORD_SIZE)/xml_reader.o \
 	OBJDIR_$(WORD_SIZE)/timewatcher.o
 
 CM_LIB = libcm_$(WORD_SIZE)

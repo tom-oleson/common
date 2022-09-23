@@ -192,7 +192,7 @@ std::string cm_log::format_log_timestamp(const std::string &fmt, time_t seconds,
         	localtime_r(&seconds, &my_tm); // break down as local time
         }
         //strftime(buf, sizeof buf, "%m/%d/%Y %H:%M:%S ", &my_tm);
-	strftime(buf, sizeof buf, fmt.c_str(), &my_tm);
+	    strftime(buf, sizeof buf, fmt.c_str(), &my_tm);
         return std::string(buf);
 }
 

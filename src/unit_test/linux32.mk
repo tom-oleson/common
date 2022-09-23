@@ -49,14 +49,18 @@ OBJS =	utilTest.o \
     timewatcherTest.o \
     logTest.o \
     process_scannerTest.o \
+	xml_readerTest.o \
     main.o
 
 default: all
 
+#note: you may need to point to libxml headers with something like this
+#if you get libxml directory not found.
+#$ sudo ln -s /usr/include/libxml2/libxml/ /usr/local/include/libxml
 CC=g++
 CM_LIB_DIR=../
-INCLUDE = -I. -I$(CM_LIB_DIR)
-LDFLAGS = -m$(WORD_SIZE) -g -lcm_$(WORD_SIZE) -ldl -lcppunit -pthread -lssl -L$(CM_LIB_DIR)
+INCLUDE = -I. -I$(CM_LIB_DIR) -I/usr/include/libxml2
+LDFLAGS = -m$(WORD_SIZE) -g -lcm_$(WORD_SIZE) -ldl -lcppunit -pthread -lssl -lxml2 -L$(CM_LIB_DIR)
 CCFLAGS = -m$(WORD_SIZE) -g $(INCLUDE) -c -fPIC -D__LINUX_BOX__ -D_REENTRANT -D_LARGEFILE$(WORD_SIZE)_SOURCE
 
 POSIXFLAGS = -D_POSIX_PTHREAD_SEMANTICS -D_REENTRANT

@@ -1,0 +1,22 @@
+<?xml version="1.0"?>
+<spec>
+
+    <record id="21" type="21" name="STAT">
+	<field name="start" type="string" pos="0"/>
+	<field name="end" type="string" pos="1" />
+	<field name="hostname" type="string" pos="2"/>
+	<field name="executable" type="string" pos="3"/>
+	<field name="instance" type="string" pos="4"/>
+	<field name="pid" type="string" pos="5"/>
+	<field name="tenant" type="string" pos="6"/>
+	<field name="stat" type="string" pos="7"/>
+	<field name="loc" type="string" pos="8" generated="true"/>
+	<field name="count" type="string" pos="9" generated="true"/>
+	<field name="total" type="string" pos="10" generated="true"/>
+	<field name="min" type="string" pos="11" generated="true"/>
+	<field name="avg" type="string" pos="12" generated="true"/>
+	<field name="max" type="string" pos="13" generated="true"/>
+    </record>
+
+</spec>
+
