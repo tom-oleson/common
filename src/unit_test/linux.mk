@@ -36,6 +36,7 @@ TOP=$(PWD)
 EXE = run_tests
 
 OBJS =	utilTest.o \
+	assertTest.o \
 	listTest.o \
 	hashTest.o \
     bufferTest.o \
@@ -61,7 +62,7 @@ CC=g++
 CM_LIB_DIR=../
 INCLUDE = -I. -I$(CM_LIB_DIR) -I/usr/include/libxml2
 LDFLAGS = -m64 -g -lcm_64 -ldl -lcppunit -pthread -lssl -lcrypto -lxml2 -L$(CM_LIB_DIR)
-CCFLAGS = -m64 -g $(INCLUDE) -c -fPIC -D__LINUX_BOX__ -D_REENTRANT -D_LARGEFILE64_SOURCE
+CCFLAGS = -m64 -g $(INCLUDE) -c -fPIC -D__LINUX_BOX__ -D_REENTRANT -D_LARGEFILE64_SOURCE -DASSERT
 
 POSIXFLAGS = -D_POSIX_PTHREAD_SEMANTICS -D_REENTRANT
 
@@ -72,7 +73,7 @@ $(EXE): $(OBJS)
 	$(CC) $(OBJS) $(LDFLAGS) -o $(EXE)
 
 clean:
-	-@rm -rf *.o $(EXE) *.log cppunit_results.xml core.*
+	-@rm -rf *.o $(EXE) ./log/* cppunit_results.xml core.*
 	@echo "$(EXE) $(@)ed"
 
 all: prod

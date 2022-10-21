@@ -40,11 +40,12 @@ POSIX_FLAGS = -D_POSIX_PTHREAD_SEMANTICS
 CM_LIB_VERSION=$(CM_VERSION)
 DEBUG= -g
 INCLUDE = -I. -I$(TOP)/ 
-CCFLAGS = $(INCLUDE) -c -m$(WORD_SIZE) $(DEBUG) -fPIC -D__LINUX_BOX__
+CCFLAGS = $(INCLUDE) -c -m$(WORD_SIZE) $(DEBUG) -fPIC -D__LINUX_BOX__ -DASSERT
 LDFLAGS = -pthread -ldl -lssl $(DEBUG) 
 CC=g++
 
 CM_OBJS = OBJDIR_$(WORD_SIZE)/config.o \
+	  OBJDIR_$(WORD_SIZE)/assert.o \
 	OBJDIR_$(WORD_SIZE)/ssl.o \
     OBJDIR_$(WORD_SIZE)/cache.o \
     OBJDIR_$(WORD_SIZE)/network.o \
