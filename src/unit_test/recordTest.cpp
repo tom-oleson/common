@@ -20,19 +20,22 @@ void recordTest::test_record() {
     cm_record::field name("name", "string", 0);
     cm_record::field age("age", "int", 0);
 
-    cm_log::info(name.to_string());
-    cm_log::info(age.to_string());
-
     CPPUNIT_ASSERT( name.get_name() == "name");
     CPPUNIT_ASSERT( age.get_name() == "age");
 
-
     cm_record::record_spec person_spec("person", "1.0");
+
+    person_spec.add_field(name);
+    person_spec.add_field(age);
 
     CPPUNIT_ASSERT(person_spec.get_name() == "person");
     CPPUNIT_ASSERT(person_spec.get_version() == "1.0");
 
     cm_log::info(person_spec.to_string());
+
+    for(int index = 0; index < person_spec.size(); index++) {
+        cm_log::info(person_spec.get_field(index).to_string());
+    }
     
 }
 

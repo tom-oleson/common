@@ -34,5 +34,5 @@ const string cm_record::field::to_string() {
 }
 
 const string cm_record::record_spec::to_string() {
-        return cm_util::format("record_spec: name=[%s], version=[%s], delimiter=[%s]", name.c_str(), version.c_str(), delimiter.c_str());
+        return cm_util::format("record_spec: name=[%s], version=[%s], delimiter=[%s], size=[%u]", name.c_str(), version.c_str(), delimiter.c_str(), size());
 }
