@@ -45,6 +45,7 @@ LDFLAGS = -pthread -ldl -lssl $(DEBUG)
 CC=g++
 
 CM_OBJS = OBJDIR_$(WORD_SIZE)/config.o \
+	  OBJDIR_$(WORD_SIZE)/record.o \
 	  OBJDIR_$(WORD_SIZE)/assert.o \
 	OBJDIR_$(WORD_SIZE)/ssl.o \
     OBJDIR_$(WORD_SIZE)/cache.o \

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, Tom Oleson <tom dot oleson at gmail dot com>
+ * Copyright (c) 2022, Tom Oleson <tom dot oleson at gmail dot com>
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without

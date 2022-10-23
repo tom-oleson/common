@@ -27,9 +27,12 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "queue.h"
+#include "record.h"
 
-// globals
-cm_queue::double_queue<std::string> cm_queue::mem_queue;
-void *default_queue = &cm_queue::mem_queue;
+const string cm_record::field::to_string() {
+        return cm_util::format("field: name=[%s], type=[%s], length=[%u]", name.c_str(), type.c_str(), length);
+}
 
+const string cm_record::record_spec::to_string() {
+        return cm_util::format("record_spec: name=[%s], version=[%s], delimiter=[%s]", name.c_str(), version.c_str(), delimiter.c_str());
+}

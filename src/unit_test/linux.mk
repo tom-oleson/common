@@ -36,6 +36,7 @@ TOP=$(PWD)
 EXE = run_tests
 
 OBJS =	utilTest.o \
+    recordTest.o \
 	assertTest.o \
 	listTest.o \
 	hashTest.o \
