@@ -27,6 +27,8 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
+#include "log.h"
+#include "xml_reader.h"
 #include "record.h"
 
 const string cm_record::field::to_string() {
@@ -35,4 +37,64 @@ const string cm_record::field::to_string() {
 
 const string cm_record::record_spec::to_string() {
         return cm_util::format("record_spec: name=[%s], version=[%s], delimiter=[%s], size=[%u]", name.c_str(), version.c_str(), delimiter.c_str(), size());
+}
+
+
+bool cm_record::xml_load_record_spec(const string spec, const string name, const string version, cm_record::record_spec *spec_ptr) {
+
+    spec_ptr->set_name(name);
+    spec_ptr->set_version(version);
+
+	try {
+        // spec can be an in-memory string starting with "<?xml" or the path to an xml file...
+		cm_xml::XMLReader reader(spec);
+
+		if(reader.Read() && reader.IsStartElement("spec")) {
+
+			while(reader.Read()) {
+
+				// process a record element...
+				// <record name="person" version="1.0" delimiter="|" >
+				if(reader.IsStartElement("record")) {
+
+                    if(reader.HasAttributes()) {
+
+                        string spec_name = reader.GetAttribute("name");
+                        string spec_version = reader.GetAttribute("version");
+                        string spec_delimiter = reader.GetAttribute("delimiter");
+
+                        if(spec_name == name && spec_version == version) {
+
+                            spec_ptr->set_delimiter(spec_delimiter);
+
+                            // process field elements...
+                            // <field name="record_type" type="string" length="0" />
+                            while(reader.Read() && reader.IsStartElement("field")) {
+                                if(reader.HasAttributes()) {
+                                    string name = reader.GetAttribute("name");
+                                    string type = reader.GetAttribute("type");
+
+                                    string length = reader.GetAttribute("length");
+                                    size_t len = (size_t) atoi(length.c_str());
+
+                                    cm_record::field field(name, type, len);
+                                    spec_ptr->add_field(field);
+                                }
+                            } // field element
+                        }
+					}
+				} // record element
+
+			}
+        }
+	} catch(const string &s) {
+		    cm_log::error(s);
+			return false;
+	}
+	catch(...) {
+            string s = cm_util::format("Exception: strerror=[%s]", strerror(errno));
+            cm_log::error(s);
+            return false;
+    }
+    return true;
 }

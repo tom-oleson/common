@@ -134,8 +134,8 @@ public:
 
 };
 
-
-
+// find spec with matching name and version in specified xml (memory or file) and add fields to spec object 
+bool xml_load_record_spec(const string spec, const string name, const string version, record_spec *spec_ptr);
 
 
 }

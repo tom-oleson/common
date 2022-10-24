@@ -15,6 +15,7 @@ class recordTest : public CPPUNIT_NS::TestFixture {
 
   CPPUNIT_TEST_SUITE( recordTest );
     CPPUNIT_TEST( test_record );
+    CPPUNIT_TEST( test_load_record_spec );
   CPPUNIT_TEST_SUITE_END();
 
 public:
@@ -23,6 +24,7 @@ public:
 
 protected:
     void test_record();
+    void test_load_record_spec();
 };
 
 
