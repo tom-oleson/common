@@ -243,6 +243,17 @@ std::string cm_util::format_filename_timestamp(time_t seconds, bool gmt) {
     return std::string(buf);
 }
 
+// used to create timestamp of the form YYYYMMDDHHMMSS
+// useful for timestamp fields in data fields
+std::string cm_util::format_field_timestamp(time_t seconds, bool gmt) {
+    char buf[sizeof "19700101000000"] = { '\0' };
+    struct tm _tm;
+    if(gmt) gmtime_r(&seconds, &_tm);    // break down as UTC time
+    else localtime_r(&seconds, &_tm);   // break down as local time
+    strftime(buf, sizeof buf, "%Y%m%d%H%M%S", &_tm);
+    return std::string(buf);
+}
+
 // returns the timezone offset formatted as: +HH:MM (see RFC 3339 and ISO 8601)
 // or empty string if the TZ environment variable is missing (or not correctly configured)
 std::string cm_util::get_timezone_offset(time_t seconds) {

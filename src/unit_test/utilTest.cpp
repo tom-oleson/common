@@ -192,6 +192,21 @@ void utilTest::test_format_filename_timestamp() {
     CPPUNIT_ASSERT( result == "19700101_000000" );
 }
 
+void utilTest::test_format_field_timestamp() {
+
+    cm_log::file_logger log("./log/time_format.log");
+    set_default_logger(&log);
+
+
+    time_t seconds = 1666634658;
+    std::string result = cm_util::format_field_timestamp(seconds, false /*gmt*/);
+
+    log.info(result);
+
+    CPPUNIT_ASSERT( result == "20221024140418" );
+}
+
+
 void utilTest::test_remove() {
 
     bool appended = cm_util::append_to_file("remove_test.log", "This file should be removed.");
