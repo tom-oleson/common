@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, Tom Oleson <tom dot oleson at gmail dot com>
+ * Copyright (c) 2022, Tom Oleson <tom dot oleson at gmail dot com>
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -60,24 +60,36 @@
 
 namespace cm_util {
 
+// string format functions
+
 std::string format(const char *fmt, ...);
 std::string &format_string(std::string& s, const char *fmt, ...);
-size_t bin2hex(const unsigned char *bin, size_t bin_len, char *hex, size_t hex_len, bool lowercase = false);
+
+// timestamp format functions
+
 std::string format_local_timestamp(time_t seconds, time_t millis, std::string &tz);
 std::string format_utc_timestamp(time_t seconds, time_t millis);
 std::string format_filename_timestamp(time_t seconds, bool gmt);
 std::string format_field_timestamp(time_t seconds, bool gmt);
 std::string get_timezone_offset(time_t seconds);
+
+// host functions
+
 std::string get_hostname();
+
+// process functions
+
 pid_t tid();
+
+// file functions
 
 int file_stat(const std::string &path, size_t *size, time_t *mod_time);
 int rename(const std::string &old_name, const std::string &new_name);
 int remove(const std::string &path);
 int dir_scan(const std::string &dir_name, const std::string &pattern, std::vector<std::string> &matches);
-
-
 bool append_to_file(const std::string &path, const std::string &str);
+
+// time functions
 
 time_t calendar_time(time_t seconds, struct tm &local_tm);
 time_t next_midnight(time_t seconds);
@@ -86,24 +98,30 @@ time_t next_hour(time_t seconds, int n_hour);
 time_t next_interval(time_t seconds, time_t interval);
 time_t next_calendar_time(time_t seconds, int hour, int min, int sec);
 
+// string/memory functions
+
 size_t strlcpy(char *dst, const char *src, size_t max);
+std::vector<std::string> split (const std::string &s, char delim);
+
+// binary to hex functions
 
 static const char *hex_upper = "0123456789ABCDEF";
 static const char *hex_lower = "0123456789abcdef";
-
 
 inline void byte2hex(const unsigned char byte, char hex[], const char *digits) {
 	hex[0]  = digits[byte >> 4];
     hex[1] = digits[byte & 0x0F];
 }
-
+size_t bin2hex(const unsigned char *bin, size_t bin_len, char *hex, size_t hex_len, bool lowercase = false);
 void bin2hex_line(char *out_buf, int out_len, const void *src_addr, const int src_len, const int width, const char *digits);
 
-std::vector<std::string> split (const std::string &s, char delim);
+// regex functions
 
 int regex_match(const std::string &s, const std::string &pattern);
 int regex_replace(std::string &s, const std::string &pattern, const std::string &replace);
 
+
+// math functions
 
 inline int random(int upper_limit) {
     srand(time(NULL));
