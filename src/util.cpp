@@ -29,7 +29,7 @@
 
 #include "util.h"
 
-#define _SPRINTF_BUF_SZ 1024
+#define _SPRINTF_BUF_SZ 2048
 
 //-------------------------------------------------------------------------
 // printf style string formatter(s) 
@@ -213,7 +213,8 @@ time_t cm_util::calendar_time(time_t seconds, struct tm &local_tm) {
     return mktime(&local_tm);
 }
 
-// use cm_util::get_timezone_offset() for tz value (we avoid it inside to reduce calls and correct tz offset format)
+// format time as YYYY-MM-DDTHH:MM:SS.999+HH:MM
+// use cm_util::get_timezone_offset() for tz value(we avoid it inside to reduce calls and to get the correct tz offset format)
 std::string cm_util::format_local_timestamp(time_t seconds, time_t millis, std::string &tz) {
 	char buf[sizeof "1970-01-01T00:00:00.999+00:00"] = { '\0' };
 	struct tm local_tm;
@@ -232,7 +233,7 @@ std::string cm_util::format_utc_timestamp(time_t seconds, time_t millis) {
 	return std::string(buf);
 }
 
-// used to create timestamp part of a file name (e.g., 20190804_225819)
+// create timestamp part for a file name (e.g., 20190804_225819)
 // useful for building output file names that need to be uniqued
 std::string cm_util::format_filename_timestamp(time_t seconds, bool gmt) {
     char buf[sizeof "19700101_000000_000 "] = { '\0' };
@@ -243,7 +244,7 @@ std::string cm_util::format_filename_timestamp(time_t seconds, bool gmt) {
     return std::string(buf);
 }
 
-// used to create timestamp of the form YYYYMMDDHHMMSS
+// create timestamp of the form YYYYMMDDHHMMSS
 // useful for timestamp fields in data fields
 std::string cm_util::format_field_timestamp(time_t seconds, bool gmt) {
     char buf[sizeof "19700101000000"] = { '\0' };
@@ -280,6 +281,7 @@ std::string cm_util::get_timezone_offset(time_t seconds) {
 	return std::string(tzoffset);
 }
 
+// returns name of the current host
 std::string cm_util::get_hostname() {
     char buf[80] = { '\0' };
     memset(buf, 0, sizeof buf);
@@ -287,6 +289,7 @@ std::string cm_util::get_hostname() {
     return std::string(buf);
 }
 
+// returns current thread id
 pid_t cm_util::tid() {
 #define __LINUX_GETTID__
 #ifdef __LINUX_GETTID__
@@ -315,10 +318,12 @@ int cm_util::file_stat(const std::string &path, size_t *size, time_t *mod_time) 
 	return ret;
 }
 
+// rename file from old name to new name
 int cm_util::rename(const std::string &old_name, const std::string &new_name) {
     return std::rename(old_name.c_str(), new_name.c_str()); 
 }
 
+// remove a file
 int cm_util::remove(const std::string &path) {
     return std::remove(path.c_str());
 }
@@ -339,6 +344,7 @@ bool cm_util::append_to_file(const std::string &path, const std::string &str) {
     return true;
 }
 
+// scan a directory and return matching file names
 int cm_util::dir_scan(const std::string &dir_name, const std::string &pattern,
             std::vector<std::string> &matches) {
     int retcode = 0;
@@ -377,6 +383,7 @@ size_t cm_util::strlcpy(char * dst, const char * src, size_t max) {
 	return sz;
 }
 
+// split a string and return a vector of the parts
 std::vector<std::string> cm_util::split (const std::string &s, char delim) {
     std::vector<std::string> result;
     std::stringstream ss(s);
@@ -389,17 +396,19 @@ std::vector<std::string> cm_util::split (const std::string &s, char delim) {
     return result;
 }
 
-
+// look for pattern in a string
 int cm_util::regex_match(const std::string &s, const std::string &pattern) {
 
+    int ret = 0;
     try {
         const std::regex reg(pattern.c_str());
-        std::regex_match(s, reg);
+        ret = std::regex_match(s, reg) ? 0 : -1;
     } catch(...) { return -1; }
 
-    return 0;   // success
+    return ret;
 }
 
+// replace matching pattern in a string
 int cm_util::regex_replace(std::string &s, const std::string &pattern, const std::string &replace) {
 
     std::string result;
