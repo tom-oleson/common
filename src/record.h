@@ -212,7 +212,8 @@ public:
     }
 
     // format record as a delimited string
-    string format(string &output) {
+    // returns size of output string
+    int format(string &output) {
         output.clear();
         vector<string>::iterator p = data.begin();
         while(p != data.end()) {
@@ -221,7 +222,7 @@ public:
                 output.append(record_spec.get_delimiter());
             }
         }
-        return output;
+        return output.size();       
     }
 
     const string to_string();
