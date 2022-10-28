@@ -32,13 +32,22 @@
 #include "record.h"
 
 const string cm_record::field::to_string() {
-        return cm_util::format("field: name=[%s], type=[%s], length=[%u]", name.c_str(), type.c_str(), length);
+    return cm_util::format("field: name=[%s], type=[%s], length=[%u]", name.c_str(), type.c_str(), length);
 }
 
 const string cm_record::record_spec::to_string() {
-        return cm_util::format("record_spec: name=[%s], version=[%s], delimiter=[%s], size=[%u]", name.c_str(), version.c_str(), delimiter.c_str(), size());
+    return cm_util::format("record_spec: name=[%s], version=[%s], delimiter=[%s], size=[%u]", name.c_str(), version.c_str(), delimiter.c_str(), size());
 }
 
+const string cm_record::record::to_string() {
+    string output;
+    vector<string>::iterator p = data.begin();
+    for(int index = 0; p != data.end(); index++) {
+        output.append( cm_util::format("%d=[%s]", index, p->c_str()) );
+        if(++p != data.end()) output.append(",");
+    }
+    return cm_util::format("record: spec=[%s:%s] data=[%s]", record_spec.get_name().c_str(), record_spec.get_version().c_str(), output.c_str());
+}
 
 bool cm_record::xml_load_record_spec(const string spec, const string name, const string version, cm_record::record_spec *spec_ptr) {
 

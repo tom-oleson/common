@@ -50,7 +50,7 @@ std::string cm_util::format(const char *fmt, ...) {
     return std::string(c_format_buf,sz);
 }
 
-std::string &cm_util::format_string(std::string& s, const char *fmt, ...) {
+std::string cm_util::format_string(std::string& s, const char *fmt, ...) {
     char c_format_buf[_SPRINTF_BUF_SZ] = { '\0' };
     //memset(c_format_buf, 0, sizeof(c_format_buf));
 

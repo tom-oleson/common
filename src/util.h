@@ -63,7 +63,7 @@ namespace cm_util {
 // string format functions
 
 std::string format(const char *fmt, ...);
-std::string &format_string(std::string& s, const char *fmt, ...);
+std::string format_string(std::string& s, const char *fmt, ...);
 
 // timestamp format functions
 

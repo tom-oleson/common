@@ -82,6 +82,7 @@ protected:
 
     vector<field> fields;                   // fields in parse order
     map<string,field> field_names_map;      // names --> fields map
+    map<string,int> field_index_map;        // names --> index map
 
 public:
     record_spec() {}      
@@ -116,6 +117,7 @@ public:
     void add_field(field &f) {
         fields.push_back(f);
         field_names_map.insert(pair<string,field>(f.get_name(), f));
+        field_index_map.insert(pair<string,int>(f.get_name(), fields.size()-1));
     }
 
     // get field by index
@@ -124,10 +126,18 @@ public:
     }
 
     // get field by name
-    field &get_field(const string &_name) {
-        map<string,field>::iterator p = field_names_map.find(_name);
+    field &get_field(const string &field_name) {
+        map<string,field>::iterator p = field_names_map.find(field_name);
         if(p != field_names_map.end()) return p->second;
-        throw cm_util::format("Invalid field name: [%s] for %s:%s", _name.c_str(), name.c_str(), version.c_str());
+        throw cm_util::format("Invalid field name: [%s] for %s:%s", field_name.c_str(), name.c_str(), version.c_str());
+    }
+
+    // get index for field
+    // returns -1 if field name is not found in spec
+    int get_index(const string &field_name) {
+        map<string,int>::iterator p = field_index_map.find(field_name);
+        if(p != field_index_map.end()) return p->second;
+        return -1;
     }
 
     const string to_string();
@@ -136,6 +146,86 @@ public:
 
 // find spec with matching name and version in specified xml (memory or file) and add fields to spec object 
 bool xml_load_record_spec(const string spec, const string name, const string version, record_spec *spec_ptr);
+
+
+class record {
+
+protected:
+    cm_record::record_spec record_spec;
+    vector<string> data;
+
+public:
+    record() {}
+    record(const cm_record::record_spec &_record_spec) : record_spec(_record_spec) {
+        // resize data vector to match record spec
+        data.resize(record_spec.size());
+     }
+
+    // copy constructor
+    record(record &r) : record_spec(r.record_spec), data(r.data) {}
+
+    // assignment operator
+    record &operator = (const record &r) {
+        record_spec = r.record_spec;
+        data = r.data;
+        return *this;
+    }        
+
+    // clear data from record
+    void clear() {
+        data.clear();
+    }
+
+    // get index for field by name
+    int get_index(const string &field_name) {
+        return record_spec.get_index(field_name);
+    }
+
+    // get data by index
+    string get_data(int index) {
+        return (index >= 0 && index < data.size()) ? data[index] : "";
+    }
+
+    // get data by field name
+    string get_data(const string &field_name) {
+        int index = get_index(field_name);
+        return (index >= 0) ? data[index] : "";
+    }
+
+    // set data by index
+    void set_data(int index, const string &value) {
+        if(index < data.size()) data[index] = value;
+    }
+
+    // set data by field name
+    void set_data(const string &field_name, const string &value) {
+        int index = get_index(field_name);
+        if(index >= 0) set_data(index, value);
+    }
+
+    // parse delimited string into record object
+    void parse(const string &s) {
+        char delimiter = record_spec.get_delimiter().at(0);
+        vector<string> result = cm_util::split(s, delimiter);
+        clear();
+        std::copy(result.begin(), result.end(), std::back_inserter(data));
+    }
+
+    // format record as a delimited string
+    string format(string &output) {
+        output.clear();
+        vector<string>::iterator p = data.begin();
+        while(p != data.end()) {
+            output.append( *p );
+            if(++p != data.end()) {
+                output.append(record_spec.get_delimiter());
+            }
+        }
+        return output;
+    }
+
+    const string to_string();
+};
 
 
 }
