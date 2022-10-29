@@ -51,7 +51,8 @@ Module.symvers
 Mkfile.old
 dkms.conf
 
-.vscode/
+*/Makefile
+*/unit_test/Makefile
 */unit_test/cppunit_results.xml
 */unit_test/log/
 */unit_test/run_tests

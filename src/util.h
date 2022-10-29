@@ -55,6 +55,9 @@
 #include <errno.h>
 #include <time.h>
 
+
+#include "timewatcher.h"
+
 // useful macro for wrapping a const string in double quotes for JSON output
 #define JS(s) "" #s ""
 

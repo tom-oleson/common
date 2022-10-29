@@ -12,7 +12,7 @@ CPPUNIT_TEST_SUITE_REGISTRATION( recordTest );
 //void recordTest::setUp() { }
 //void recordTest::tearDown() { }
 
-void recordTest::test_record() {
+void recordTest::test_record_spec() {
 
     cm_log::file_logger log("./log/record_test.log");
     set_default_logger(&log);
@@ -71,6 +71,53 @@ void recordTest::test_load_record_spec() {
     for(int index = 0; index < spec.size(); index++) {
         cm_log::info(spec.get_field(index).to_string());
     }
+}
+
+void recordTest::test_record() {
+
+    cm_log::file_logger log("./log/record_test.log");
+    set_default_logger(&log);
+
+    string xml = "<?xml version='1.0'?>" \
+        "<spec>" \
+            "<record name='task' version='1.0' delimiter='|'>" \
+                "<field name='id' type='timestamp' length='14'/>" \
+                "<field name='description' type='string'/>" \
+                "<field name='priority' type='int' length='1'/>" \
+                "<field name='activity' type='string'/>" \
+                "<field name='notes' type='string'/>" \
+                "<field name='tags' type='string'/>" \
+                "<field name='start' type='timestamp' length='14'/>" \
+                "<field name='due' type='timestamp' length='14'/>" \
+                "<field name='done' type='timestamp' length='14'/>" \
+                "<field name='status' type='string' length='1'/>" \
+            "</record>" \
+        "</spec>";
+
+    cm_record::record_spec task_spec;
+    bool ret = xml_load_record_spec(xml, "task", "1.0", &task_spec);
+
+    CPPUNIT_ASSERT(ret == true);
+    CPPUNIT_ASSERT(task_spec.get_name() == "task");
+    CPPUNIT_ASSERT(task_spec.get_version() == "1.0");
+
+    // create record object
+
+    cm_record::record task(task_spec);
+
+    // add some data
+
+    task.set_data("id", cm_time::clock_gmt_timestamp());
+    task.set_data("description", "Create new software");
+    task.set_data("priority", "1");
+    task.set_data("activity", "Software Development");
+    task.set_data("notes", "Includes desigh, code and test cycles.");
+    task.set_data("tags", "#software #development");
+    task.set_data("start", cm_time::clock_gmt_timestamp());
+    task.set_data("status", " ");
+
+    cm_log::info(task.to_string());
 
 }
+
 

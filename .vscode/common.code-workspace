@@ -1,0 +1,15 @@
+{
+	"folders": [
+		{
+			"path": ".."
+		}
+	],
+	"settings": {
+		"files.associations": {
+			"memory": "cpp"
+		},
+		"makefile.makePath": "/usr/bin/make",
+		"makefile.makefilePath": "/home/tom/Data/common/src/Makefile",
+		"makefile.makeDirectory": "/home/tom/Data/common/src"
+	}
+}

@@ -132,6 +132,11 @@ double cm_time::duration(const timespec &start, const timespec &finish) {
 
 }
 
+std::string cm_time::clock_gmt_timestamp() {
+    time_t seconds = cm_time::clock_seconds();
+    return cm_util::format_field_timestamp(seconds, true);
+}
+
 // Call gets singleton instance 
 timewatcher& timeWatcher() {
         static timewatcher tw;

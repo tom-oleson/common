@@ -43,14 +43,22 @@ namespace cm_time {
 
 timespec clock_res();
 timespec clock_time();
+
+// current time in seconds with millis and nanos stored to pointer variables
 time_t clock_seconds(time_t *millis, time_t *nanos);
-time_t clock_seconds();
+
+// current time in seconds
+time_t clock_seconds();	
+
 time_t seconds(timespec &ts);
 time_t millis(timespec &ts);
 time_t nanos(timespec &ts);
 time_t total_millis(timespec &ts);
 
 double duration(const timespec &start, const timespec &finish);
+
+// return current clock time as GMT time formatted as a string (YYYYMMDDHHMMSS)
+std::string clock_gmt_timestamp();
 
 } // namespace cm_time
 
