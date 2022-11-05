@@ -92,7 +92,7 @@ public:
 
     // copy constructor
     record_spec(const record_spec &r) :
-        name(r.name), version(r.version), delimiter(r.delimiter), fields(r.fields), field_names_map(r.field_names_map) {}
+        name(r.name), version(r.version), delimiter(r.delimiter), fields(r.fields), field_names_map(r.field_names_map), field_index_map(r.field_index_map) {}
 
     // assignment operator
     record_spec &operator = (const record_spec &r) {
@@ -101,6 +101,7 @@ public:
         delimiter = r.delimiter;
         fields = r.fields;
         field_names_map = r.field_names_map;
+        field_index_map = r.field_index_map;
         return *this;
     }        
 

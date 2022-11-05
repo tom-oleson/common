@@ -7,6 +7,10 @@
 
 #include "recordTest.h"
 
+#include "record.h"
+#include "log.h"
+#include "timewatcher.h" 
+
 CPPUNIT_TEST_SUITE_REGISTRATION( recordTest );
 
 //void recordTest::setUp() { }
@@ -107,16 +111,29 @@ void recordTest::test_record() {
 
     // add some data
 
-    task.set_data("id", cm_time::clock_gmt_timestamp());
+    string timestamp = cm_time::clock_gmt_timestamp();
+
+    task.set_data("id", timestamp);
     task.set_data("description", "Create new software");
     task.set_data("priority", "1");
     task.set_data("activity", "Software Development");
     task.set_data("notes", "Includes desigh, code and test cycles.");
     task.set_data("tags", "#software #development");
-    task.set_data("start", cm_time::clock_gmt_timestamp());
+    task.set_data("start", timestamp);
     task.set_data("status", " ");
 
     cm_log::info(task.to_string());
+
+    CPPUNIT_ASSERT(task.get_data("id") == timestamp);
+    CPPUNIT_ASSERT(task.get_data("description") == "Create new software");
+    CPPUNIT_ASSERT(task.get_data("priority") == "1");
+    CPPUNIT_ASSERT(task.get_data("activity") == "Software Development");
+    CPPUNIT_ASSERT(task.get_data("notes") == "Includes desigh, code and test cycles.");
+    CPPUNIT_ASSERT(task.get_data("tags") == "#software #development");
+    CPPUNIT_ASSERT(task.get_data("start") == timestamp);
+    CPPUNIT_ASSERT(task.get_data("due") == "");
+    CPPUNIT_ASSERT(task.get_data("done") == "");
+    CPPUNIT_ASSERT(task.get_data("status") == " ");
 
 }
 

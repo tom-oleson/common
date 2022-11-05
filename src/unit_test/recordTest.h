@@ -5,10 +5,6 @@
 #include <cppunit/extensions/HelperMacros.h>
 
 #include <string.h>
-#include "record.h"
-#include "log.h"
-#include "timewatcher.h" 
-
 
 using namespace std;
 

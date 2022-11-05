@@ -77,8 +77,18 @@ clean:
 	-@rm -rf *.o $(EXE) ./log/* cppunit_results.xml core.*
 	@echo "$(EXE) $(@)ed"
 
-all: prod
+build: $(EXE)
 
-prod: $(EXE)
+
+all: clean build
+
+run:
 	clear
 	export LD_LIBRARY_PATH=$(CM_LIB_DIR):$(LD_LIBRARY_PATH);$(PWD)/$(EXE)
+
+
+# workaround to get LD_LIBRARY_PATH into vscode environment
+vscode:
+	clear
+	export LD_LIBRARY_PATH=$(CM_LIB_DIR):$(LD_LIBRARY_PATH);code
+

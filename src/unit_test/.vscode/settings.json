@@ -1,0 +1,9 @@
+{
+    "makefile.launchConfigurations": [
+        {
+            "cwd": "/media/tom/Data/common/src/unit_test",
+            "binaryPath": "/media/tom/Data/common/src/unit_test/run_tests",
+            "binaryArgs": []
+        }
+    ]
+}
