@@ -152,14 +152,14 @@ bool xml_load_record_spec(const string spec, const string name, const string ver
 class record {
 
 protected:
-    cm_record::record_spec record_spec;
+    cm_record::record_spec *record_spec = nullptr;   // use a pointer, not a copy of the entire spec!
     vector<string> data;
 
 public:
     record() {}
-    record(const cm_record::record_spec &_record_spec) : record_spec(_record_spec) {
+    record(cm_record::record_spec *_record_spec) : record_spec(_record_spec) {
         // resize data vector to match record spec
-        data.resize(record_spec.size());
+        data.resize(record_spec->size());
      }
 
     // copy constructor
@@ -179,7 +179,7 @@ public:
 
     // get index for field by name
     int get_index(const string &field_name) {
-        return record_spec.get_index(field_name);
+        return record_spec->get_index(field_name);
     }
 
     // get data by index
@@ -205,25 +205,30 @@ public:
     }
 
     // parse delimited string into record object
-    void parse(const string &s) {
-        char delimiter = record_spec.get_delimiter().at(0);
+    // returns number of fields parsed
+    int parse(const string &s) {
+        char delimiter = record_spec->get_delimiter().at(0);
         vector<string> result = cm_util::split(s, delimiter);
         clear();
+        // copy ressults into data vector
         std::copy(result.begin(), result.end(), std::back_inserter(data));
+        return data.size();
     }
 
     // format record as a delimited string
-    // returns size of output string
+    // returns number of fields placed in output string
     int format(string &output) {
         output.clear();
+        int count = 0;
         vector<string>::iterator p = data.begin();
         while(p != data.end()) {
             output.append( *p );
             if(++p != data.end()) {
-                output.append(record_spec.get_delimiter());
+                output.append(record_spec->get_delimiter());
             }
+            count++;
         }
-        return output.size();       
+        return count;
     }
 
     const string to_string();

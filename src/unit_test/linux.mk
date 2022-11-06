@@ -92,3 +92,6 @@ vscode:
 	clear
 	export LD_LIBRARY_PATH=$(CM_LIB_DIR):$(LD_LIBRARY_PATH);code
 
+gdb:
+	clear
+	export LD_LIBRARY_PATH=$(CM_LIB_DIR):$(LD_LIBRARY_PATH);gdb $(PWD)/$(EXE)

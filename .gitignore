@@ -51,6 +51,7 @@ Module.symvers
 Mkfile.old
 dkms.conf
 
+.gdb_history
 */Makefile
 */unit_test/Makefile
 */unit_test/cppunit_results.xml

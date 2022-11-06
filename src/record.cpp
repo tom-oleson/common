@@ -46,7 +46,7 @@ const string cm_record::record::to_string() {
         output.append( cm_util::format("%d=[%s]", index, p->c_str()) );
         if(++p != data.end()) output.append(",");
     }
-    return cm_util::format("record: spec=[%s:%s] data=[%s]", record_spec.get_name().c_str(), record_spec.get_version().c_str(), output.c_str());
+    return cm_util::format("record: spec=[%s:%s] data=[%s]", record_spec->get_name().c_str(), record_spec->get_version().c_str(), output.c_str());
 }
 
 bool cm_record::xml_load_record_spec(const string spec, const string name, const string version, cm_record::record_spec *spec_ptr) {

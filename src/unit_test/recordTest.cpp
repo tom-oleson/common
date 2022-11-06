@@ -107,7 +107,7 @@ void recordTest::test_record() {
 
     // create record object
 
-    cm_record::record task(task_spec);
+    cm_record::record task(&task_spec);
 
     // add some data
 
@@ -117,7 +117,7 @@ void recordTest::test_record() {
     task.set_data("description", "Create new software");
     task.set_data("priority", "1");
     task.set_data("activity", "Software Development");
-    task.set_data("notes", "Includes desigh, code and test cycles.");
+    task.set_data("notes", "Includes design, code and test cycles.");
     task.set_data("tags", "#software #development");
     task.set_data("start", timestamp);
     task.set_data("status", " ");
@@ -128,7 +128,80 @@ void recordTest::test_record() {
     CPPUNIT_ASSERT(task.get_data("description") == "Create new software");
     CPPUNIT_ASSERT(task.get_data("priority") == "1");
     CPPUNIT_ASSERT(task.get_data("activity") == "Software Development");
-    CPPUNIT_ASSERT(task.get_data("notes") == "Includes desigh, code and test cycles.");
+    CPPUNIT_ASSERT(task.get_data("notes") == "Includes design, code and test cycles.");
+    CPPUNIT_ASSERT(task.get_data("tags") == "#software #development");
+    CPPUNIT_ASSERT(task.get_data("start") == timestamp);
+    CPPUNIT_ASSERT(task.get_data("due") == "");
+    CPPUNIT_ASSERT(task.get_data("done") == "");
+    CPPUNIT_ASSERT(task.get_data("status") == " ");
+
+}
+
+void recordTest::test_format_and_parse() {
+
+    cm_log::file_logger log("./log/record_test.log");
+    set_default_logger(&log);
+
+    string xml = "<?xml version='1.0'?>" \
+        "<spec>" \
+            "<record name='task' version='1.0' delimiter='|'>" \
+                "<field name='id' type='timestamp' length='14'/>" \
+                "<field name='description' type='string'/>" \
+                "<field name='priority' type='int' length='1'/>" \
+                "<field name='activity' type='string'/>" \
+                "<field name='notes' type='string'/>" \
+                "<field name='tags' type='string'/>" \
+                "<field name='start' type='timestamp' length='14'/>" \
+                "<field name='due' type='timestamp' length='14'/>" \
+                "<field name='done' type='timestamp' length='14'/>" \
+                "<field name='status' type='string' length='1'/>" \
+            "</record>" \
+        "</spec>";
+
+    cm_record::record_spec task_spec;
+    bool ret = xml_load_record_spec(xml, "task", "1.0", &task_spec);
+
+    CPPUNIT_ASSERT(ret == true);
+    CPPUNIT_ASSERT(task_spec.get_name() == "task");
+    CPPUNIT_ASSERT(task_spec.get_version() == "1.0");
+
+    // create record object
+
+    cm_record::record task(&task_spec);
+
+    // add some data
+
+    string timestamp = cm_time::clock_gmt_timestamp();
+
+    task.set_data("id", timestamp);
+    task.set_data("description", "Create new software");
+    task.set_data("priority", "1");
+    task.set_data("activity", "Software Development");
+    task.set_data("notes", "Includes design, code and test cycles.");
+    task.set_data("tags", "#software #development");
+    task.set_data("start", timestamp);
+    task.set_data("status", " ");
+
+    // format the record
+    string output;
+    int out_count = task.format(output);
+    
+    cm_log::info(output);
+
+    // clear the data
+    task.clear();
+
+    // parse the output back into the record object
+
+    int in_count = task.parse(output);
+
+    CPPUNIT_ASSERT(in_count == out_count);
+
+    CPPUNIT_ASSERT(task.get_data("id") == timestamp);
+    CPPUNIT_ASSERT(task.get_data("description") == "Create new software");
+    CPPUNIT_ASSERT(task.get_data("priority") == "1");
+    CPPUNIT_ASSERT(task.get_data("activity") == "Software Development");
+    CPPUNIT_ASSERT(task.get_data("notes") == "Includes design, code and test cycles.");
     CPPUNIT_ASSERT(task.get_data("tags") == "#software #development");
     CPPUNIT_ASSERT(task.get_data("start") == timestamp);
     CPPUNIT_ASSERT(task.get_data("due") == "");
