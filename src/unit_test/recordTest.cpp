@@ -9,7 +9,8 @@
 
 #include "record.h"
 #include "log.h"
-#include "timewatcher.h" 
+#include "timewatcher.h"
+#include "store.h" 
 
 CPPUNIT_TEST_SUITE_REGISTRATION( recordTest );
 
@@ -113,27 +114,27 @@ void recordTest::test_record() {
 
     string timestamp = cm_time::clock_gmt_timestamp();
 
-    task.set_data("id", timestamp);
-    task.set_data("description", "Create new software");
-    task.set_data("priority", "1");
-    task.set_data("activity", "Software Development");
-    task.set_data("notes", "Includes design, code and test cycles.");
-    task.set_data("tags", "#software #development");
-    task.set_data("start", timestamp);
-    task.set_data("status", " ");
+    task.set("id", timestamp);
+    task.set("description", "Create new software");
+    task.set("priority", "1");
+    task.set("activity", "Software Development");
+    task.set("notes", "Includes design, code and test cycles.");
+    task.set("tags", "#software #development");
+    task.set("start", timestamp);
+    task.set("status", " ");
 
     cm_log::info(task.to_string());
 
-    CPPUNIT_ASSERT(task.get_data("id") == timestamp);
-    CPPUNIT_ASSERT(task.get_data("description") == "Create new software");
-    CPPUNIT_ASSERT(task.get_data("priority") == "1");
-    CPPUNIT_ASSERT(task.get_data("activity") == "Software Development");
-    CPPUNIT_ASSERT(task.get_data("notes") == "Includes design, code and test cycles.");
-    CPPUNIT_ASSERT(task.get_data("tags") == "#software #development");
-    CPPUNIT_ASSERT(task.get_data("start") == timestamp);
-    CPPUNIT_ASSERT(task.get_data("due") == "");
-    CPPUNIT_ASSERT(task.get_data("done") == "");
-    CPPUNIT_ASSERT(task.get_data("status") == " ");
+    CPPUNIT_ASSERT(task.get("id") == timestamp);
+    CPPUNIT_ASSERT(task.get("description") == "Create new software");
+    CPPUNIT_ASSERT(task.get("priority") == "1");
+    CPPUNIT_ASSERT(task.get("activity") == "Software Development");
+    CPPUNIT_ASSERT(task.get("notes") == "Includes design, code and test cycles.");
+    CPPUNIT_ASSERT(task.get("tags") == "#software #development");
+    CPPUNIT_ASSERT(task.get("start") == timestamp);
+    CPPUNIT_ASSERT(task.get("due") == "");
+    CPPUNIT_ASSERT(task.get("done") == "");
+    CPPUNIT_ASSERT(task.get("status") == " ");
 
 }
 
@@ -173,14 +174,14 @@ void recordTest::test_format_and_parse() {
 
     string timestamp = cm_time::clock_gmt_timestamp();
 
-    task.set_data("id", timestamp);
-    task.set_data("description", "Create new software");
-    task.set_data("priority", "1");
-    task.set_data("activity", "Software Development");
-    task.set_data("notes", "Includes design, code and test cycles.");
-    task.set_data("tags", "#software #development");
-    task.set_data("start", timestamp);
-    task.set_data("status", " ");
+    task.set("id", timestamp);
+    task.set("description", "Create new software");
+    task.set("priority", "1");
+    task.set("activity", "Software Development");
+    task.set("notes", "Includes design, code and test cycles.");
+    task.set("tags", "#software #development");
+    task.set("start", timestamp);
+    task.set("status", " ");
 
     // format the record
     string output;
@@ -197,17 +198,72 @@ void recordTest::test_format_and_parse() {
 
     CPPUNIT_ASSERT(in_count == out_count);
 
-    CPPUNIT_ASSERT(task.get_data("id") == timestamp);
-    CPPUNIT_ASSERT(task.get_data("description") == "Create new software");
-    CPPUNIT_ASSERT(task.get_data("priority") == "1");
-    CPPUNIT_ASSERT(task.get_data("activity") == "Software Development");
-    CPPUNIT_ASSERT(task.get_data("notes") == "Includes design, code and test cycles.");
-    CPPUNIT_ASSERT(task.get_data("tags") == "#software #development");
-    CPPUNIT_ASSERT(task.get_data("start") == timestamp);
-    CPPUNIT_ASSERT(task.get_data("due") == "");
-    CPPUNIT_ASSERT(task.get_data("done") == "");
-    CPPUNIT_ASSERT(task.get_data("status") == " ");
+    CPPUNIT_ASSERT(task.get("id") == timestamp);
+    CPPUNIT_ASSERT(task.get("description") == "Create new software");
+    CPPUNIT_ASSERT(task.get("priority") == "1");
+    CPPUNIT_ASSERT(task.get("activity") == "Software Development");
+    CPPUNIT_ASSERT(task.get("notes") == "Includes design, code and test cycles.");
+    CPPUNIT_ASSERT(task.get("tags") == "#software #development");
+    CPPUNIT_ASSERT(task.get("start") == timestamp);
+    CPPUNIT_ASSERT(task.get("due") == "");
+    CPPUNIT_ASSERT(task.get("done") == "");
+    CPPUNIT_ASSERT(task.get("status") == " ");
 
 }
 
+
+// static global
+cm_store::info_store<std::string,std::string> priority_store;
+
+
+void recordTest::test_lookup() {
+
+    cm_log::file_logger log("./log/record_test.log");
+    set_default_logger(&log);
+
+    // load record spec
+
+    string xml = "<?xml version='1.0'?>" \
+        "<spec>" \
+            "<record name='priority' version='1.0' delimiter='|'>" \
+                "<field name='code' type='string' length='1'/>" \
+                "<field name='description' type='string'/>" \
+            "</record>" \
+        "</spec>";
+
+    cm_record::record_spec priority_spec;
+    bool ret = xml_load_record_spec(xml, "priority", "1.0", &priority_spec);
+
+    CPPUNIT_ASSERT(ret == true);
+    CPPUNIT_ASSERT(priority_spec.get_name() == "priority");
+    CPPUNIT_ASSERT(priority_spec.get_version() == "1.0");
+
+
+    CPPUNIT_ASSERT(priority_spec.get_index("code") == 0);
+    CPPUNIT_ASSERT(priority_spec.get_index("description") == 1);
+
+
+    // parse records and place in store
+
+    cm_record::record priority(&priority_spec);
+
+    string records =    "1|Urgent/Important\n" \
+                        "2|Urgent/Not Important\n" \
+                        "3|Not Urgent/Important\n" \
+                        "4|Not Urgent/Not Important";
+
+    // use input streingstream to read records from string...
+    istringstream is(records);
+
+    // note you can use ifstream to get records from a file...
+    // ifstream is("/path/to/file");
+
+    ret = cm_record::load_records_to_store(is, priority, "code", "description", &priority_store);
+
+    CPPUNIT_ASSERT(priority_store.find("1") == "Urgent/Important");
+    CPPUNIT_ASSERT(priority_store.find("2") == "Urgent/Not Important");
+    CPPUNIT_ASSERT(priority_store.find("3") == "Not Urgent/Important");
+    CPPUNIT_ASSERT(priority_store.find("4") == "Not Urgent/Not Important");
+
+}
 

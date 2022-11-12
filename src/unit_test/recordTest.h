@@ -15,6 +15,7 @@ class recordTest : public CPPUNIT_NS::TestFixture {
     CPPUNIT_TEST( test_load_record_spec );
     CPPUNIT_TEST( test_record );
     CPPUNIT_TEST( test_format_and_parse );
+    CPPUNIT_TEST( test_lookup );
   CPPUNIT_TEST_SUITE_END();
 
 public:
@@ -26,6 +27,7 @@ protected:
     void test_load_record_spec();
     void test_record();
     void test_format_and_parse();
+    void test_lookup();
 };
 
 

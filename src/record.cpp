@@ -107,3 +107,19 @@ bool cm_record::xml_load_record_spec(const string spec, const string name, const
     }
     return true;
 }
+
+
+bool cm_record::load_records_to_store(istream &is, record &record, string key_field_name, string value_field_name, cm_store::info_store<std::string,std::string> *store) {
+
+    string input;
+    while(getline(is, input)) {
+        // parse the input string
+        record.parse(input);
+        // add entry to store (map)
+        string key = record.get(key_field_name);
+        string value = record.get(value_field_name);
+        store->set(key, value);
+    }
+
+    return true;
+}

@@ -33,6 +33,7 @@
 #include <string>
 
 #include "util.h"           // for cm_util::format
+#include "store.h"
 
 using namespace std;
 
@@ -183,25 +184,25 @@ public:
     }
 
     // get data by index
-    string get_data(int index) {
+    string get(int index) {
         return (index >= 0 && index < data.size()) ? data[index] : "";
     }
 
     // get data by field name
-    string get_data(const string &field_name) {
+    string get(const string &field_name) {
         int index = get_index(field_name);
         return (index >= 0) ? data[index] : "";
     }
 
     // set data by index
-    void set_data(int index, const string &value) {
+    void set(int index, const string &value) {
         if(index < data.size()) data[index] = value;
     }
 
     // set data by field name
-    void set_data(const string &field_name, const string &value) {
+    void set(const string &field_name, const string &value) {
         int index = get_index(field_name);
-        if(index >= 0) set_data(index, value);
+        if(index >= 0) set(index, value);
     }
 
     // parse delimited string into record object
@@ -234,6 +235,9 @@ public:
     const string to_string();
 };
 
+
+// load records from inputstream into specified store in memory
+bool load_records_to_store(istream &is, record &record, string key_field_name, string value_field_name, cm_store::info_store<std::string,std::string> *store);
 
 }
 

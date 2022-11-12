@@ -5,5 +5,10 @@
             "binaryPath": "/media/tom/Data/common/src/unit_test/run_tests",
             "binaryArgs": []
         }
-    ]
+    ],
+    "launch": {
+    
+        "configurations": [],
+        "compounds": []
+    }
 }
