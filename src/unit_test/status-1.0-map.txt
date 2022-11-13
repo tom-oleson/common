@@ -1,0 +1,4 @@
+ |Open
+X|Done
+D|Delegate
+I|Ignore

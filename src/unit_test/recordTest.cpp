@@ -212,7 +212,7 @@ void recordTest::test_format_and_parse() {
 }
 
 
-// static global
+// global
 cm_store::info_store<std::string,std::string> priority_store;
 
 
@@ -222,7 +222,6 @@ void recordTest::test_lookup() {
     set_default_logger(&log);
 
     // load record spec
-
     string xml = "<?xml version='1.0'?>" \
         "<spec>" \
             "<record name='priority' version='1.0' delimiter='|'>" \
@@ -230,7 +229,6 @@ void recordTest::test_lookup() {
                 "<field name='description' type='string'/>" \
             "</record>" \
         "</spec>";
-
     cm_record::record_spec priority_spec;
     bool ret = xml_load_record_spec(xml, "priority", "1.0", &priority_spec);
 
@@ -238,15 +236,12 @@ void recordTest::test_lookup() {
     CPPUNIT_ASSERT(priority_spec.get_name() == "priority");
     CPPUNIT_ASSERT(priority_spec.get_version() == "1.0");
 
-
     CPPUNIT_ASSERT(priority_spec.get_index("code") == 0);
     CPPUNIT_ASSERT(priority_spec.get_index("description") == 1);
 
 
     // parse records and place in store
-
     cm_record::record priority(&priority_spec);
-
     string records =    "1|Urgent/Important\n" \
                         "2|Urgent/Not Important\n" \
                         "3|Not Urgent/Important\n" \
@@ -264,6 +259,38 @@ void recordTest::test_lookup() {
     CPPUNIT_ASSERT(priority_store.find("2") == "Urgent/Not Important");
     CPPUNIT_ASSERT(priority_store.find("3") == "Not Urgent/Important");
     CPPUNIT_ASSERT(priority_store.find("4") == "Not Urgent/Not Important");
-
 }
 
+// global
+cm_store::info_store<std::string,std::string> status_store;
+
+void recordTest::test_lookup_from_file() {
+
+    cm_log::file_logger log("./log/record_test.log");
+    set_default_logger(&log);
+
+    // load record spec
+    string xml = "status-1.0-spec.xml";
+    cm_record::record_spec status_spec;
+    bool ret = xml_load_record_spec(xml, "status", "1.0", &status_spec);
+
+    CPPUNIT_ASSERT(ret == true);
+    CPPUNIT_ASSERT(status_spec.get_name() == "status");
+    CPPUNIT_ASSERT(status_spec.get_version() == "1.0");
+
+    CPPUNIT_ASSERT(status_spec.get_index("code") == 0);
+    CPPUNIT_ASSERT(status_spec.get_index("description") == 1);
+
+    // parse records and place in store
+    cm_record::record status(&status_spec);
+    ifstream is("./status-1.0-map.txt");
+    CPPUNIT_ASSERT(is.is_open() == true);
+
+    ret = cm_record::load_records_to_store(is, status, "code", "description", &status_store);
+
+    CPPUNIT_ASSERT(status_store.find(" ") == "Open");
+    CPPUNIT_ASSERT(status_store.find("X") == "Done");
+    CPPUNIT_ASSERT(status_store.find("D") == "Delegate");
+    CPPUNIT_ASSERT(status_store.find("I") == "Ignore");
+
+}
